@@ -632,28 +632,31 @@ async function getImage(id) {
   return { statusCode: 200, headers: { 'content-type': it.type, 'cache-control': 'public, max-age=31536000, immutable' }, body: it.data, isBase64Encoded: true };
 }
 
-// ---------------------------------------------------------------- 每天早上 9 點：提醒「5 天後客人要收到」的訂單（只傳給最大管理員；沒有就不傳，省推播額度）
-const DIGEST_DAYS = 5;
+// ---------------------------------------------------------------- 每天早上 9 點：提醒「兩週後客人要收到」的訂單（只傳給最大管理員）
+// 每張訂單只提醒一次：到貨日前剛好 14 天的那天早上；如果下單時已經不到 14 天（例如剛好 14 天前下單），就在下單隔天早上補提醒。
+// 沒有要提醒的訂單就不傳（省推播額度）。
+const DIGEST_DAYS = 14;
 async function dailyDigest() {
   if (!env.LINE_MESSAGING_TOKEN || !OWNER_IDS.size) return { sent: false, reason: 'not configured' };
   const today = twDate(); const target = addDays(today, DIGEST_DAYS);
   const all = await queryAll({ KeyConditionExpression: 'pk = :p', ExpressionAttributeValues: { ':p': 'ORDER' } });
-  const due = all.filter((o) => !o.byShop && o.date === target && o.status !== 'cancelled').sort((a, b) => a.orderNo.localeCompare(b.orderNo));
-  const reported = all.filter((o) => !o.byShop && o.status === 'reported');
-  if (!due.length) return { sent: false, reason: 'nothing due in 5 days' }; // SK: no orders that day → no message at all
-  const n = ['①', '②', '③', '④', '⑤', '⑥', '⑦', '⑧', '⑨', '⑩'];
+  const live = all.filter((o) => !o.byShop && !o.remindedAt && o.status !== 'cancelled' && o.date >= today && o.date <= target)
+    .sort((a, b) => a.date.localeCompare(b.date) || a.orderNo.localeCompare(b.orderNo));
+  if (!live.length) return { sent: false, reason: 'nothing to remind' };
+  const onTime = live.filter((o) => o.date === target); const late = live.filter((o) => o.date < target);
+  const n = ['①', '②', '③', '④', '⑤', '⑥', '⑦', '⑧', '⑨', '⑩', '⑪', '⑫'];
+  const item = (o, i, withDate) => {
+    const paid = o.payment?.status === 'paid' ? '已付款 ✓' : o.status === 'reported' ? '⚠️ 匯款待確認' : '⚠️ 還沒付款';
+    return [`${n[i] || `(${i + 1})`} ${o.orderNo}　${o.contact?.name || ''}${withDate ? `　📅 ${twDay(o.date)}` : ''}`, `　${o.lines.map((l) => `${l.name}×${l.qty}`).join('、').slice(0, 90)}`, `　$${o.total}｜${paid}`, ''];
+  };
   const lines = ['🔔 出貨提醒', ''];
-  if (due.length) {
-    lines.push(`<<--- ${DIGEST_DAYS} 天後 ${twDay(target)} 客人要收到的訂單：${due.length} 筆 --->>`, '');
-    due.forEach((o, i) => {
-      const paid = o.payment?.status === 'paid' ? '已付款 ✓' : o.status === 'reported' ? '⚠️ 匯款待確認' : '⚠️ 還沒付款';
-      lines.push(`${n[i] || `(${i + 1})`} ${o.orderNo}　${o.contact?.name || ''}`, `　${o.lines.map((l) => `${l.name}×${l.qty}`).join('、').slice(0, 90)}`, `　$${o.total}｜${paid}`, '');
-    });
-  }
-  if (reported.length) lines.push(`🏦 客人回報已匯款、還沒確認：${reported.map((o) => o.orderNo).join('、')}`, '');
+  if (onTime.length) { lines.push(`<<--- 兩週後 ${twDay(target)} 客人要收到的訂單：${onTime.length} 筆 --->>`, ''); onTime.forEach((o, i) => lines.push(...item(o, i, false))); }
+  if (late.length) { lines.push(`<<--- 新進來、兩週內就要收到的訂單：${late.length} 筆 --->>`, ''); late.forEach((o, i) => lines.push(...item(o, i, true))); }
   lines.push(`後台：${ADMIN_URL}`);
   await Promise.all([...OWNER_IDS].map((id) => pushTo(id, lines.join('\n'))));
-  return { sent: true, orders: due.length };
+  const at = new Date().toISOString();
+  await Promise.all(live.map((o) => setOrder(o.orderNo, { remindedAt: at }).catch(() => {})));
+  return { sent: true, orders: live.length };
 }
 
 // ---------------------------------------------------------------- router
