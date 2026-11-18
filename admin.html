@@ -40,6 +40,14 @@
   .statusbar button { border: 1.5px solid #e3cdbf; background: #fff; border-radius: 999px; padding: 7px 12px; font: 700 13.5px var(--sans); cursor: pointer; }
   .statusbar button.on { background: var(--brown); border-color: var(--brown); color: #fff; }
   .tag-del { border: 0; background: #f1e1d8; border-radius: 999px; padding: 5px 10px; font-size: 13px; cursor: pointer; }
+  .shopbar { max-width: var(--page); margin: 0 auto; padding: 4px 14px 0; }
+  .shopbar .box { display: flex; align-items: center; gap: 12px; border-radius: 16px; padding: 12px 14px; background: #fff; border: 1.5px solid #ead7cc; }
+  .shopbar .box.on { background: #eef8f0; border-color: #a9d3b3; }
+  .shopbar .box.off { background: #fdf0ef; border-color: #ecc3c0; }
+  .shopbar .dot2 { width: 14px; height: 14px; border-radius: 50%; flex: none; background: #c0504d; box-shadow: 0 0 0 4px rgba(192, 80, 77, .18); }
+  .shopbar .on .dot2 { background: #3f7d4e; box-shadow: 0 0 0 4px rgba(63, 125, 78, .18); }
+  .shopbar .t { flex: 1; font-size: 13px; color: var(--ink2); line-height: 1.45; }
+  .shopbar .t b { display: block; font: 900 17px var(--serif); color: var(--ink); letter-spacing: .06em; }
   code { background: #f6e8e0; padding: 2px 6px; border-radius: 6px; font-size: 12.5px; word-break: break-all; }
 </style>
 </head>
@@ -50,6 +58,7 @@
   <button class="circle-btn" id="reload" aria-label="重新整理"><svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg></button>
 </header>
 <nav class="tabs" id="tabs" hidden><button data-t="orders" class="on">訂單</button><button data-t="products">商品</button><button data-t="settings">設定</button></nav>
+<div class="shopbar" id="shopbar" hidden></div>
 <main class="wrap" id="app"><div class="spinner"></div></main>
 <script src="js/config.js"></script>
 <script src="js/app.js"></script>
@@ -76,8 +85,27 @@
     app.innerHTML = `<div class="panel" style="text-align:center"><p style="font:900 18px var(--serif)">${esc(e.message)}</p><p class="note">請店家用「管理員邀請連結」開一次這個頁面。</p></div>`; return;
   }
   $('#tabs').hidden = false;
+  try { await loadSettings(); renderShopBar(); } catch (e) { /* settings tab will retry */ }
   $('#tabs').onclick = (e) => { const b = e.target.closest('button'); if (!b) return; tab = b.dataset.t; $('#tabs').querySelectorAll('button').forEach((x) => x.classList.toggle('on', x === b)); show(); };
   $('#reload').onclick = async () => { NTC.loading(true, '更新中…'); try { if (tab === 'orders') await loadOrders(); if (tab === 'products') products = (await NTC.api('/admin/products')).products; if (tab === 'settings') await loadSettings(); show(); } catch (e) { NTC.toast(e.message); } NTC.loading(false); };
+
+  // ---------- 開店接單／關閉接單 (one big switch at the top)
+  function renderShopBar() {
+    const bar = $('#shopbar'); if (!settings) return;
+    const open = !settings.pauseOrders;
+    const how = !open ? '客人可以逛，但不能下單（休息、檔期滿都用這個）'
+      : settings.testMode ? '客人結帳會「用 LINE 傳訂單給店家」（線上付款還在測試）' : '客人可以直接線上付款下單';
+    bar.hidden = false;
+    bar.innerHTML = `<div class="box ${open ? 'on' : 'off'}"><span class="dot2"></span><span class="t"><b>${open ? '接單中' : '關閉接單中'}</b>${how}</span>
+      <button class="btn small ${open ? 'ghost' : ''}" id="toggleShop">${open ? '關閉接單' : '開店接單'}</button></div>`;
+    $('#toggleShop').onclick = async () => {
+      const next = !open;
+      if (!confirm(next ? '確定開店接單？客人馬上就能下單。' : '確定關閉接單？客人會看到「目前暫停接單」，已經下的訂單不受影響。')) return;
+      NTC.loading(true, '更新中…');
+      try { settings = (await NTC.api('/admin/settings', { method: 'PUT', body: { pauseOrders: !next } })).settings; renderShopBar(); if (tab === 'settings') renderSettings(); NTC.toast(next ? '已開店接單' : '已關閉接單'); }
+      catch (e) { NTC.toast(e.message, 3500); } finally { NTC.loading(false); }
+    };
+  }
 
   async function loadOrders() { const r = await NTC.api('/admin/orders'); orders = r.orders; statuses = r.statuses; }
   async function loadSettings() { const r = await NTC.api('/admin/settings'); settings = r.settings; ready = r.ready; }
@@ -238,7 +266,7 @@
         <label class="field"><span>滿多少免運（0＝不免運）</span><input id="s-free" type="number" min="0" value="${s.freeShippingOver}"></label></section>
       <section class="panel"><h2>付款方式</h2>
         <label class="tg red" style="display:flex;margin-bottom:6px"><b>暫停接單</b>${s.pauseOrders ? '<span class="flag">開著：客人只能看，不能下單</span>' : '<span class="flag ok">關閉：客人可以下單</span>'}<span class="sp"></span><input type="checkbox" id="s-pause" ${s.pauseOrders ? 'checked' : ''}></label>
-        <p class="note" style="margin:0 0 12px">開著時客人的購物車只會顯示「線上訂購即將開放」。管理員不受影響，可以照常測試下單。</p>
+        <p class="note" style="margin:0 0 12px">開著時客人的購物車只會顯示「目前暫停接單」（可以搭配下面的「公告」寫原因，例如「12/24–12/26 休息」）。管理員不受影響，可以照常測試下單。</p>
         <label class="tg red" style="display:flex;margin-bottom:6px"><b>測試模式</b>${s.testMode ? '<span class="flag">開著：只有管理員能線上結帳</span>' : '<span class="flag ok">關閉：客人可以線上付款</span>'}<span class="sp"></span><input type="checkbox" id="s-test" ${s.testMode ? 'checked' : ''}></label>
         <p class="note" style="margin:0 0 12px">測試模式開著時，客人結帳會改成「用 LINE 傳訂單給店家」。金流和匯款帳號都準備好之後再關掉。</p>
         <label class="tg" style="display:flex;margin-bottom:8px">LINE Pay ${ready.linepay ? `<span class="flag ok">已串接（${ready.linepayEnv === 'production' ? '正式' : '測試'}）</span>` : '<span class="flag">尚未申請／串接</span>'}<span class="sp"></span><input type="checkbox" id="s-p-lp" ${s.payments.linepay ? 'checked' : ''}></label>
@@ -263,7 +291,7 @@
     $('#s-addbtn').onclick = () => { const v = $('#s-addday').value; if (v && !blocked.includes(v)) { blocked.push(v); $('#s-blocked').insertAdjacentHTML('beforeend', `<button type="button" class="tag-del" data-d="${v}">${v} ✕</button>`); $('#s-blocked .note')?.remove(); $('#s-blocked').lastElementChild.onclick = (e) => { blocked = blocked.filter((x) => x !== v); e.target.remove(); }; } };
     const put = async (body, msg = '已儲存') => {
       NTC.loading(true, '儲存中…');
-      try { settings = (await NTC.api('/admin/settings', { method: 'PUT', body })).settings; renderSettings(); NTC.toast(msg); }
+      try { settings = (await NTC.api('/admin/settings', { method: 'PUT', body })).settings; renderSettings(); renderShopBar(); NTC.toast(msg); }
       catch (e) { NTC.toast(e.message, 3500); } finally { NTC.loading(false); }
     };
     $('#s-save').onclick = () => put({

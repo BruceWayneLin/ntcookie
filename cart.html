@@ -67,8 +67,8 @@
     if (S.pauseOrders) { // shop not taking orders yet: show the cart, no checkout
       app.innerHTML = `${S.notice ? `<div class="panel note" style="background:#fff6ec">${esc(S.notice)}</div>` : ''}
         <section class="panel"><h2>購物車</h2>${pc.lines.map((l) => `<div class="line-item"><img class="th" src="${esc(asset(l.photo))}" alt=""><div class="info"><div class="nm">${esc(l.name)} × ${l.qty}</div>${l.detail ? `<div class="dt">${esc(l.detail)}</div>` : ''}<div class="pr">${money(l.subtotal)}</div></div></div>`).join('')}</section>
-        <section class="panel" style="text-align:center"><p style="font:900 19px var(--serif);margin:4px 0 6px">線上訂購即將開放 ♡</p>
-          <p class="note" style="margin:0 0 14px">目前還不能在網站下單，開放時會在 LINE 通知大家。有任何問題歡迎直接聊天詢問。</p>
+        <section class="panel" style="text-align:center"><p style="font:900 19px var(--serif);margin:4px 0 6px">目前暫停接單 ♡</p>
+          <p class="note" style="margin:0 0 14px">恢復接單時會在 LINE 通知大家。有任何問題歡迎直接聊天詢問。</p>
           <a class="btn line block" href="${NTC.chatUrl('您好，我想詢問')}">LINE 聊天詢問</a></section>`;
       return;
     }
