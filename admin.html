@@ -9,7 +9,7 @@
 <link rel="icon" href="assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css?v=1118m">
+<link rel="stylesheet" href="css/app.css?v=1118n">
 <style>
   :root { --page: 760px; }
   .tabs { position: sticky; top: 63px; z-index: 20; display: flex; gap: 6px; max-width: var(--page); margin: 0 auto; padding: 8px 14px; background: rgba(248, 237, 231, .96); }
@@ -61,8 +61,8 @@
 <div class="shopbar" id="shopbar" hidden></div>
 <main class="wrap" id="app"><div class="spinner"></div></main>
 <p class="note" id="ver" style="text-align:center;margin:0 0 24px;color:var(--muted)"></p>
-<script src="js/config.js?v=1118m"></script>
-<script src="js/app.js?v=1118m"></script>
+<script src="js/config.js?v=1118n"></script>
+<script src="js/app.js?v=1118n"></script>
 <script>
 (async function () {
   const { $, esc, money, asset } = NTC;
@@ -76,22 +76,10 @@
   // ---------- who are you?  The LINE account decides: admins go straight in, everyone else is stopped here.
   NTC.preferAdmin = true;
   const card = (inner) => { $('#tabs').hidden = true; $('#shopbar').hidden = true; app.innerHTML = `<div class="panel" style="max-width:440px;margin:24px auto;text-align:center">${inner}</div>`; };
-  const passForm = (msg) => `<details id="passbox" ${msg ? 'open' : ''} style="margin-top:16px;text-align:left"><summary class="note" style="cursor:pointer;text-align:center">用店家密碼登入（備用）</summary>
-      <form id="pwform" style="margin-top:10px"><input id="pw" type="password" autocomplete="current-password" placeholder="店家密碼" style="width:100%;border:1.5px solid #e6d2c6;border-radius:12px;padding:12px;font-size:17px;text-align:center;letter-spacing:.2em">
-      <p class="err" id="pwerr" ${msg ? '' : 'hidden'}>${esc(msg || '')}</p><button class="btn block small" style="margin-top:10px">登入</button></form></details>`;
-  const wirePass = () => {
-    const f = $('#pwform'); if (!f) return;
-    f.onsubmit = async (e) => {
-      e.preventDefault(); const pass = $('#pw').value.trim(); if (!pass) return;
-      NTC.loading(true, '登入中…');
-      try { const r = await NTC.api('/admin/login', { method: 'POST', body: { pass } }); NTC.setAdminToken(r.token); location.replace(location.pathname); }
-      catch (err) { NTC.loading(false); $('#pwerr').textContent = err.message; $('#pwerr').hidden = false; $('#pw').value = ''; }
-    };
-  };
   const loginScreen = (msg) => { // outside LINE (e.g. a computer): log in with LINE (QR code / LINE app)
     card(`<p style="font:900 20px var(--serif);margin:6px 0 4px">店家後台</p><p class="note" style="margin:0 0 14px">請用店家管理員的 LINE 帳號登入</p>
-      <button class="btn line block" id="login">用 LINE 登入</button>${passForm(msg)}`);
-    $('#login').onclick = NTC.login; wirePass();
+      <button class="btn line block" id="login">用 LINE 登入</button>${msg ? `<p class="err">${esc(msg)}</p>` : ''}`);
+    $('#login').onclick = NTC.login;
   };
   const notAdminScreen = async (me) => { // a LINE member who isn't an admin: nothing of the shop is shown
     NTC.markAdmin(false);
@@ -130,7 +118,7 @@
       if (invite) { card(`<p style="font:900 20px var(--serif);margin:6px 0 4px">管理員邀請</p><p class="note" style="margin:0 0 14px">用你的 LINE 帳號登入，這個帳號就會成為店家管理員。</p><button class="btn line block" id="login">用 LINE 登入並接受邀請</button>`); $('#login').onclick = NTC.login; return; }
       loginScreen(); return;
     }
-    if (!l) { loginScreen('LINE 登入暫時無法使用，可以先用店家密碼'); return; }
+    if (!l) { loginScreen('LINE 登入暫時無法使用，請稍後再試'); return; }
   }
   if (invite) {
     try { await NTC.api('/admin/claim', { method: 'POST', body: { invite }, asLine: true }); const me = await NTC.lineProfile().catch(() => null); NTC.toast(`已把 LINE「${me ? me.name : ''}」加成管理員`, 3500); }
@@ -372,10 +360,7 @@
         ${c.modes.map((m, i) => `<label class="field"><span>任選 ${m.flavors} 種（每種 ${m.each} 顆）最少幾盒</span><input class="s-mode" data-i="${i}" type="number" min="1" value="${m.minBoxes}"></label>`).join('')}</section>
       <section class="panel"><h2>公告</h2><label class="field"><span>顯示在購物車最上面（選填）</span><textarea id="s-notice" maxlength="300" placeholder="例如：12/24–12/26 聖誕檔期已滿">${esc(s.notice)}</textarea></label></section>
       <button class="btn block" id="s-save" style="margin-bottom:14px">儲存設定</button>
-      <section class="panel"><h2>店家密碼</h2>
-        <p class="note" style="margin:0 0 10px">用這組密碼就能從任何手機、電腦進後台（網址後面加 <code>admin.html</code>，或選單裡的「店家登入」）。改密碼後，其他裝置要重新登入。</p>
-        <label class="field"><span>新的店家密碼（6 個字以上）</span><input id="s-newpass" type="text" autocomplete="off" maxlength="40" placeholder="${s.hasAdminPass ? '不改就留空' : '還沒設定'}"></label>
-        <div class="row" style="gap:8px"><button class="btn small" id="s-savepass" style="flex:1">更新密碼</button><button class="btn ghost small" id="s-logout" style="flex:1">登出這支裝置</button></div></section>
+      <section class="panel"><h2>這支裝置</h2><p class="note" style="margin:0 0 10px">登出後，下次打開後台要再用 LINE 登入。</p><button class="btn ghost small block" id="s-logout">登出這支裝置</button></section>
       <section class="panel"><h2>管理員</h2>
         <div id="s-reqs"></div>
         <p style="font:900 15px var(--serif);margin:4px 0 4px">＋ 新增管理員</p>
@@ -410,14 +395,6 @@
       testMode: $('#s-test').checked,
       pauseOrders: $('#s-pause').checked,
     });
-    $('#s-savepass').onclick = async () => {
-      const np = $('#s-newpass').value.trim();
-      if (np.length < 6) { NTC.toast('密碼要 6 個字以上'); return; }
-      if (!confirm('確定更新店家密碼？其他已登入的裝置要用新密碼重新登入。')) return;
-      NTC.loading(true, '儲存中…');
-      try { const r = await NTC.api('/admin/settings', { method: 'PUT', body: { newAdminPass: np } }); settings = r.settings; if (NTC.adminToken() && r.token) NTC.setAdminToken(r.token); renderSettings(); NTC.toast('店家密碼已更新'); }
-      catch (e) { NTC.toast(e.message, 3500); } finally { NTC.loading(false); }
-    };
     $('#s-logout').onclick = async () => { if (confirm('登出這支裝置的後台？')) { NTC.setAdminToken(''); await NTC.logout(); location.replace('index.html'); } };
     NTC.api('/admin/requests').then(({ requests }) => {
       const box = $('#s-reqs'); if (!box || !requests.length) return;

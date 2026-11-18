@@ -177,7 +177,7 @@ async function getUser(event) {
   if (!m) return null;
   const tok = m[1];
   if (tok.startsWith('adm.')) {
-    if (readSession(tok, await getSettings())) return SHOP_ADMIN;
+    if (env.ALLOW_PASSCODE === '1' && readSession(tok, await getSettings())) return SHOP_ADMIN;
     throw new HttpError(401, '登入已過期，請重新輸入店家密碼');
   }
   const hit = tokenCache.get(tok);
@@ -727,7 +727,7 @@ async function route(event) {
       if (method === 'POST' && path === '/admin/login') {
         const b = parseBody(event);
         const s = await getSettings();
-        if (!s.adminPass) throw new HttpError(403, '還沒設定店家密碼');
+        if (env.ALLOW_PASSCODE !== '1' || !s.adminPass) throw new HttpError(403, '後台只能用管理員的 LINE 帳號登入');
         const ip = event.requestContext?.http?.sourceIp || 'unknown';
         const rec = (await get('LOGINFAIL', ip)) || { count: 0, until: 0 };
         if (rec.until > Date.now()) throw new HttpError(429, '嘗試太多次，請 15 分鐘後再試');
@@ -828,6 +828,7 @@ async function route(event) {
           };
         }
         let token;
+        if (b.newAdminPass !== undefined && env.ALLOW_PASSCODE !== '1') throw bad('後台只能用 LINE 帳號登入，沒有店家密碼');
         if (b.newAdminPass !== undefined) { // set / change the 店家密碼: every older session stops working
           const np = String(b.newAdminPass);
           if (np.length < 6 || np.length > 40) throw bad('店家密碼要 6 個字以上');
