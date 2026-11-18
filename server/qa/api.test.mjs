@@ -312,6 +312,35 @@ await call('/admin/request', { method: 'POST', user: 'Uqa-gus|Gus', body: {} });
 ok('rejected → still no access', r.status === 200 && g.status === 403, [r.status, g.status]);
 await putSettings({ removeAdmins: ['Uqa-fran'] });
 
+section('用手機號碼綁定管理員');
+const HAL = 'Uqa-hal|Hal', IVY = 'Uqa-ivy|Ivy';
+r = await call('/admin/settings', { method: 'PUT', user: HAL, body: { addAdminPhones: [{ phone: '0911222333' }] } }); ok('only an admin can set admin phones', r.status === 403, r.status);
+r = await putSettings({ addAdminPhones: [{ phone: '12' }] }); ok('bad phone rejected', r.status === 400, r.status);
+r = await putSettings({ addAdminPhones: [{ phone: '0911-222-333', label: '負責人' }] }); ok('admin phone saved (digits only)', r.json.settings.adminPhones.some((p) => p.phone === '0911222333' && p.label === '負責人' && !p.boundSub), r.json.settings.adminPhones);
+r = await call('/admin/bind-phone', { method: 'POST', body: { phone: '0911222333' } }); ok('binding needs a LINE identity', r.status === 401, r.status);
+r = await call('/admin/bind-phone', { method: 'POST', user: HAL, body: { phone: '0911000000' } }); ok('wrong number → refused', r.status === 403, r.status);
+r = await call('/admin/orders', { user: HAL }); ok('…and no access', r.status === 403, r.status);
+r = await call('/admin/bind-phone', { method: 'POST', user: HAL, body: { phone: '0911 222 333' } }); ok('right number (any format) → bound', r.status === 200 && r.json.name === 'Hal', r.json);
+r = await call('/admin/orders', { user: HAL }); ok('that LINE account now opens the admin directly', r.status === 200, r.status);
+r = await call('/admin/settings', { user: ADMIN }); ok('settings show the number as bound to Hal', r.json.settings.adminPhones.find((p) => p.phone === '0911222333').boundName === 'Hal', r.json.settings.adminPhones);
+r = await call('/admin/bind-phone', { method: 'POST', user: IVY, body: { phone: '0911222333' } }); ok('the same number cannot make a second account admin', r.status === 403, r.status);
+const ptries = []; for (let i = 0; i < 4; i++) ptries.push((await call('/admin/bind-phone', { method: 'POST', user: IVY, body: { phone: '09110000' + i + '0' } })).status);
+r = await call('/admin/bind-phone', { method: 'POST', user: IVY, body: { phone: '0911000099' } }); ok('5 wrong numbers → locked 30 minutes', ptries.every((x) => x === 403) && r.status === 429, [ptries, r.status]);
+await putSettings({ removeAdminPhones: ['0911222333'], removeAdmins: ['Uqa-hal'] }); r = await call('/admin/orders', { user: HAL }); ok('removing the phone + admin locks Hal out', r.status === 403, r.status);
+
+section('負責人手機（寫死、最大權限）');
+const JAY = 'Uqa-jay|Jay', KIM = 'Uqa-kim|Kim';
+r = await call('/admin/settings', { user: ADMIN }); ok('settings list the owner phone first, marked fixed', r.json.settings.adminPhones[0]?.phone === '0900123456' && r.json.settings.adminPhones[0].owner === true, r.json.settings.adminPhones);
+r = await putSettings({ removeAdminPhones: ['0900123456'] }); ok('the owner phone cannot be removed', r.json.settings.adminPhones.some((p) => p.phone === '0900123456' && p.owner), r.json.settings.adminPhones);
+r = await call('/admin/bind-phone', { method: 'POST', user: JAY, body: { phone: '0900-123-456' } }); ok('owner phone → owner-level admin', r.json?.owner === true, r.json);
+r = await call('/admin/orders', { user: JAY }); ok('owner opens the admin', r.status === 200, r.status);
+r = await call('/admin/bind-phone', { method: 'POST', user: KIM, body: { phone: '0900123456' } }); g = await call('/admin/orders', { user: KIM });
+ok('the owner phone works again for another LINE account (e.g. a new phone)', r.json?.owner === true && g.status === 200, [r.json, g.status]);
+r = await putSettings({ removeAdmins: ['Uqa-jay'] }); ok('a normal admin cannot remove the owner', r.status === 403, r.status);
+r = await call('/admin/settings', { method: 'PUT', user: JAY, body: { removeAdmins: ['Uqa-kim'] } }); g = await call('/admin/orders', { user: KIM });
+ok('the owner can remove another owner account', r.status === 200 && g.status === 403, [r.status, g.status]);
+r = await call('/admin/settings', { method: 'PUT', user: JAY, body: { removeAdmins: ['Uqa-jay'] } }); ok('the owner can remove themselves', r.status === 200, r.status);
+
 section('admin invite');
 r = await putSettings({ rotateInvite: true }); const NEWINV = r.json.settings.adminInvite;
 ok('invite rotated', NEWINV && NEWINV !== INVITE, NEWINV);

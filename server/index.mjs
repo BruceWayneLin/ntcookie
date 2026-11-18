@@ -159,7 +159,11 @@ function readSession(tok, s) {
   try { const p = JSON.parse(Buffer.from(body, 'base64url').toString()); return p.exp > Date.now() && p.v === (s.passVersion || 1); } catch { return false; }
 }
 const SHOP_ADMIN = { sub: 'shop-admin', name: '店家', picture: '', shopAdmin: true };
-const adminView = (s) => ({ ...s, pk: undefined, sk: undefined, adminPass: undefined, sessionSecret: undefined, hasAdminPass: !!s.adminPass });
+// 負責人手機：寫死在伺服器設定（OWNER_PHONE），後台刪不掉；任何 LINE 帳號輸入這個號碼都會成為「負責人」等級的管理員
+const OWNER_PHONE = String(env.OWNER_PHONE || '').replace(/\D/g, '');
+const isOwnerOf = (s, u) => !!(u && (s.admins || []).some((a) => a.sub === u.sub && a.owner));
+const adminView = (s) => ({ ...s, pk: undefined, sk: undefined, adminPass: undefined, sessionSecret: undefined, hasAdminPass: !!s.adminPass,
+  adminPhones: [...(OWNER_PHONE ? [{ phone: OWNER_PHONE, label: '負責人', owner: true }] : []), ...(s.adminPhones || []).filter((p) => p.phone !== OWNER_PHONE)] });
 
 // ---------------------------------------------------------------- auth (LIFF ID token)
 const tokenCache = new Map();
@@ -676,6 +680,32 @@ async function route(event) {
         }
         return json(200, { ok: true });
       }
+      if (method === 'POST' && path === '/admin/bind-phone') { // 用手機號碼綁定：號碼要先被設定成「管理員手機」，每個號碼只能綁一個 LINE 帳號
+        const u = await requireUser(event);
+        if (u.shopAdmin) throw bad('請在 LINE 裡打開後台再綁定');
+        const s = await getSettings();
+        if (isAdminOf(s, u)) return json(200, { admin: true });
+        const key = `${u.sub}`; const rec = (await get('BINDFAIL', key)) || { count: 0, until: 0 };
+        if (rec.until > Date.now()) throw new HttpError(429, '輸入錯太多次，請 30 分鐘後再試');
+        const digits = String(parseBody(event).phone ?? '').replace(/\D/g, '');
+        if (OWNER_PHONE && digits === OWNER_PHONE) {
+          const now0 = new Date().toISOString();
+          await put({ ...s, pk: 'SETTINGS', sk: 'main', admins: [...(s.admins || []).filter((a) => a.sub !== u.sub), { sub: u.sub, name: u.name, picture: u.picture, addedAt: now0, via: 'owner-phone', owner: true }] });
+          if (rec.count) await del('BINDFAIL', key);
+          return json(200, { ok: true, name: u.name, owner: true });
+        }
+        const entry = digits.length >= 8 && (s.adminPhones || []).find((p) => p.phone === digits && !p.boundSub);
+        if (!entry) {
+          const count = (rec.count || 0) + 1;
+          await put({ pk: 'BINDFAIL', sk: key, count: count >= 5 ? 0 : count, until: count >= 5 ? Date.now() + 30 * 60e3 : 0 });
+          throw new HttpError(403, '這個手機號碼沒有被設定成管理員，或已經綁定過了');
+        }
+        const now = new Date().toISOString();
+        const adminPhones = s.adminPhones.map((p) => (p === entry ? { ...p, boundSub: u.sub, boundName: u.name, boundAt: now } : p));
+        await put({ ...s, pk: 'SETTINGS', sk: 'main', adminPhones, admins: [...(s.admins || []), { sub: u.sub, name: u.name, picture: u.picture, addedAt: now, via: 'phone' }] });
+        if (rec.count) await del('BINDFAIL', key);
+        return json(200, { ok: true, name: u.name });
+      }
       if (method === 'POST' && path === '/admin/request') { // a LINE member who isn't an admin asks to become one
         const u = await requireUser(event);
         if (u.shopAdmin) return json(200, { admin: true });
@@ -709,7 +739,7 @@ async function route(event) {
         if (rec.count) await del('LOGINFAIL', ip);
         return json(200, { token: signSession(s) });
       }
-      const { settings } = await requireAdmin(event);
+      const { settings, user: me } = await requireAdmin(event);
       if (method === 'GET' && path === '/admin/orders') {
         const q = new URLSearchParams(event.rawQueryString || '');
         let orders = await queryAll({ KeyConditionExpression: 'pk = :p', ExpressionAttributeValues: { ':p': 'ORDER' }, ScanIndexForward: false });
@@ -805,8 +835,23 @@ async function route(event) {
           if (!next.sessionSecret) next.sessionSecret = rand(32);
           token = signSession(next);
         }
+        if (Array.isArray(b.addAdminPhones)) {
+          const list = [...(settings.adminPhones || [])];
+          for (const x of b.addAdminPhones) {
+            const d = String(x.phone ?? '').replace(/\D/g, '');
+            if (d.length < 8 || d.length > 15) throw bad('手機號碼格式不正確');
+            if (!list.some((p) => p.phone === d)) list.push({ phone: d, label: str(x.label, 20), addedAt: new Date().toISOString() });
+          }
+          next.adminPhones = list;
+        }
+        if (Array.isArray(b.addAdminPhones) && b.addAdminPhones.some((x) => String(x.phone ?? '').replace(/\D/g, '') === OWNER_PHONE)) next.adminPhones = (next.adminPhones || []).filter((p) => p.phone !== OWNER_PHONE);
+        if (Array.isArray(b.removeAdminPhones)) next.adminPhones = (next.adminPhones || settings.adminPhones || []).filter((p) => !b.removeAdminPhones.includes(p.phone));
         if (b.rotateInvite) next.adminInvite = randAlnum(10);
-        if (Array.isArray(b.removeAdmins)) next.admins = (next.admins || []).filter((a) => !b.removeAdmins.includes(a.sub));
+        if (Array.isArray(b.removeAdmins)) {
+          const owner = isOwnerOf(settings, me);
+          if (!owner && (next.admins || []).some((a) => a.owner && b.removeAdmins.includes(a.sub))) throw new HttpError(403, '負責人只能由負責人自己移除');
+          next.admins = (next.admins || []).filter((a) => !b.removeAdmins.includes(a.sub));
+        }
         await put(next);
         return json(200, { settings: adminView(next), token });
       }

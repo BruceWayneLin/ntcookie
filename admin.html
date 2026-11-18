@@ -9,7 +9,7 @@
 <link rel="icon" href="assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css?v=1118k">
+<link rel="stylesheet" href="css/app.css?v=1118m">
 <style>
   :root { --page: 760px; }
   .tabs { position: sticky; top: 63px; z-index: 20; display: flex; gap: 6px; max-width: var(--page); margin: 0 auto; padding: 8px 14px; background: rgba(248, 237, 231, .96); }
@@ -61,8 +61,8 @@
 <div class="shopbar" id="shopbar" hidden></div>
 <main class="wrap" id="app"><div class="spinner"></div></main>
 <p class="note" id="ver" style="text-align:center;margin:0 0 24px;color:var(--muted)"></p>
-<script src="js/config.js?v=1118k"></script>
-<script src="js/app.js?v=1118k"></script>
+<script src="js/config.js?v=1118m"></script>
+<script src="js/app.js?v=1118m"></script>
 <script>
 (async function () {
   const { $, esc, money, asset } = NTC;
@@ -98,9 +98,18 @@
     card(`${me.picture ? `<img src="${esc(me.picture)}" alt="" style="width:64px;height:64px;border-radius:50%;margin:4px auto 8px">` : ''}
       <p style="font:900 19px var(--serif);margin:0 0 6px">「${esc(me.name)}」不是管理員</p>
       <p class="note" style="margin:0 0 14px">這裡是店家後台，只有管理員的 LINE 帳號可以進入。</p>
-      <button class="btn block" id="askadmin">申請成為管理員</button><p class="note" id="askmsg" style="margin:10px 0 0" hidden></p>
+      <form id="phoneform" style="text-align:left"><label class="field"><span>店家負責人：輸入你的手機號碼，第一次綁定後就不用再輸入</span>
+        <input id="bindphone" type="tel" inputmode="tel" autocomplete="tel" placeholder="09xx-xxx-xxx" maxlength="20" style="text-align:center;font-size:18px"></label>
+        <p class="err" id="phoneerr" hidden></p><button class="btn block">綁定並進入後台</button></form>
+      <button class="btn ghost block small" id="askadmin" style="margin-top:14px">我不是負責人：申請成為管理員</button><p class="note" id="askmsg" style="margin:10px 0 0" hidden></p>
       ${NTC.inLineApp() ? '' : '<button class="btn ghost block small" id="switchacc" style="margin-top:10px">換一個 LINE 帳號</button>'}
       <a class="btn ghost block small" href="index.html" style="margin-top:10px">回官網</a>`);
+    $('#phoneform').onsubmit = async (e) => {
+      e.preventDefault(); const phone = $('#bindphone').value.trim(); if (!phone) return;
+      NTC.loading(true, '綁定中…');
+      try { await NTC.api('/admin/bind-phone', { method: 'POST', body: { phone }, asLine: true }); location.replace(location.pathname); }
+      catch (err) { NTC.loading(false); $('#phoneerr').textContent = err.message; $('#phoneerr').hidden = false; }
+    };
     $('#askadmin').onclick = async () => {
       NTC.loading(true, '送出申請…');
       try { const r = await NTC.api('/admin/request', { method: 'POST', body: {}, asLine: true }); if (r.admin) { location.reload(); return; }
@@ -369,7 +378,11 @@
         <div class="row" style="gap:8px"><button class="btn small" id="s-savepass" style="flex:1">更新密碼</button><button class="btn ghost small" id="s-logout" style="flex:1">登出這支裝置</button></div></section>
       <section class="panel"><h2>管理員</h2>
         <div id="s-reqs"></div>
-        ${(s.admins || []).map((a) => `<div class="row" style="padding:6px 0">${a.picture ? `<img src="${esc(a.picture)}" style="width:30px;height:30px;border-radius:50%" alt="">` : ''}<span class="sp">${esc(a.name)}</span><button class="tag-del" data-rm="${esc(a.sub)}">移除</button></div>`).join('')}
+        <p style="font:900 15px var(--serif);margin:4px 0 4px">＋ 新增管理員</p>
+        <p class="note" style="margin:0 0 8px">輸入對方的手機號碼和名字 → 請對方在 LINE 打開後台（<code>liff.line.me/2012677349-KI6PM6Pz/admin.html</code>），輸入同一個手機號碼，就會成為管理員，以後在 LINE 打開會自動進來。每個號碼只能綁一個 LINE 帳號。</p>
+        ${(s.adminPhones || []).map((p) => `<div class="row" style="padding:5px 0"><span class="sp">${esc(p.phone.replace(/^(\d{4})(\d{3})(\d+)$/, '$1-$2-$3'))}${p.label ? `（${esc(p.label)}）` : ''}　${p.owner ? '<span class="flag ok">固定・最大權限</span>' : p.boundSub ? `<span class="flag ok">已綁定 ${esc(p.boundName || '')}</span>` : '<span class="flag">等待綁定</span>'}</span>${p.owner ? '' : `<button class="tag-del" data-rmphone="${esc(p.phone)}">移除</button>`}</div>`).join('') || '<p class="note" style="margin:0 0 6px">還沒有新增</p>'}
+        <div class="row" style="gap:8px;margin:6px 0 14px"><input id="s-addphone" type="tel" inputmode="tel" placeholder="09xx-xxx-xxx" style="flex:1;border:1.5px solid #e6d2c6;border-radius:12px;padding:10px"><input id="s-addlabel" placeholder="名字（選填）" style="width:34%;border:1.5px solid #e6d2c6;border-radius:12px;padding:10px"><button class="btn small" id="s-addphonebtn" type="button">新增</button></div>
+        ${(s.admins || []).map((a) => `<div class="row" style="padding:6px 0">${a.picture ? `<img src="${esc(a.picture)}" style="width:30px;height:30px;border-radius:50%" alt="">` : ''}<span class="sp">${esc(a.name)}${a.owner ? ' <span class="flag ok">負責人</span>' : ''}</span><button class="tag-del" data-rm="${esc(a.sub)}">移除</button></div>`).join('')}
         <p class="note" style="margin:10px 0 6px">把這個連結傳給要加入的人，用 LINE 打開一次就會變成管理員：</p>
         <code>${esc(liffInvite || inviteUrl)}</code>
         <div class="row" style="gap:8px;margin-top:8px"><button class="btn ghost small" id="s-copyinv" style="flex:1">複製邀請連結</button><button class="btn ghost small" id="s-rotate" style="flex:1">換一個新連結</button></div></section>`;
@@ -415,6 +428,8 @@
         NTC.loading(true); try { await NTC.api(`/admin/requests/${encodeURIComponent(sub)}/${ok ? 'approve' : 'reject'}`, { method: 'POST', body: {} }); await loadSettings(); renderSettings(); NTC.toast(ok ? '已核准' : '已拒絕'); } catch (e) { NTC.toast(e.message); } finally { NTC.loading(false); }
       }));
     }).catch(() => {});
+    $('#s-addphonebtn').onclick = () => { const phone = $('#s-addphone').value.trim(); if (!phone) return; put({ addAdminPhones: [{ phone, label: $('#s-addlabel').value.trim() }] }, '已新增，請對方在 LINE 打開後台輸入這個手機號碼'); };
+    app.querySelectorAll('[data-rmphone]').forEach((b) => (b.onclick = () => { if (confirm('移除這個管理員手機？（已經綁定的 LINE 帳號要在下面的管理員名單另外移除）')) put({ removeAdminPhones: [b.dataset.rmphone] }, '已移除'); }));
     $('#s-copyinv').onclick = async () => { try { await navigator.clipboard.writeText(liffInvite || inviteUrl); NTC.toast('已複製'); } catch (e) { prompt('邀請連結', liffInvite || inviteUrl); } };
     $('#s-rotate').onclick = () => { if (confirm('換新連結後，舊的邀請連結就失效（已經是管理員的人不受影響）。')) put({ rotateInvite: true }, '已換新連結'); };
     app.querySelectorAll('[data-rm]').forEach((b) => (b.onclick = () => { if (confirm('移除這位管理員？')) put({ removeAdmins: [b.dataset.rm] }, '已移除'); }));
