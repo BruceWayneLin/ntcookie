@@ -66,13 +66,18 @@ async function queryAll(params) {
 }
 
 const DEFAULT_SETTINGS = {
-  leadDays: 5, // 最早可預約：今天 + N 天
+  leadDays: 14, // 最早可預約：今天 + N 天（店家：接單後最快兩週出貨）
   maxDays: 60, // 最晚可預約：今天 + N 天
   maxOrdersPerDay: 0, // 0 = 不限
   closedWeekdays: [], // 0 = 星期日
   blockedDates: [],
   dateLabel: '希望到貨日期',
-  shippingOptions: [{ id: 'home', label: '宅配到府', fee: 150 }],
+  dateNote: '接單後最快兩週出貨；急件請先用 LINE 詢問（需加收急件費 $300～500）。',
+  // 運費：可麗露只能冷凍宅配，依「每件包裹的盒數」計費，一件最多 maxPerParcel 盒，超過就拆成多件；馬林糖走常溫
+  shipping: {
+    frozen: { label: '黑貓冷凍宅配', tiers: [{ upTo: 1, fee: 175 }, { upTo: 4, fee: 250 }, { upTo: 9, fee: 290 }], maxPerParcel: 9 },
+    ambient: { label: '黑貓常溫宅配', fee: 150 },
+  },
   freeShippingOver: 0, // 0 = 不免運
   payments: { linepay: true, ecpay: true, transfer: true },
   bank: { name: '', code: '', account: '', holder: '' },
@@ -93,7 +98,12 @@ const DEFAULT_SETTINGS = {
 
 async function getSettings() {
   const s = await get('SETTINGS', 'main');
-  if (s) return { ...DEFAULT_SETTINGS, ...s, canele: { ...DEFAULT_SETTINGS.canele, ...(s.canele || {}) } };
+  if (s) {
+    return {
+      ...DEFAULT_SETTINGS, ...s, canele: { ...DEFAULT_SETTINGS.canele, ...(s.canele || {}) },
+      shipping: { frozen: { ...DEFAULT_SETTINGS.shipping.frozen, ...(s.shipping?.frozen || {}) }, ambient: { ...DEFAULT_SETTINGS.shipping.ambient, ...(s.shipping?.ambient || {}) } },
+    };
+  }
   const fresh = { pk: 'SETTINGS', sk: 'main', ...DEFAULT_SETTINGS, adminInvite: randAlnum(10) };
   await ddb.send(new PutCommand({ TableName: TABLE, Item: fresh, ConditionExpression: 'attribute_not_exists(pk)' })).catch(() => {});
   return (await get('SETTINGS', 'main')) || fresh;
@@ -110,8 +120,9 @@ function publicSettings(s, admin = false) {
     testMode: !!s.testMode,
     pauseOrders: !!(s.pauseOrders && !admin),
     leadDays: s.leadDays, maxDays: s.maxDays, closedWeekdays: s.closedWeekdays, blockedDates: s.blockedDates,
-    maxOrdersPerDay: s.maxOrdersPerDay, dateLabel: s.dateLabel,
-    shippingOptions: s.shippingOptions, freeShippingOver: s.freeShippingOver,
+    maxOrdersPerDay: s.maxOrdersPerDay, dateLabel: s.dateLabel, dateNote: s.dateNote || '',
+    shipping: s.shipping, freeShippingOver: s.freeShippingOver,
+    shippingOptions: [], // older cached pages still read this
     payments: {
       linepay: !!(open && s.payments?.linepay && linepayReady()),
       ecpay: !!(open && s.payments?.ecpay && ecpayReady()),
@@ -159,7 +170,26 @@ async function requireAdmin(event) {
 }
 
 // ---------------------------------------------------------------- pricing
-function priceOrder(reqItems, products, settings, shippingId) {
+const TEMP = { canele: 'frozen', meringue: 'ambient' };
+// keep in sync with NTC.shipping in js/app.js
+function calcShipping(lines, subtotal, settings) {
+  const sh = settings.shipping; const parts = [];
+  const boxes = lines.filter((l) => l.temp === 'frozen').reduce((a, l) => a + l.qty, 0);
+  if (boxes) {
+    const tiers = [...(sh.frozen.tiers || [])].map((t) => ({ upTo: int(t.upTo), fee: int(t.fee) })).filter((t) => t.upTo > 0).sort((a, b) => a.upTo - b.upTo);
+    const max = Math.max(1, int(sh.frozen.maxPerParcel) || (tiers.length ? tiers[tiers.length - 1].upTo : boxes));
+    const feeFor = (n) => (tiers.find((t) => n <= t.upTo) || tiers[tiers.length - 1] || { fee: 0 }).fee;
+    let left = boxes; let fee = 0; let parcels = 0;
+    while (left > 0) { const n = Math.min(left, max); fee += feeFor(n); left -= n; parcels++; }
+    parts.push({ kind: 'frozen', label: sh.frozen.label, units: boxes, parcels, fee });
+  }
+  const jars = lines.filter((l) => l.temp === 'ambient').reduce((a, l) => a + l.qty, 0);
+  if (jars) parts.push({ kind: 'ambient', label: sh.ambient.label, units: jars, parcels: 1, fee: int(sh.ambient.fee) });
+  const freeOver = int(settings.freeShippingOver);
+  if (freeOver > 0 && subtotal >= freeOver) parts.forEach((p) => { p.fee = 0; });
+  return { label: parts.map((p) => p.label + (p.parcels > 1 ? `（${p.parcels} 件）` : '')).join('＋'), fee: parts.reduce((a, p) => a + p.fee, 0), parts };
+}
+function priceOrder(reqItems, products, settings) {
   const byId = new Map(products.map((p) => [p.id, p]));
   const usable = (p) => p && p.active && !p.soldOut;
   if (!Array.isArray(reqItems) || !reqItems.length) throw bad('購物車是空的');
@@ -174,9 +204,9 @@ function priceOrder(reqItems, products, settings, shippingId) {
       if (p.category === 'canele') {
         const min = int(settings.canele?.singleMinBoxes, 1);
         if (qty < min) throw bad(`單一口味禮盒 ${min} 盒起訂`);
-        lines.push({ type: 'product', productId: p.id, name: `${p.name}・單一口味禮盒`, detail: '每盒 6 顆・皆為相同口味', unit: '盒', price: int(p.price), qty });
+        lines.push({ type: 'product', productId: p.id, name: `${p.name}・單一口味禮盒`, detail: '每盒 6 顆・皆為相同口味', unit: '盒', price: int(p.price), qty, temp: 'frozen' });
       } else {
-        lines.push({ type: 'product', productId: p.id, name: p.name, unit: p.unit || '個', price: int(p.price), qty });
+        lines.push({ type: 'product', productId: p.id, name: p.name, unit: p.unit || '個', price: int(p.price), qty, temp: TEMP[p.category] || 'ambient' });
       }
     } else if (it.type === 'canele-assorted') {
       const mode = (settings.canele?.modes || []).find((m) => m.id === it.mode);
@@ -189,17 +219,14 @@ function priceOrder(reqItems, products, settings, shippingId) {
       lines.push({
         type: 'canele-assorted', mode: mode.id, flavors: ids,
         name: `綜合口味禮盒（任選 ${mode.flavors} 種）`, detail: fl.map((p) => p.name).join('、') + `｜每種 ${mode.each} 顆`,
-        unit: '盒', price: int(settings.canele.assortedPrice), qty,
+        unit: '盒', price: int(settings.canele.assortedPrice), qty, temp: 'frozen',
       });
     } else throw bad('購物車資料不正確');
   }
   for (const l of lines) l.subtotal = l.price * l.qty;
   const subtotal = lines.reduce((a, l) => a + l.subtotal, 0);
-  const ship = (settings.shippingOptions || []).find((o) => o.id === shippingId) || (settings.shippingOptions || [])[0];
-  if (!ship) throw bad('請選擇配送方式');
-  const freeOver = int(settings.freeShippingOver);
-  const shippingFee = freeOver > 0 && subtotal >= freeOver ? 0 : int(ship.fee);
-  return { lines, subtotal, shipping: { id: ship.id, label: ship.label, fee: shippingFee }, total: subtotal + shippingFee };
+  const shipping = calcShipping(lines, subtotal, settings);
+  return { lines, subtotal, shipping, total: subtotal + shipping.fee };
 }
 
 async function checkDate(date, settings) {
@@ -275,8 +302,9 @@ async function loadOrder(no, event, token) {
 async function setOrder(no, fields, historyNote) {
   const names = {}; const values = {}; const sets = [];
   Object.entries(fields).forEach(([k, v], i) => { names['#f' + i] = k; values[':v' + i] = v; sets.push(`#f${i} = :v${i}`); });
-  let expr = 'SET ' + sets.join(', ');
-  if (historyNote) { names['#h'] = 'history'; values[':h'] = [{ at: new Date().toISOString(), note: historyNote }]; values[':e'] = []; expr += ', #h = list_append(if_not_exists(#h, :e), :h)'; }
+  if (historyNote) { names['#h'] = 'history'; values[':h'] = [{ at: new Date().toISOString(), note: historyNote }]; values[':e'] = []; sets.push('#h = list_append(if_not_exists(#h, :e), :h)'); }
+  if (!sets.length) return get('ORDER', no);
+  const expr = 'SET ' + sets.join(', ');
   const r = await ddb.send(new UpdateCommand({
     TableName: TABLE, Key: { pk: 'ORDER', sk: no }, UpdateExpression: expr, ExpressionAttributeNames: names, ExpressionAttributeValues: values, ReturnValues: 'ALL_NEW',
   }));
@@ -309,14 +337,14 @@ async function notifyAdmins(message) {
 
 function orderSummaryText(o) {
   const items = o.lines.map((l) => `・${l.name} ×${l.qty}${l.detail && l.type === 'canele-assorted' ? `（${l.detail}）` : ''}`).join('\n');
-  return `🧾 新訂單 ${o.orderNo}\n${items}\n合計 $${o.total}（含運 $${o.shipping.fee}）\n${o.date}｜${o.contact.name} ${o.contact.phone}\n付款：${PAY_LABEL[o.payment.method]}${o.note ? `\n留言：${o.note}` : ''}`;
+  return `🧾 新訂單 ${o.orderNo}\n${items}\n合計 $${o.total}（含運 $${o.shipping.fee}）\n${o.date}｜${o.contact.name} ${o.contact.phone}\n付款：${PAY_LABEL[o.payment.method]}${o.note ? `\n備註：${o.note}` : ''}`;
 }
 
 async function createOrder(event) {
   const b = parseBody(event);
   const user = await getUser(event).catch(() => null);
   const [settings, products] = await Promise.all([getSettings(), listProducts()]);
-  const priced = priceOrder(b.items, products, settings, b.shippingId);
+  const priced = priceOrder(b.items, products, settings);
   await checkDate(b.date, settings);
   const contact = { name: str(b.contact?.name, 40), phone: str(b.contact?.phone, 20), address: str(b.contact?.address, 160) };
   if (!contact.name) throw bad('請填收件人姓名');
@@ -523,7 +551,7 @@ export async function handler(event) {
       const b = parseBody(event);
       if (method === 'POST' && seg[2] === 'transfer') {
         const o = await loadOrder(seg[1], event, b.t);
-        const last5 = str(b.last5, 5);
+        const last5 = String(b.last5 ?? '').trim();
         if (!/^\d{5}$/.test(last5)) throw bad('請填帳號末五碼（5 個數字）');
         const n = await setOrder(o.orderNo, { payment: { ...o.payment, last5, reportedAt: new Date().toISOString() } }, `客人回報轉帳末五碼 ${last5}`);
         await notifyAdmins(`🏦 ${o.orderNo} 回報已轉帳 $${o.total}，末五碼 ${last5}`).catch(() => {});
@@ -593,7 +621,7 @@ export async function handler(event) {
           if (b.status === 'cancelled') await releaseDateSlot(o.date);
           if (o.status === 'cancelled') await takeDateSlot(o.date, { ...settings, maxOrdersPerDay: 0 });
         }
-        if (b.markPaid && o.payment?.status !== 'paid') {
+        if ((b.markPaid || b.status === 'paid') && o.payment?.status !== 'paid') {
           fields.payment = { ...o.payment, status: 'paid', paidAt: new Date().toISOString(), confirmedBy: 'admin' };
           if ((fields.status || o.status) === 'pending') fields.status = 'paid';
           notes.push('管理員確認已收款');
@@ -627,8 +655,17 @@ export async function handler(event) {
       }
       if (method === 'PUT' && path === '/admin/settings') {
         const b = parseBody(event);
-        const keys = ['leadDays', 'maxDays', 'maxOrdersPerDay', 'closedWeekdays', 'blockedDates', 'dateLabel', 'shippingOptions', 'freeShippingOver', 'payments', 'bank', 'transferDays', 'canele', 'notice', 'testMode', 'pauseOrders'];
+        const keys = ['leadDays', 'maxDays', 'maxOrdersPerDay', 'closedWeekdays', 'blockedDates', 'dateLabel', 'dateNote', 'shipping', 'freeShippingOver', 'payments', 'bank', 'transferDays', 'canele', 'notice', 'testMode', 'pauseOrders'];
         const next = { ...settings, ...pick(b, keys), pk: 'SETTINGS', sk: 'main' };
+        if (b.shipping) {
+          const f = b.shipping.frozen || {}; const a = b.shipping.ambient || {};
+          const tiers = (Array.isArray(f.tiers) ? f.tiers : []).map((t) => ({ upTo: int(t.upTo), fee: Math.max(0, int(t.fee)) })).filter((t) => t.upTo > 0).sort((x, y) => x.upTo - y.upTo);
+          if (!tiers.length) throw bad('冷凍運費至少要有一個級距');
+          next.shipping = {
+            frozen: { label: str(f.label, 30) || DEFAULT_SETTINGS.shipping.frozen.label, tiers, maxPerParcel: Math.max(1, int(f.maxPerParcel) || tiers[tiers.length - 1].upTo) },
+            ambient: { label: str(a.label, 30) || DEFAULT_SETTINGS.shipping.ambient.label, fee: Math.max(0, int(a.fee)) },
+          };
+        }
         if (b.rotateInvite) next.adminInvite = randAlnum(10);
         if (Array.isArray(b.removeAdmins)) next.admins = (next.admins || []).filter((a) => !b.removeAdmins.includes(a.sub));
         await put(next);

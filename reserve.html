@@ -8,16 +8,16 @@
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css">
+<link rel="stylesheet" href="css/app.css?v=1118c">
 <title>預約／訂購｜N.T Cookie × N.T Canelé</title>
 <meta name="description" content="選擇希望到貨的日期，再挑選可麗露禮盒、馬林糖一口酥，線上下單。">
 </head>
 <body>
 <header class="topbar"><button class="circle-btn" id="back" aria-label="返回"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button><h1>預約／訂購</h1><a class="circle-btn" href="cart.html" aria-label="購物車"><svg viewBox="0 0 24 24"><path d="M3 4h2.2l2.1 10.2a1.6 1.6 0 0 0 1.6 1.3h8.6a1.6 1.6 0 0 0 1.6-1.2L21 8H6.2"/><circle cx="9.5" cy="19.5" r="1.4"/><circle cx="17" cy="19.5" r="1.4"/></svg><span class="badge" data-cart-count></span></a></header>
 <main class="wrap" id="app"><div class="spinner"></div></main>
-<script src="js/config.js"></script>
-<script src="js/app.js"></script>
-<script src="js/shop.js"></script>
+<script src="js/config.js?v=1118c"></script>
+<script src="js/app.js?v=1118c"></script>
+<script src="js/shop.js?v=1118c"></script>
 <script>
 (async function () {
   const { $, esc } = NTC;
@@ -26,16 +26,21 @@
   let cat; try { cat = await NTC.catalog(); } catch (e) { app.innerHTML = `<p class="err">${esc(e.message)}</p>`; return; }
   const S = cat.settings;
   let date = NTC.dateRules(S, cat.fullDates).ok(NTC.date.get()) ? NTC.date.get() : '';
+  const askUrl = NTC.chatUrl('您好，我想預約／查詢檔期');
   app.innerHTML = `
+    ${S.pauseOrders ? `<section class="panel" style="background:#fff6ec;text-align:center"><p style="font:900 17px var(--serif);margin:2px 0 6px">目前暫停線上接單 ♡</p>
+      <p class="note" style="margin:0 0 12px">${esc(S.notice || '想預約或查詢檔期，歡迎直接用 LINE 跟我們說。')}</p><a class="btn line block" href="${askUrl}">LINE 預約／查詢檔期</a></section>` : ''}
     <section class="panel"><h2><span class="n">1</span>選擇${esc(S.dateLabel || '日期')}</h2>
-      <p class="note" style="margin:-4px 0 10px">每一份都是接單後手工製作，最早可預約 <b>${NTC.fmtDate(NTC.dateRules(S).min)}</b>。</p>
+      <p class="note" style="margin:-4px 0 10px">${esc(S.dateNote || '每一份都是接單後手工製作。')}<br>最早可預約 <b>${NTC.fmtDate(NTC.dateRules(S).min)}</b>。</p>
       <div id="cal"></div><p class="note" id="picked" style="margin:10px 0 0;text-align:center"></p></section>
     <section class="panel" id="step2"><h2><span class="n">2</span>挑選甜點</h2>
       <a href="canele.html" style="display:block;margin-bottom:10px"><img src="assets/v2/03-homepage/category-canele.webp" alt="N.T Canelé 可麗露專區" style="width:100%;border-radius:20px"></a>
       <a href="meringue.html" style="display:block"><img src="assets/v2/03-homepage/category-meringue-cookies.webp" alt="馬林糖一口酥・送禮小點" style="width:100%;border-radius:20px"></a>
     </section>
     <section class="panel"><h2><span class="n">3</span>留言・送出訂單</h2><p class="note" style="margin:0 0 12px">挑好後到購物車填收件資料、留言給店家，再選付款方式就完成了。</p>
-      <a class="btn block" href="cart.html">前往購物車</a></section>`;
+      <a class="btn block" href="cart.html">前往購物車</a></section>
+    <section class="panel"><h2>客製造型餅乾・急件・其他問題</h2><p class="note" style="margin:0 0 12px">卡通、收涎、慶生等造型餅乾是一單一單客製報價；急件或想先問檔期，也歡迎直接聊天。</p>
+      <a class="btn ghost block" href="${askUrl}">LINE 詢問檔期</a></section>`;
   const paint = () => { $('#picked').innerHTML = date ? `已選 <b>${NTC.fmtDate(date)}</b>，接著挑選甜點 ↓` : '請先點選日期'; };
   NTC.calendar($('#cal'), { settings: S, fullDates: cat.fullDates, value: date, onChange: (d) => { date = d; NTC.date.set(d); paint(); NTC.refreshCart(); setTimeout(() => $('#step2').scrollIntoView({ behavior: 'smooth', block: 'start' }), 150); } });
   paint(); NTC.refreshCart();

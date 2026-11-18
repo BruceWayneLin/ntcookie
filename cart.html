@@ -9,7 +9,7 @@
 <link rel="icon" href="assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css">
+<link rel="stylesheet" href="css/app.css?v=1118c">
 </head>
 <body>
 <header class="topbar">
@@ -19,9 +19,9 @@
 </header>
 <main class="wrap" id="app"><div class="spinner"></div></main>
 
-<script src="js/config.js"></script>
-<script src="js/app.js"></script>
-<script src="js/shop.js"></script>
+<script src="js/config.js?v=1118c"></script>
+<script src="js/app.js?v=1118c"></script>
+<script src="js/shop.js?v=1118c"></script>
 <script>
 (async function () {
   const { $, esc, money, asset } = NTC;
@@ -30,7 +30,7 @@
   let cat;
   try { cat = await NTC.catalog(); } catch (e) { app.innerHTML = `<p class="err">${esc(e.message)}</p>`; return; }
   const S = cat.settings;
-  const form = { date: NTC.date.get(), shippingId: (S.shippingOptions[0] || {}).id, payment: '', note: '', contact: { name: '', phone: '', address: '' } };
+  const form = { date: NTC.date.get(), payment: '', note: '', contact: { name: '', phone: '', address: '' } };
   const saved = (() => { try { return JSON.parse(localStorage.getItem('ntc-contact') || 'null'); } catch (e) { return null; } })();
   if (saved) form.contact = { ...form.contact, ...saved };
   const pays = [
@@ -60,9 +60,11 @@
       return;
     }
     const pc = NTC.priceCart(items, cat);
-    const ship = S.shippingOptions.find((o) => o.id === form.shippingId) || S.shippingOptions[0];
-    const fee = ship ? (S.freeShippingOver > 0 && pc.subtotal >= S.freeShippingOver ? 0 : ship.fee) : 0;
-    const total = pc.subtotal + fee;
+    const fee = pc.shipping.fee; const total = pc.total;
+    const frozen = pc.shipping.parts.find((x) => x.kind === 'frozen'); const ambient = pc.shipping.parts.find((x) => x.kind === 'ambient');
+    const shipRows = pc.shipping.parts.map((x) => `<div class="row"><span>${x.kind === 'frozen' ? '❄️ ' : ''}${esc(x.label)}${x.kind === 'frozen' ? `（${x.units} 盒${x.parcels > 1 ? `・${x.parcels} 件包裹` : ''}）` : ''}</span><span class="sp"></span><span>${x.fee ? money(x.fee) : '免運'}</span></div>`).join('');
+    const shipNote = [frozen ? `可麗露皆採冷凍宅配寄送${frozen.parcels > 1 ? `；單件包裹最多 ${frozen.max} 盒，這張訂單會拆成 ${frozen.parcels} 件寄出，運費依各件盒數計算` : ''}。` : '',
+      frozen && ambient ? '馬林糖一口酥為常溫，會和冷凍的可麗露分開寄送。' : ''].filter(Boolean).join('');
     const dateOk = NTC.dateRules(S, cat.fullDates).ok(form.date);
     if (S.pauseOrders) { // shop not taking orders yet: show the cart, no checkout
       app.innerHTML = `${S.notice ? `<div class="panel note" style="background:#fff6ec">${esc(S.notice)}</div>` : ''}
@@ -87,7 +89,7 @@
       </section>
 
       <section class="panel"><h2><span class="n">2</span>${esc(S.dateLabel || '日期')}</h2>
-        <p class="note" style="margin:-4px 0 10px">手工製作，最早可預約 ${NTC.fmtDate(NTC.dateRules(S).min)}。${form.date && dateOk ? `已選 <b>${NTC.fmtDate(form.date)}</b>` : '請選擇日期'}</p>
+        <p class="note" style="margin:-4px 0 10px">${esc(S.dateNote || '手工製作，需要準備時間。')}<br>最早可預約 ${NTC.fmtDate(NTC.dateRules(S).min)}。${form.date && dateOk ? `已選 <b>${NTC.fmtDate(form.date)}</b>` : '請選擇日期'}</p>
         <div id="cal"></div>
       </section>
 
@@ -98,11 +100,13 @@
         <label class="field"><span>收件人姓名</span><input id="f-name" autocomplete="name" value="${esc(form.contact.name)}" maxlength="40"></label>
         <label class="field"><span>手機</span><input id="f-phone" type="tel" inputmode="tel" autocomplete="tel" value="${esc(form.contact.phone)}" maxlength="20" placeholder="09xx-xxx-xxx"></label>
         <label class="field"><span>收件地址</span><input id="f-addr" autocomplete="street-address" value="${esc(form.contact.address)}" maxlength="160" placeholder="縣市＋區＋路名門牌"></label>
-        <div style="margin-top:4px">${S.shippingOptions.map((o) => `<button type="button" class="opt ship ${o.id === form.shippingId ? 'on' : ''}" data-id="${esc(o.id)}"><span class="dot"></span><span class="t">${esc(o.label)}${S.freeShippingOver > 0 ? `<small>滿 ${money(S.freeShippingOver)} 免運</small>` : ''}</span><span class="r">${o.fee ? money(o.fee) : '免運'}</span></button>`).join('')}</div>
+        <div class="totals" id="shipbox" style="margin-top:4px;padding:10px 12px;border-radius:12px;background:#fbf3ee">
+          <div style="font-weight:700;font-size:13px;color:var(--ink2);margin-bottom:2px">配送方式（僅提供宅配）</div>${shipRows}
+          ${shipNote ? `<p class="note" style="margin:6px 0 0">${esc(shipNote)}</p>` : ''}${S.freeShippingOver > 0 ? `<p class="note" style="margin:6px 0 0">滿 ${money(S.freeShippingOver)} 免運</p>` : ''}</div>
       </section>
 
-      <section class="panel"><h2><span class="n">4</span>留言給店家</h2>
-        <label class="field" style="margin:0"><span class="sr-only">留言</span><textarea id="f-note" maxlength="500" placeholder="例如：送禮用、想放卡片、收件時段、其他需求…">${esc(form.note)}</textarea></label>
+      <section class="panel"><h2><span class="n">4</span>備註（留言給店家）</h2>
+        <label class="field" style="margin:0"><span class="sr-only">備註</span><textarea id="f-note" maxlength="500" placeholder="例如：送禮用、想放卡片、希望收件時段、其他需求…">${esc(form.note)}</textarea></label>
       </section>
 
       <section class="panel"><h2><span class="n">5</span>付款方式</h2>
@@ -128,7 +132,6 @@
       row.querySelector('.rm').onclick = () => { NTC.cart.remove(i); keep(); render(); };
     });
     NTC.calendar($('#cal'), { settings: S, fullDates: cat.fullDates, value: form.date, onChange: (d) => { form.date = d; NTC.date.set(d); keep(); render(); } });
-    app.querySelectorAll('.opt.ship').forEach((b) => (b.onclick = () => { keep(); form.shippingId = b.dataset.id; render(); }));
     app.querySelectorAll('.opt.pay').forEach((b) => (b.onclick = () => { keep(); form.payment = b.dataset.k; render(); }));
     const ll = $('#lineLogin'); if (ll) ll.onclick = () => { keep(); persist(); NTC.login(); };
     if ($('#submit')) $('#submit').onclick = () => submit(pc);
@@ -158,7 +161,7 @@
     persist();
     const text = ['您好，我想訂購：', ...pc.lines.map((l) => `・${l.name} ×${l.qty}${l.it.type === 'canele-assorted' ? `（${l.detail}）` : ''}　${money(l.subtotal)}`),
       `運費 ${fee ? money(fee) : '免運'}／合計 ${money(total)}`, `${S.dateLabel || '日期'}：${NTC.fmtDate(form.date)}`,
-      `收件人：${form.contact.name} ${form.contact.phone}`, `地址：${form.contact.address}`, form.note ? `留言：${form.note}` : ''].filter(Boolean).join('\n');
+      `收件人：${form.contact.name} ${form.contact.phone}`, `地址：${form.contact.address}`, form.note ? `備註：${form.note}` : ''].filter(Boolean).join('\n');
     if (NTC.inLine() && window.liff.sendMessages) {
       window.liff.sendMessages([{ type: 'text', text }]).then(() => { NTC.toast('已傳到聊天室，我們會盡快回覆您 ♡', 3500); setTimeout(() => window.liff.closeWindow(), 1500); })
         .catch(() => { location.href = NTC.chatUrl(text); });
@@ -178,7 +181,7 @@
     NTC.loading(true, '送出訂單中…');
     try {
       const r = await NTC.api('/orders', { method: 'POST', body: {
-        items: NTC.cart.items(), date: form.date, shippingId: form.shippingId, contact: form.contact, note: form.note,
+        items: NTC.cart.items(), date: form.date, contact: form.contact, note: form.note,
         payment: form.payment, returnBase: location.href, inLine: false,
       } });
       // remember the order in this browser (guests find it again from 我的訂單)

@@ -88,7 +88,7 @@
     const cat = await NTC.catalog(); const min = cat.settings.canele.singleMinBoxes || 1;
     const { el, close } = NTC.sheet(`
       <div class="hero"><img src="${esc(asset(p.photo || p.card))}" alt="">
-        <div><h2>${esc(p.name)}</h2><p class="sub" style="margin:2px 0 8px">單一口味禮盒・每盒 6 顆・皆為相同口味</p>
+        <div><h2>${esc(p.name)}</h2><p class="sub" style="margin:2px 0 8px">單一口味禮盒・每盒 6 顆・皆為相同口味<br>❄️ 冷凍宅配寄送</p>
         <div class="price">${money(p.price)} <small>/ 盒</small></div></div></div>
       <div class="row" style="margin:6px 0 16px"><span style="font-weight:700">盒數</span><span class="note">（${min} 盒起訂）</span><span class="sp"></span><div class="qty"></div></div>
       <button class="btn block add">加入購物車・<span class="tt"></span></button>
@@ -114,7 +114,7 @@
     let mode = s.modes[0]; let chosen = pre.filter((id) => fl.some((p) => p.id === id && !p.soldOut));
     const { el, close } = NTC.sheet(`
       <h2>綜合口味禮盒 <span class="price" style="font-size:20px">${money(s.assortedPrice)} <small>/ 盒</small></span></h2>
-      <p class="sub">手工製作，每種口味最低製作量為 6 顆，因此綜合禮盒設有最低訂購盒數。</p>
+      <p class="sub">手工製作，每種口味最低製作量為 6 顆，因此綜合禮盒設有最低訂購盒數。❄️ 冷凍宅配寄送。</p>
       <div class="modes">${s.modes.map((m) => `<button type="button" class="opt" data-m="${m.id}"><span class="dot"></span><span class="t">任選 ${m.flavors} 種口味<small>每盒各 ${m.each} 顆・${m.minBoxes} 盒起訂</small></span></button>`).join('')}</div>
       <div class="row" style="margin:6px 0 8px"><b>選口味</b><span class="sp"></span><span class="note cnt"></span></div>
       <div class="chips fl">${fl.map((p) => `<button type="button" class="chip" data-id="${esc(p.id)}" ${p.soldOut ? 'disabled' : ''}>${p.icon ? `<img src="${esc(asset(p.icon))}" alt="">` : ''}${esc(p.name)}${p.soldOut ? '（售完）' : ''}</button>`).join('')}</div>
@@ -134,7 +134,10 @@
       tt.textContent = money(st.value * s.assortedPrice);
       el.querySelector('.add').disabled = chosen.length !== mode.flavors;
     };
-    el.querySelectorAll('.opt').forEach((o) => (o.onclick = () => { mode = s.modes.find((m) => m.id === o.dataset.m); st.setMin(mode.minBoxes); st.set(Math.max(st.value, mode.minBoxes), true); paint(); }));
+    el.querySelectorAll('.opt').forEach((o) => (o.onclick = () => { // each set starts at its own minimum (3 → 6 → back to 3)
+      if (o.dataset.m === mode.id) return;
+      mode = s.modes.find((m) => m.id === o.dataset.m); st.setMin(1); st.set(mode.minBoxes, true); st.setMin(mode.minBoxes); paint();
+    }));
     el.querySelectorAll('.fl .chip').forEach((c) => (c.onclick = () => {
       const id = c.dataset.id;
       if (chosen.includes(id)) chosen = chosen.filter((x) => x !== id);

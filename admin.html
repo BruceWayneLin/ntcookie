@@ -9,7 +9,7 @@
 <link rel="icon" href="assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css">
+<link rel="stylesheet" href="css/app.css?v=1118c">
 <style>
   :root { --page: 760px; }
   .tabs { position: sticky; top: 63px; z-index: 20; display: flex; gap: 6px; max-width: var(--page); margin: 0 auto; padding: 8px 14px; background: rgba(248, 237, 231, .96); }
@@ -60,8 +60,8 @@
 <nav class="tabs" id="tabs" hidden><button data-t="orders" class="on">訂單</button><button data-t="products">商品</button><button data-t="settings">設定</button></nav>
 <div class="shopbar" id="shopbar" hidden></div>
 <main class="wrap" id="app"><div class="spinner"></div></main>
-<script src="js/config.js"></script>
-<script src="js/app.js"></script>
+<script src="js/config.js?v=1118c"></script>
+<script src="js/app.js?v=1118c"></script>
 <script>
 (async function () {
   const { $, esc, money, asset } = NTC;
@@ -148,7 +148,7 @@
         <div class="row"><b>合計</b><span class="sp"></span><b style="color:var(--red);font-size:18px">${money(o.total)}</b></div></div>
       <dl class="kv" style="margin-bottom:12px"><dt>日期</dt><dd>${NTC.fmtDate(o.date)} <input type="date" id="o-date" value="${esc(o.date)}" style="margin-left:6px;border:1px solid #e6d2c6;border-radius:8px;padding:2px 4px"></dd>
         <dt>收件人</dt><dd>${esc(o.contact.name)}</dd><dt>手機</dt><dd><a href="tel:${esc(o.contact.phone)}">${esc(o.contact.phone)}</a></dd><dt>地址</dt><dd>${esc(o.contact.address)}</dd>
-        ${o.note ? `<dt>客人留言</dt><dd style="white-space:pre-wrap;font-weight:500">${esc(o.note)}</dd>` : ''}
+        <dt>客人備註</dt><dd style="white-space:pre-wrap;font-weight:500">${o.note ? esc(o.note) : '<span class="muted">（無）</span>'}</dd>
         <dt>付款</dt><dd>${esc(PAY[p.method] || '')}・${p.status === 'paid' ? `<span class="flag ok">已收款 ${new Date(p.paidAt).toLocaleString('zh-TW', { hour12: false })}</span>` : '<span class="flag">未收款</span>'}
           ${p.last5 ? `<br>客人回報末五碼 <b>${esc(p.last5)}</b>` : ''}${p.info ? `<br>${p.info.kind === 'atm' ? `ATM ${esc(p.info.bankCode)}-${esc(p.info.account)}` : `超商代碼 ${esc(p.info.code)}`}` : ''}
           ${p.simulated ? '<br><span class="flag">測試環境模擬付款</span>' : ''}</dd></dl>
@@ -260,9 +260,13 @@
         <p style="font-weight:700;margin:0 0 6px;font-size:13px;color:var(--ink2)">不接單的日期</p>
         <div class="chips" id="s-blocked" style="margin-bottom:8px">${s.blockedDates.sort().map((d) => `<button type="button" class="tag-del" data-d="${d}">${d} ✕</button>`).join('') || '<span class="note">無</span>'}</div>
         <div class="row"><input type="date" id="s-addday" style="flex:1;border:1.5px solid #e6d2c6;border-radius:12px;padding:10px"><button class="btn small" id="s-addbtn" type="button">加入</button></div>
-        <label class="field" style="margin-top:12px"><span>日期欄位的名稱</span><input id="s-datelabel" value="${esc(s.dateLabel)}" maxlength="20"></label></section>
+        <label class="field" style="margin-top:12px"><span>日期欄位的名稱</span><input id="s-datelabel" value="${esc(s.dateLabel)}" maxlength="20"></label>
+        <label class="field"><span>日期下面的說明（出貨時間、急件費）</span><textarea id="s-datenote" maxlength="200">${esc(s.dateNote || '')}</textarea></label></section>
       <section class="panel"><h2>運費</h2>
-        <div id="s-ship">${s.shippingOptions.map((o, i) => `<div class="grid2" data-i="${i}"><label class="field"><span>配送方式</span><input class="sl" value="${esc(o.label)}"></label><label class="field"><span>運費</span><input class="sf" type="number" value="${o.fee}"></label></div>`).join('')}</div>
+        <p style="font-weight:700;margin:0 0 6px;font-size:13px;color:var(--ink2)">❄️ 可麗露・冷凍宅配（依每件包裹的盒數）</p>
+        <div id="s-tiers">${s.shipping.frozen.tiers.map((t, i) => `<div class="grid2" data-i="${i}"><label class="field"><span>${i === 0 ? '1' : s.shipping.frozen.tiers[i - 1].upTo + 1} 盒 ～ 幾盒</span><input class="tu" type="number" min="1" value="${t.upTo}"></label><label class="field"><span>運費</span><input class="tf" type="number" min="0" value="${t.fee}"></label></div>`).join('')}</div>
+        <label class="field"><span>一件包裹最多裝幾盒（超過會自動拆成多件、分別計運費）</span><input id="s-maxbox" type="number" min="1" value="${s.shipping.frozen.maxPerParcel}"></label>
+        <label class="field"><span>馬林糖一口酥・常溫宅配運費（每張訂單）</span><input id="s-amb" type="number" min="0" value="${s.shipping.ambient.fee}"></label>
         <label class="field"><span>滿多少免運（0＝不免運）</span><input id="s-free" type="number" min="0" value="${s.freeShippingOver}"></label></section>
       <section class="panel"><h2>付款方式</h2>
         <label class="tg red" style="display:flex;margin-bottom:6px"><b>暫停接單</b>${s.pauseOrders ? '<span class="flag">開著：客人只能看，不能下單</span>' : '<span class="flag ok">關閉：客人可以下單</span>'}<span class="sp"></span><input type="checkbox" id="s-pause" ${s.pauseOrders ? 'checked' : ''}></label>
@@ -297,7 +301,9 @@
     $('#s-save').onclick = () => put({
       leadDays: +$('#s-lead').value, maxDays: +$('#s-max').value, maxOrdersPerDay: +$('#s-perday').value, closedWeekdays: week, blockedDates: blocked,
       dateLabel: $('#s-datelabel').value.trim() || '希望到貨日期',
-      shippingOptions: [...app.querySelectorAll('#s-ship [data-i]')].map((r, i) => ({ id: s.shippingOptions[i].id, label: r.querySelector('.sl').value.trim(), fee: +r.querySelector('.sf').value })),
+      shipping: { frozen: { label: s.shipping.frozen.label, maxPerParcel: +$('#s-maxbox').value, tiers: [...app.querySelectorAll('#s-tiers [data-i]')].map((r) => ({ upTo: +r.querySelector('.tu').value, fee: +r.querySelector('.tf').value })) },
+        ambient: { label: s.shipping.ambient.label, fee: +$('#s-amb').value } },
+      dateNote: $('#s-datenote').value.trim(),
       freeShippingOver: +$('#s-free').value,
       payments: { linepay: $('#s-p-lp').checked, ecpay: $('#s-p-ec').checked, transfer: $('#s-p-tr').checked },
       bank: { name: $('#s-bname').value.trim(), code: $('#s-bcode').value.trim(), account: $('#s-bacc').value.trim(), holder: $('#s-bholder').value.trim() },

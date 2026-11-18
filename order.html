@@ -9,7 +9,7 @@
 <link rel="icon" href="assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css">
+<link rel="stylesheet" href="css/app.css?v=1118c">
 </head>
 <body>
 <header class="topbar">
@@ -18,8 +18,8 @@
   <a class="circle-btn" href="orders.html" aria-label="我的訂單"><svg viewBox="0 0 24 24"><path d="M7 3h10a1 1 0 0 1 1 1v17l-3-2-3 2-3-2-3 2V4a1 1 0 0 1 1-1z"/><path d="M9 8h6M9 12h6"/></svg></a>
 </header>
 <main class="wrap" id="app"><div class="spinner"></div></main>
-<script src="js/config.js"></script>
-<script src="js/app.js"></script>
+<script src="js/config.js?v=1118c"></script>
+<script src="js/app.js?v=1118c"></script>
 <script>
 (async function () {
   const { $, esc, money } = NTC;
@@ -84,7 +84,7 @@
           <div class="row"><b>合計</b><span class="sp"></span><span class="grand">${money(o.total)}</span></div></div>
       </section>
       <section class="panel"><h2>收件</h2>
-        <dl class="kv"><dt>日期</dt><dd>${NTC.fmtDate(o.date)}</dd><dt>收件人</dt><dd>${esc(o.contact.name)}</dd><dt>手機</dt><dd>${esc(o.contact.phone)}</dd><dt>地址</dt><dd>${esc(o.contact.address)}</dd>${o.note ? `<dt>留言</dt><dd style="font-weight:500;white-space:pre-wrap">${esc(o.note)}</dd>` : ''}</dl>
+        <dl class="kv"><dt>日期</dt><dd>${NTC.fmtDate(o.date)}</dd><dt>收件人</dt><dd>${esc(o.contact.name)}</dd><dt>手機</dt><dd>${esc(o.contact.phone)}</dd><dt>地址</dt><dd>${esc(o.contact.address)}</dd><dt>備註</dt><dd style="font-weight:500;white-space:pre-wrap">${o.note ? esc(o.note) : '<span class="muted">（無）</span>'}</dd></dl>
       </section>
       <div class="row" style="gap:10px"><a class="btn ghost block" href="${NTC.chatUrl(`您好，我想詢問訂單 ${o.orderNo}`)}">聯絡店家</a><a class="btn block" href="index.html">繼續逛逛</a></div>`;
     app.querySelectorAll('[data-copy]').forEach((b) => (b.onclick = async () => { try { await navigator.clipboard.writeText(b.dataset.copy); NTC.toast('已複製'); } catch (e) { NTC.toast(b.dataset.copy); } }));

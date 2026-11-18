@@ -102,6 +102,25 @@
   };
   NTC.date = { get: () => store.get('ntc-date', ''), set: (v) => store.set('ntc-date', v || '') };
 
+  // shipping — keep in sync with calcShipping in server/index.mjs
+  NTC.shipping = (lines, subtotal, s) => {
+    const sh = s.shipping; const parts = [];
+    if (!sh) return { fee: 0, parts, label: '' };
+    const boxes = lines.filter((l) => l.temp === 'frozen').reduce((a, l) => a + l.qty, 0);
+    if (boxes) {
+      const tiers = [...(sh.frozen.tiers || [])].sort((a, b) => a.upTo - b.upTo);
+      const max = Math.max(1, sh.frozen.maxPerParcel || (tiers.length ? tiers[tiers.length - 1].upTo : boxes));
+      const feeFor = (n) => (tiers.find((t) => n <= t.upTo) || tiers[tiers.length - 1] || { fee: 0 }).fee;
+      let left = boxes; let fee = 0; let parcels = 0;
+      while (left > 0) { const n = Math.min(left, max); fee += feeFor(n); left -= n; parcels++; }
+      parts.push({ kind: 'frozen', label: sh.frozen.label, units: boxes, parcels, fee, max });
+    }
+    const jars = lines.filter((l) => l.temp === 'ambient').reduce((a, l) => a + l.qty, 0);
+    if (jars) parts.push({ kind: 'ambient', label: sh.ambient.label, units: jars, parcels: 1, fee: sh.ambient.fee || 0 });
+    if (s.freeShippingOver > 0 && subtotal >= s.freeShippingOver) parts.forEach((p) => { p.fee = 0; });
+    return { fee: parts.reduce((a, p) => a + p.fee, 0), parts, label: parts.map((p) => p.label + (p.parcels > 1 ? `（${p.parcels} 件）` : '')).join('＋') };
+  };
+
   // price the cart with the live catalog (the server prices it again when the order is placed)
   NTC.priceCart = (items, cat) => {
     const s = cat.settings; const lines = [];
@@ -111,7 +130,7 @@
         const ok = p && !p.soldOut;
         const isC = p && p.category === 'canele';
         lines.push({
-          idx, it, ok, photo: p ? (p.photo || p.card) : '', price: p ? p.price : 0,
+          idx, it, ok, temp: isC ? 'frozen' : 'ambient', photo: p ? (p.photo || p.card) : '', price: p ? p.price : 0,
           name: p ? (isC ? `${p.name}・單一口味禮盒` : p.name) : '已下架的商品',
           detail: isC ? '每盒 6 顆・皆為相同口味' : '', unit: p ? (p.unit || (isC ? '盒' : '個')) : '',
           min: isC ? (s.canele.singleMinBoxes || 1) : 1,
@@ -122,7 +141,7 @@
         const fl = (it.flavors || []).map((id) => cat.byId[id]);
         const ok = !!mode && fl.every((p) => p && !p.soldOut) && fl.length === mode.flavors;
         lines.push({
-          idx, it, ok, photo: fl[0] ? fl[0].photo : '', price: s.canele.assortedPrice, unit: '盒',
+          idx, it, ok, temp: 'frozen', photo: fl[0] ? fl[0].photo : '', price: s.canele.assortedPrice, unit: '盒',
           name: mode ? `綜合口味禮盒（任選 ${mode.flavors} 種）` : '綜合口味禮盒',
           detail: fl.map((p) => (p ? p.name : '已下架口味')).join('、') + (mode ? `｜每種 ${mode.each} 顆` : ''),
           min: mode ? mode.minBoxes : 1,
@@ -132,7 +151,8 @@
     });
     lines.forEach((l) => { l.qty = l.it.qty; l.subtotal = l.price * l.qty; if (!l.error && l.qty < l.min) l.error = `這個禮盒 ${l.min} 盒起訂`; });
     const subtotal = lines.reduce((a, l) => a + l.subtotal, 0);
-    return { lines, subtotal, count: lines.reduce((a, l) => a + l.qty, 0), valid: lines.length > 0 && lines.every((l) => !l.error) };
+    const shipping = NTC.shipping(lines.filter((l) => l.ok), subtotal, s);
+    return { lines, subtotal, shipping, total: subtotal + shipping.fee, count: lines.reduce((a, l) => a + l.qty, 0), valid: lines.length > 0 && lines.every((l) => !l.error) };
   };
 
   const CART_SVG = '<svg viewBox="0 0 24 24"><path d="M3 4h2.2l2.1 10.2a1.6 1.6 0 0 0 1.6 1.3h8.6a1.6 1.6 0 0 0 1.6-1.2L21 8H6.2"/><circle cx="9.5" cy="19.5" r="1.4"/><circle cx="17" cy="19.5" r="1.4"/></svg>';

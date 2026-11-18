@@ -103,11 +103,11 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
 
 /* cart bar at the bottom of shop pages */
 .cartbar {
-  position: fixed; left: 50%; bottom: 0; z-index: 25; transform: translate(-50%, 110%);
+  position: fixed; left: 50%; bottom: 0; z-index: 25; transform: translate(-50%, 110%); visibility: hidden;
   width: min(100vw, var(--page)); padding: 10px 14px calc(10px + env(safe-area-inset-bottom, 0px));
-  transition: transform .25s ease;
+  transition: transform .25s ease, visibility 0s linear .25s;
 }
-.cartbar.show { transform: translate(-50%, 0); }
+.cartbar.show { transform: translate(-50%, 0); visibility: visible; transition: transform .25s ease; }
 .cartbar a {
   display: flex; align-items: center; gap: 12px; text-decoration: none; color: #fff;
   background: linear-gradient(180deg, #8d4f33, #6e3a24); border-radius: 18px; padding: 12px 16px;
