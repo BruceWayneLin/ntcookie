@@ -22,6 +22,7 @@ sent.length = 0;
 const o = (await api('POST', '/orders', { items: [{ type: 'product', productId: 'meringue-butter', qty: 2 }], date: ymd(10), contact: { name: '卡蘿', phone: '0912345678', address: '台北市' }, note: '', payment: 'transfer' }, CAROL + '|Carol')).json;
 ok('order placed by a LINE member', !!o.orderNo, o);
 ok('new order → LINE push to the fixed admin (not to fake test IDs)', sent.some((m) => m.kind === 'push' && m.body.to === process.env.OWNER_LINE_IDS && /新訂單/.test(m.body.messages[0].text)) && sent.every((m) => /^U[0-9a-f]{32}$/.test(m.body.to)), sent.map((m) => m.body.to));
+ok('new-order alert links straight to that order in the admin', sent.some((m) => m.kind === 'push' && m.body.messages[0].text.includes(`admin.html?order=${o.orderNo}`)), sent.map((m) => m.body.messages[0].text.slice(-80)));
 
 let r = await hook([msg('hi', CAROL)], 'wrong-secret'); ok('bad signature → 401, nothing sent', r.statusCode === 401, r.statusCode);
 r = await hook([]); ok('LINE "Verify" (empty events) → 200', r.statusCode === 200, r.statusCode);
@@ -31,6 +32,9 @@ ok('owner asks with the order number → full status reply (status, payment, dat
 sent.length = 0; await hook([msg(o.orderNo, DAN)]);
 const reply2 = sent.find((m) => m.kind === 'reply')?.body.messages[0].text || '';
 ok('someone else asking about that number → status only, no amount/date/name', /待付款/.test(reply2) && !/\$930|卡蘿|台北/.test(reply2), reply2);
+sent.length = 0; await hook([msg(o.orderNo, process.env.OWNER_LINE_IDS)]);
+const ra = sent.find((m) => m.kind === 'reply')?.body.messages[0].text || '';
+ok('an admin sending an order number gets full details + customer + admin link (not the customer page)', ra.includes(`admin.html?order=${o.orderNo}`) && /卡蘿/.test(ra) && !/orders\.html/.test(ra), ra);
 sent.length = 0; await hook([msg('我的訂單進度？', CAROL)]);
 const reply3 = sent.find((m) => m.kind === 'reply')?.body.messages[0].text || '';
 ok('「訂單進度」 from the member → lists their recent orders', reply3.includes(o.orderNo) && /最近的訂單/.test(reply3), reply3);
@@ -45,7 +49,7 @@ ok('follow / sticker events are ignored', sent.length === 0, sent);
 
 sent.length = 0; await api('POST', `/orders/${o.orderNo}/transfer`, { t: o.token, last5: '13579' });
 const tr = sent.find((m) => m.kind === 'push' && /回報已轉帳/.test(m.body.messages[0].text))?.body.messages[0].text || '';
-ok('customer reports transfer → admins get a LINE push with the customer name (+ LINE name), phone, amount, digits', /卡蘿（LINE：Carol）/.test(tr) && /0912345678/.test(tr) && /\$930/.test(tr) && /13579/.test(tr) && /admin\.html/.test(tr), tr);
+ok('customer reports transfer → admins get a LINE push with the customer name (+ LINE name), phone, amount, digits, order link', /卡蘿（LINE：Carol）/.test(tr) && /0912345678/.test(tr) && /\$930/.test(tr) && /13579/.test(tr) && tr.includes(`admin.html?order=${o.orderNo}`), tr);
 sent.length = 0; await api('PATCH', `/admin/orders/${o.orderNo}`, { markPaid: true }, 'Uqa-admin|QA');
 ok('shop confirms payment → customer gets 已付款 push', sent.some((m) => m.kind === 'push' && m.body.to === CAROL && /付款成功/.test(m.body.messages[0].text)), sent.map((m) => [m.body.to.slice(0, 5), m.body.messages[0].text]));
 sent.length = 0; await api('PATCH', `/admin/orders/${o.orderNo}`, { status: 'shipped', adminMessage: '黑貓 1234-5678' }, 'Uqa-admin|QA');
@@ -59,4 +63,23 @@ ok('shop cancels → the LINE customer is told, with the reason and 請聯絡客
 const guest = (await api('POST', '/orders', { items: [{ type: 'product', productId: 'meringue-butter', qty: 1 }], date: ymd(10), contact: { name: 'G', phone: '0912000000', address: 'x' }, note: '', payment: 'transfer' })).json;
 sent.length = 0; await api('PATCH', `/admin/orders/${guest.orderNo}`, { status: 'cancelled' }, 'Uqa-admin|QA');
 ok('guest order (no LINE account) → no customer push attempted', !sent.some((m) => m.body.to !== process.env.OWNER_LINE_IDS), sent.map((m) => m.body.to));
+// ---- daily morning digest
+const Q = (n) => api('POST', '/orders', { items: [{ type: 'product', productId: 'meringue-butter', qty: 1 }], date: ymd(n), contact: { name: '早安客' + n, phone: '0912345678', address: 'x' }, note: '', payment: 'transfer' }, 'Uqa-dg' + n + '|DG');
+await api('PUT', '/admin/settings', { leadDays: 0 }, 'Uqa-admin|QA');
+const d0 = (await Q(0)).json, d3 = (await Q(3)).json, d4 = (await Q(4)).json;
+const tst = (await api('POST', '/orders', { items: [{ type: 'product', productId: 'meringue-butter', qty: 1 }], date: ymd(1), contact: { name: '測試', phone: '0912345678', address: 'x' }, payment: 'transfer' }, 'Uqa-admin|QA')).json;
+await api('PATCH', `/admin/orders/${d0.orderNo}`, { markPaid: true }, 'Uqa-admin|QA');
+sent.length = 0; let dr = await handler({ source: 'ntcookie.daily' });
+const dg = sent.filter((m) => m.kind === 'push');
+const dt = dg[0]?.body.messages[0].text || '';
+ok('morning digest: one message, only to the fixed admin', dg.length === 1 && dg[0].body.to === process.env.OWNER_LINE_IDS && dr.sent, [dg.length, dg[0]?.body.to, dr]);
+ok('lists orders due today…+3 days, by date, with paid/unpaid flags', dt.includes(d0.orderNo) && dt.includes(d3.orderNo) && /（今天）/.test(dt) && /已付款/.test(dt) && /⚠️未付款/.test(dt), dt);
+ok('leaves out day+4, shop test orders, and cancelled/shipped ones', !dt.includes(d4.orderNo) && !dt.includes(tst.orderNo), dt);
+for (const x of [d0, d3]) await api('PATCH', `/admin/orders/${x.orderNo}`, { status: 'shipped', markPaid: true }, 'Uqa-admin|QA');
+for (const x of [o]) await api('PATCH', `/admin/orders/${x.orderNo}`, { status: 'done' }, 'Uqa-admin|QA');
+const leftovers = (await api('GET', '/admin/orders', undefined, 'Uqa-admin|QA')).json.orders.filter((x) => !x.byShop && x.date <= ymd(3) && !['shipped', 'done', 'cancelled'].includes(x.status) || x.status === 'reported');
+for (const x of leftovers) await api('PATCH', `/admin/orders/${x.orderNo}`, { status: 'cancelled' }, 'Uqa-admin|QA');
+sent.length = 0; dr = await handler({ source: 'ntcookie.daily' });
+ok('nothing due → no message at all (saves the monthly quota)', !dr.sent && sent.length === 0, [dr, sent.length]);
+await api('PUT', '/admin/settings', { leadDays: 5 }, 'Uqa-admin|QA');
 console.log(`${pass} passed, ${fail} failed`); process.exit(fail ? 1 : 0);

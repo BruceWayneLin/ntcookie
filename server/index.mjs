@@ -163,6 +163,8 @@ const SHOP_ADMIN = { sub: 'shop-admin', name: '店家', picture: '', shopAdmin: 
 const OWNER_PHONE = String(env.OWNER_PHONE || '').replace(/\D/g, '');
 // 最大管理員：寫死的 LINE 帳號 ID（OWNER_LINE_IDS，逗號分隔），永遠是負責人、後台刪不掉
 const OWNER_IDS = new Set(String(env.OWNER_LINE_IDS || '').split(',').map((x) => x.trim()).filter(Boolean));
+const ADMIN_URL = env.ADMIN_URL || 'https://liff.line.me/2012677349-KI6PM6Pz/admin.html';
+const adminLink = (no) => `${ADMIN_URL}?order=${no}`;
 const isOwnerOf = (s, u) => !!(u && (OWNER_IDS.has(u.sub) || (s.admins || []).some((a) => a.sub === u.sub && a.owner)));
 const adminView = (s) => ({ ...s, pk: undefined, sk: undefined, adminPass: undefined, sessionSecret: undefined, hasAdminPass: !!s.adminPass,
   admins: [...(s.admins || []).map((a) => (OWNER_IDS.has(a.sub) ? { ...a, owner: true, fixed: true } : a)),
@@ -364,7 +366,7 @@ async function markPaid(o, detail, note) {
   const payment = { ...(o.payment || {}), ...detail, status: 'paid', paidAt: new Date().toISOString() };
   const status = ['pending', 'reported'].includes(o.status) ? 'paid' : o.status;
   const n = await setOrder(o.orderNo, { payment, status }, note);
-  await notifyAdmins(`💰 已付款 ${o.orderNo}｜$${o.total}｜${PAY_LABEL[payment.method] || ''}｜${o.contact?.name || ''}${o.user?.name && o.user.name !== o.contact?.name ? `（LINE：${o.user.name}）` : ''}`).catch(() => {});
+  await notifyAdmins(`💰 已付款 ${o.orderNo}｜$${o.total}｜${PAY_LABEL[payment.method] || ''}｜${o.contact?.name || ''}${o.user?.name && o.user.name !== o.contact?.name ? `（LINE：${o.user.name}）` : ''}\n${adminLink(o.orderNo)}`).catch(() => {});
   await pushTo(o.user?.sub, `您的訂單 ${o.orderNo} 已付款成功，我們會依預約日期為您製作 ♡`).catch(() => {});
   return n;
 }
@@ -419,8 +421,12 @@ async function lineWebhook(event) {
       const nos = [...new Set(msg.toUpperCase().replace(/\s/g, '').match(/NT\d{9}/g) || [])].slice(0, 3);
       if (nos.length) {
         const parts = [];
-        for (const no of nos) { const o = await get('ORDER', no); parts.push(o ? statusText(o, !!uid && o.user?.sub === uid) : `📦 ${no}\n找不到這筆訂單，請確認編號是否正確`); }
-        parts.push(`完整明細：官網「我的訂單」輸入訂單編號＋手機\n${SITE_URL}orders.html\n（有其他問題直接留言，店家看到會盡快回覆 ♡）`);
+        const asAdmin = isAdminOf(await getSettings(), uid ? { sub: uid } : null);
+        for (const no of nos) {
+          const o = await get('ORDER', no);
+          parts.push(!o ? `📦 ${no}\n找不到這筆訂單，請確認編號是否正確` : asAdmin ? `${statusText(o, true)}\n客人：${o.contact?.name || ''} ${o.contact?.phone || ''}\n後台：${adminLink(o.orderNo)}` : statusText(o, !!uid && o.user?.sub === uid));
+        }
+        if (!asAdmin) parts.push(`完整明細：官網「我的訂單」輸入訂單編號＋手機\n${SITE_URL}orders.html\n（有其他問題直接留言，店家看到會盡快回覆 ♡）`);
         await lineReply(ev.replyToken, parts.join('\n\n'));
       } else if (/訂單|查詢|進度|出貨了嗎|寄出/.test(msg)) {
         const mine = uid ? await queryAll({ IndexName: 'gsi1', KeyConditionExpression: 'gsi1pk = :p', ExpressionAttributeValues: { ':p': `USER#${uid}` }, ScanIndexForward: false }) : [];
@@ -469,7 +475,7 @@ async function createOrder(event) {
   };
   await put(o);
   if (user) await put({ pk: 'USER', sk: user.sub, ...contact, lineName: user.name, picture: user.picture, updatedAt: now });
-  await notifyAdmins(orderSummaryText(o)).catch(() => {});
+  await notifyAdmins(`${orderSummaryText(o)}\n\n後台看這筆：${adminLink(o.orderNo)}`).catch(() => {});
   const next = await startPayment(o, b.returnBase, b.inLine);
   return json(200, { orderNo, token: o.token, total: o.total, next, summary: orderSummaryText(o) });
 }
@@ -626,8 +632,31 @@ async function getImage(id) {
   return { statusCode: 200, headers: { 'content-type': it.type, 'cache-control': 'public, max-age=31536000, immutable' }, body: it.data, isBase64Encoded: true };
 }
 
+// ---------------------------------------------------------------- 每天早上 9 點：接下來 3 天的訂單提醒（只傳給最大管理員；沒有訂單就不傳，省推播額度）
+async function dailyDigest() {
+  if (!env.LINE_MESSAGING_TOKEN || !OWNER_IDS.size) return { sent: false, reason: 'not configured' };
+  const today = twDate(); const until = addDays(today, 3);
+  const all = await queryAll({ KeyConditionExpression: 'pk = :p', ExpressionAttributeValues: { ':p': 'ORDER' } });
+  const due = all.filter((o) => !o.byShop && o.date >= today && o.date <= until && !['shipped', 'done', 'cancelled'].includes(o.status))
+    .sort((a, b) => a.date.localeCompare(b.date) || a.orderNo.localeCompare(b.orderNo));
+  const reported = all.filter((o) => !o.byShop && o.status === 'reported');
+  if (!due.length && !reported.length) return { sent: false, reason: 'nothing due' };
+  const lines = [`☀️ 早安！接下來 3 天（${twDay(today)}～${twDay(until)}）要準備的訂單：${due.length} 筆`];
+  let day = '';
+  for (const o of due) {
+    if (o.date !== day) { day = o.date; lines.push('', `📅 ${twDay(day)}${day === today ? '（今天）' : ''}`); }
+    const paid = o.payment?.status === 'paid' ? '已付款' : o.status === 'reported' ? '⚠️匯款待確認' : '⚠️未付款';
+    lines.push(`・${o.orderNo} ${o.contact?.name || ''} $${o.total}｜${paid}｜${STATUS[o.status]}`, `　${o.lines.map((l) => `${l.name}×${l.qty}`).join('、').slice(0, 80)}`);
+  }
+  if (reported.length) lines.push('', `🏦 客人回報已匯款、還沒確認的：${reported.map((o) => o.orderNo).join('、')}`);
+  lines.push('', `後台：${ADMIN_URL}`);
+  await Promise.all([...OWNER_IDS].map((id) => pushTo(id, lines.join('\n'))));
+  return { sent: true, orders: due.length };
+}
+
 // ---------------------------------------------------------------- router
 export async function handler(event) {
+  if (event?.source === 'ntcookie.daily') { const r = await dailyDigest(); console.log(JSON.stringify({ daily: r })); return r; }
   const res = await route(event);
   try {
     const h = event.headers || {}; const ua = h['user-agent'] || '';
@@ -685,7 +714,7 @@ async function route(event) {
         if (o.status === 'pending') fields.status = 'reported'; // customer says the money is sent; the shop still confirms it arrived
         const n = await setOrder(o.orderNo, fields, `客人回報已匯款，末五碼 ${last5}`);
         const who = `${o.contact?.name || ''}${o.user?.name && o.user.name !== o.contact?.name ? `（LINE：${o.user.name}）` : ''}`;
-        await notifyAdmins(`🏦 客人回報已轉帳\n訂單：${o.orderNo}\n客人：${who || '（未填）'}　${o.contact?.phone || ''}\n金額：$${o.total}\n帳號末五碼：${last5}\n\n請到網銀確認入帳後，在後台按「確認已收到款項」：\nhttps://liff.line.me/2012677349-KI6PM6Pz/admin.html`).catch(() => {});
+        await notifyAdmins(`🏦 客人回報已轉帳\n訂單：${o.orderNo}\n客人：${who || '（未填）'}　${o.contact?.phone || ''}\n金額：$${o.total}\n帳號末五碼：${last5}\n\n請到網銀確認入帳後，在後台按「確認已收到款項」：\n${adminLink(o.orderNo)}`).catch(() => {});
         return json(200, { order: publicOrder(n, await getSettings()) });
       }
       if (method === 'POST' && seg[2] === 'pay') { // retry / switch payment

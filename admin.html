@@ -9,7 +9,7 @@
 <link rel="icon" href="assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css?v=1118t">
+<link rel="stylesheet" href="css/app.css?v=1118u">
 <style>
   :root { --page: 760px; }
   .tabs { position: sticky; top: 63px; z-index: 20; display: flex; gap: 6px; max-width: var(--page); margin: 0 auto; padding: 8px 14px; background: rgba(248, 237, 231, .96); }
@@ -61,8 +61,8 @@
 <div class="shopbar" id="shopbar" hidden></div>
 <main class="wrap" id="app"><div class="spinner"></div></main>
 <p class="note" id="ver" style="text-align:center;margin:0 0 24px;color:var(--muted)"></p>
-<script src="js/config.js?v=1118t"></script>
-<script src="js/app.js?v=1118t"></script>
+<script src="js/config.js?v=1118u"></script>
+<script src="js/app.js?v=1118u"></script>
 <script>
 (async function () {
   const { $, esc, money, asset } = NTC;
@@ -134,6 +134,11 @@
     loginScreen(e.status === 401 || e.status === 403 ? e.message : e.message + '（請再試一次）'); return;
   }
   $('#tabs').hidden = false;
+  const deep = (q.get('order') || '').toUpperCase();
+  if (deep) {
+    history.replaceState(null, '', location.pathname);
+    setTimeout(() => { const o = orders.find((x) => x.orderNo === deep); if (o) openOrder(o); else NTC.toast(`找不到訂單 ${deep}`); }, 0);
+  }
   try { await loadSettings(); renderShopBar(); } catch (e) { /* settings tab will retry */ }
   // logged in with the passcode inside LINE, but this LINE account isn't an admin yet → offer to bind it (one tap, then no passcode needed in LINE)
   (async () => {
@@ -224,6 +229,11 @@
         <button class="btn ghost small" style="flex:1" id="o-copy">複製客人連結</button></div>
       ${o.byShop ? '<button class="btn ghost block small" id="o-del" style="margin-top:10px;color:var(--red)">刪除這張測試單</button>'
         : canDeleteReal && o.status === 'cancelled' && p.status !== 'paid' ? '<button class="btn ghost block small" id="o-del" style="margin-top:10px;color:var(--red)">刪除這筆訂單（只有最大管理員看得到）</button>' : ''}
+      ${(() => {
+        const digits = (v) => String(v || '').replace(/\D/g, '');
+        const same = orders.filter((x) => x.orderNo !== o.orderNo && ((o.user && x.user && x.user.sub === o.user.sub) || (digits(o.contact.phone).length >= 8 && digits(x.contact.phone) === digits(o.contact.phone))));
+        return `<p style="font-weight:700;margin:14px 0 6px">這位客人的其他訂單（${same.length}）</p>${same.length ? same.map((x) => `<button class="ord" data-other="${esc(x.orderNo)}" style="padding:8px 12px;margin:0 0 6px"><div class="top"><b style="font-size:14px">${esc(x.orderNo)}</b><span class="status-pill ${esc(x.status)}">${esc(x.statusLabel)}</span><span class="sp"></span><span class="amt">${money(x.total)}</span></div><div class="mid" style="margin-top:2px">📅 ${NTC.fmtDate(x.date)}</div></button>`).join('') : '<p class="note" style="margin:0">沒有其他訂單</p>'}`;
+      })()}
       <p style="font-weight:700;margin:14px 0 6px">紀錄</p><div class="hist">${(o.history || []).map((h) => `${new Date(h.at).toLocaleString('zh-TW', { hour12: false })}　${esc(h.note)}`).join('<br>')}</div>`);
     let status = o.status;
     el.querySelectorAll('#o-status button').forEach((b) => (b.onclick = () => { status = b.dataset.k; el.querySelectorAll('#o-status button').forEach((x) => x.classList.toggle('on', x === b)); }));
@@ -243,6 +253,7 @@
       } catch (e) { NTC.toast(e.message, 3500); } finally { NTC.loading(false); }
     };
     el.querySelector('#o-save').onclick = () => save();
+    el.querySelectorAll('[data-other]').forEach((b) => (b.onclick = () => { const x = orders.find((y) => y.orderNo === b.dataset.other); close(); setTimeout(() => openOrder(x), 270); }));
     const delBtn = el.querySelector('#o-del');
     if (delBtn) delBtn.onclick = async () => {
       if (!confirm(o.byShop ? `確定刪除測試單 ${o.orderNo}？刪掉就找不回來。` : `確定刪除客人的訂單 ${o.orderNo}（${o.contact.name}）？\n刪除後客人的訂單連結也會失效，而且找不回來。`)) return;
