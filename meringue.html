@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>馬林糖一口酥｜N.T Cookie × N.T Canelé</title>
+<meta name="description" content="馬林糖一口酥・送禮小點｜法式手工・酥脆輕盈・甜而不膩。原味奶油、小山園抹茶、頂級可可、天然紫薯、香濃起司。">
+<meta name="theme-color" content="#f5e6de">
+<meta property="og:title" content="馬林糖一口酥｜N.T Cookie × N.T Canelé">
+<meta property="og:image" content="https://brucewaynelin.github.io/ntcookie/assets/v2/02-meringue/banner.png">
+<link rel="icon" href="assets/favicon.png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<main class="dz dz-941">
+  <h1 class="sr-only">馬林糖一口酥・送禮小點</h1>
+  <!-- design 0–548: banner with its own back / cart / menu buttons, then 「口味選擇」 -->
+  <div class="seg" style="height:calc(548 * var(--u));background-image:url(assets/v2/page-meringue-top.webp)">
+    <button class="hot" id="back" aria-label="返回" style="left:calc(20*var(--u));top:calc(12*var(--u));width:calc(72*var(--u));height:calc(72*var(--u));border-radius:50%"></button>
+    <a class="hot" href="cart.html" aria-label="購物車" style="left:calc(767*var(--u));top:calc(12*var(--u));width:calc(72*var(--u));height:calc(72*var(--u));border-radius:50%">
+      <span class="badge" data-cart-count style="position:absolute;right:-2px;top:-2px;min-width:19px;height:19px;padding:0 5px;border-radius:999px;background:var(--red);color:#fff;font:700 11px/19px var(--sans);text-align:center"></span></a>
+    <button class="hot" id="menu" aria-label="選單" style="left:calc(851*var(--u));top:calc(12*var(--u));width:calc(72*var(--u));height:calc(72*var(--u));border-radius:50%"></button>
+  </div>
+  <!-- design 548–1496: the flavour cards (live from the shop's product list) -->
+  <div class="seg grid-rows" id="grid" style="height:calc(948 * var(--u));background-image:url(assets/v2/page-meringue-mid.webp)"></div>
+  <!-- design 1496–1672: footer line -->
+  <div class="seg" style="height:calc(176 * var(--u));background-image:url(assets/v2/page-meringue-bottom.webp)"></div>
+</main>
+<script src="js/config.js"></script>
+<script src="js/app.js"></script>
+<script src="js/shop.js"></script>
+<script>
+  NTC.$('#back').onclick = NTC.back;
+  NTC.$('#menu').onclick = NTC.openMenu;
+  NTC.mountCartBar();
+  NTC.catalog().then((c) => NTC.renderGrid(NTC.$('#grid'), 'meringue', c.products.filter((p) => p.category === 'meringue')))
+    .catch((e) => NTC.toast(e.message, 4000));
+</script>
+</body>
+</html>

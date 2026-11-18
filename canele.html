@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>N.T Canelé 可麗露專區｜豪宅裡の可麗露</title>
+<meta name="description" content="N.T Canelé 豪宅裡の可麗露・六入可麗露禮盒。單一口味禮盒 $750 起、綜合口味禮盒 $800。">
+<meta name="theme-color" content="#f5e6de">
+<meta property="og:title" content="N.T Canelé 可麗露專區｜豪宅裡の可麗露">
+<meta property="og:image" content="https://brucewaynelin.github.io/ntcookie/assets/v2/01-canele/banner.png">
+<link rel="icon" href="assets/favicon.png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<div class="float-tools">
+  <button class="circle-btn" id="back" aria-label="返回"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
+  <div class="row" style="gap:10px">
+    <a class="circle-btn" href="cart.html" aria-label="購物車" id="cartbtn"><span class="badge" data-cart-count></span></a>
+    <button class="circle-btn" id="menu" aria-label="選單"><svg viewBox="0 0 24 24"><path d="M5 7h14M5 12h14M5 17h14"/></svg></button>
+  </div>
+</div>
+<main class="dz dz-1199">
+  <h1 class="sr-only">N.T Canelé 豪宅裡の可麗露・六入可麗露禮盒</h1>
+  <div class="seg" style="height:calc(311 * var(--u));background-image:url(assets/v2/page-canele-top.webp)"></div>
+  <!-- design 311–828: the flavour cards (live) -->
+  <div class="seg grid-rows" id="grid" style="height:calc(517 * var(--u));background-image:url(assets/v2/page-canele-mid.webp)"></div>
+  <!-- design 828–1312: 訂購方式 (tap ① or ② to order) -->
+  <div class="seg" style="height:calc(484 * var(--u));background-image:url(assets/v2/page-canele-bottom.webp)">
+    <button class="hot" id="single" aria-label="單一口味禮盒：選口味" style="left:calc(218*var(--u));top:calc(23*var(--u));width:calc(435*var(--u));height:calc(253*var(--u));border-radius:calc(26*var(--u))"></button>
+    <button class="hot" id="mixed" aria-label="綜合口味禮盒：組合口味" style="left:calc(659*var(--u));top:calc(23*var(--u));width:calc(505*var(--u));height:calc(253*var(--u));border-radius:calc(26*var(--u))"></button>
+  </div>
+</main>
+<script src="js/config.js"></script>
+<script src="js/app.js"></script>
+<script src="js/shop.js"></script>
+<script>
+  NTC.$('#cartbtn').insertAdjacentHTML('afterbegin', NTC.CART_SVG);
+  NTC.$('#back').onclick = NTC.back;
+  NTC.$('#menu').onclick = NTC.openMenu;
+  NTC.$('#single').onclick = NTC.openCanelePicker;
+  NTC.$('#mixed').onclick = () => NTC.openAssorted();
+  NTC.mountCartBar();
+  NTC.catalog().then((c) => NTC.renderGrid(NTC.$('#grid'), 'canele', c.products.filter((p) => p.category === 'canele')))
+    .catch((e) => NTC.toast(e.message, 4000));
+</script>
+</body>
+</html>

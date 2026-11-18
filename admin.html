@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>店家後台｜N.T Cookie × N.T Canelé</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#f8ede7">
+<link rel="icon" href="assets/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/app.css">
+<style>
+  :root { --page: 760px; }
+  .tabs { position: sticky; top: 63px; z-index: 20; display: flex; gap: 6px; max-width: var(--page); margin: 0 auto; padding: 8px 14px; background: rgba(248, 237, 231, .96); }
+  .tabs button { flex: 1; border: 0; border-radius: 12px; padding: 10px 0; background: #fff; font: 800 15px var(--serif); letter-spacing: .1em; color: var(--ink2); cursor: pointer; }
+  .tabs button.on { background: var(--brown); color: #fff; }
+  .ord { display: block; width: 100%; text-align: left; border: 1px solid #f1e2d9; background: var(--card); border-radius: 16px; padding: 12px 14px; margin: 0 0 10px; cursor: pointer; }
+  .ord .top { display: flex; align-items: center; gap: 8px; }
+  .ord .top b { font: 900 16px var(--serif); letter-spacing: .03em; }
+  .ord .mid { font-size: 13.5px; color: var(--ink2); margin-top: 6px; line-height: 1.5; }
+  .ord .amt { font-weight: 800; color: var(--brown); }
+  .flag { display: inline-block; font-size: 11.5px; font-weight: 700; padding: 2px 7px; border-radius: 6px; background: #fdecd3; color: #9a5b0b; margin-left: 4px; }
+  .flag.ok { background: #e3f1e6; color: #2f6b3d; }
+  .prod { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px dashed #ead7cc; }
+  .prod:last-child { border-bottom: 0; }
+  .prod img { width: 56px; height: 56px; border-radius: 12px; object-fit: cover; flex: none; background: #f3e4db; }
+  .prod .i { flex: 1; min-width: 0; }
+  .prod .i b { display: block; font-size: 15px; }
+  .prod .i span { font-size: 13px; color: var(--ink2); }
+  .tg { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--ink2); cursor: pointer; user-select: none; }
+  .tg input { appearance: none; width: 40px; height: 24px; border-radius: 999px; background: #dccbc1; position: relative; cursor: pointer; transition: background .2s; margin: 0; }
+  .tg input::after { content: ""; position: absolute; left: 3px; top: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: left .2s; box-shadow: 0 1px 3px rgba(0, 0, 0, .2); }
+  .tg input:checked { background: #3f7d4e; }
+  .tg input:checked::after { left: 19px; }
+  .tg.red input:checked { background: var(--red); }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
+  .hist { font-size: 12.5px; color: var(--ink2); line-height: 1.6; max-height: 140px; overflow: auto; background: #fbf3ee; border-radius: 10px; padding: 8px 10px; }
+  .statusbar { display: flex; flex-wrap: wrap; gap: 6px; }
+  .statusbar button { border: 1.5px solid #e3cdbf; background: #fff; border-radius: 999px; padding: 7px 12px; font: 700 13.5px var(--sans); cursor: pointer; }
+  .statusbar button.on { background: var(--brown); border-color: var(--brown); color: #fff; }
+  .tag-del { border: 0; background: #f1e1d8; border-radius: 999px; padding: 5px 10px; font-size: 13px; cursor: pointer; }
+  code { background: #f6e8e0; padding: 2px 6px; border-radius: 6px; font-size: 12.5px; word-break: break-all; }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <a class="circle-btn" href="index.html" aria-label="回首頁"><svg viewBox="0 0 24 24"><path d="M4 11l8-7 8 7v9a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1z"/></svg></a>
+  <h1>店家後台</h1>
+  <button class="circle-btn" id="reload" aria-label="重新整理"><svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg></button>
+</header>
+<nav class="tabs" id="tabs" hidden><button data-t="orders" class="on">訂單</button><button data-t="products">商品</button><button data-t="settings">設定</button></nav>
+<main class="wrap" id="app"><div class="spinner"></div></main>
+<script src="js/config.js"></script>
+<script src="js/app.js"></script>
+<script>
+(async function () {
+  const { $, esc, money, asset } = NTC;
+  const app = $('#app');
+  const q = new URLSearchParams(location.search);
+  const PAY = { linepay: 'LINE Pay', ecpay: '綠界', transfer: '轉帳' };
+  let tab = 'orders'; let statuses = {}; let orders = []; let filter = 'open'; let sortBy = 'created';
+  let products = []; let settings = null; let ready = {};
+
+  // ---------- who are you?
+  if (!(await NTC.loggedIn())) {
+    app.innerHTML = `<div class="panel" style="text-align:center"><p style="font:900 18px var(--serif)">請用店家的 LINE 帳號登入</p><button class="btn line block" id="login">用 LINE 登入</button></div>`;
+    $('#login').onclick = NTC.login; return;
+  }
+  if (q.get('invite')) {
+    try { await NTC.api('/admin/claim', { method: 'POST', body: { invite: q.get('invite') } }); NTC.toast('已加入管理員'); }
+    catch (e) { NTC.toast(e.message, 4000); }
+    history.replaceState(null, '', location.pathname);
+  }
+  try { await loadOrders(); } catch (e) {
+    app.innerHTML = `<div class="panel" style="text-align:center"><p style="font:900 18px var(--serif)">${esc(e.message)}</p><p class="note">請店家用「管理員邀請連結」開一次這個頁面。</p></div>`; return;
+  }
+  $('#tabs').hidden = false;
+  $('#tabs').onclick = (e) => { const b = e.target.closest('button'); if (!b) return; tab = b.dataset.t; $('#tabs').querySelectorAll('button').forEach((x) => x.classList.toggle('on', x === b)); show(); };
+  $('#reload').onclick = async () => { NTC.loading(true, '更新中…'); try { if (tab === 'orders') await loadOrders(); if (tab === 'products') products = (await NTC.api('/admin/products')).products; if (tab === 'settings') await loadSettings(); show(); } catch (e) { NTC.toast(e.message); } NTC.loading(false); };
+
+  async function loadOrders() { const r = await NTC.api('/admin/orders'); orders = r.orders; statuses = r.statuses; }
+  async function loadSettings() { const r = await NTC.api('/admin/settings'); settings = r.settings; ready = r.ready; }
+  async function show() {
+    if (tab === 'orders') return renderOrders();
+    if (tab === 'products') { if (!products.length) { app.innerHTML = '<div class="spinner"></div>'; products = (await NTC.api('/admin/products')).products; } return renderProducts(); }
+    if (!settings) { app.innerHTML = '<div class="spinner"></div>'; await loadSettings(); }
+    renderSettings();
+  }
+
+  // ================= 訂單 =================
+  const isOpen = (o) => !['done', 'cancelled'].includes(o.status);
+  function renderOrders() {
+    const counts = { open: orders.filter(isOpen).length, all: orders.length };
+    Object.keys(statuses).forEach((k) => (counts[k] = orders.filter((o) => o.status === k).length));
+    let list = filter === 'all' ? orders : filter === 'open' ? orders.filter(isOpen) : orders.filter((o) => o.status === filter);
+    if (sortBy === 'date') list = [...list].sort((a, b) => a.date.localeCompare(b.date) || a.orderNo.localeCompare(b.orderNo));
+    const chip = (k, t) => `<button class="${filter === k ? 'on' : ''}" data-f="${k}">${t} ${counts[k] || 0}</button>`;
+    app.innerHTML = `
+      <div class="statusbar" style="margin-bottom:10px">${chip('open', '處理中')}${Object.entries(statuses).map(([k, t]) => chip(k, t)).join('')}${chip('all', '全部')}</div>
+      <div class="row" style="margin-bottom:10px"><span class="note">${list.length} 筆</span><span class="sp"></span>
+        <div class="statusbar"><button data-s="created" class="${sortBy === 'created' ? 'on' : ''}">依下單時間</button><button data-s="date" class="${sortBy === 'date' ? 'on' : ''}">依出貨日期</button></div></div>
+      ${list.map((o) => `<button class="ord" data-no="${esc(o.orderNo)}">
+        <div class="top"><b>${esc(o.orderNo)}</b><span class="status-pill ${esc(o.status)}">${esc(o.statusLabel)}</span><span class="sp"></span><span class="amt">${money(o.total)}</span></div>
+        <div class="mid">📅 ${NTC.fmtDate(o.date)}　👤 ${esc(o.contact.name)}　${esc(PAY[o.payment.method] || '')}
+          ${o.payment.status === 'paid' ? '<span class="flag ok">已收款</span>' : o.payment.last5 ? `<span class="flag">回報末五碼 ${esc(o.payment.last5)}</span>` : '<span class="flag">未付款</span>'}<br>
+          ${esc(o.lines.map((l) => `${l.name}×${l.qty}`).join('、'))}${o.note ? `<br>💬 ${esc(o.note.slice(0, 60))}` : ''}</div></button>`).join('') || '<p class="empty note">沒有訂單</p>'}`;
+    app.querySelectorAll('[data-f]').forEach((b) => (b.onclick = () => { filter = b.dataset.f; renderOrders(); }));
+    app.querySelectorAll('[data-s]').forEach((b) => (b.onclick = () => { sortBy = b.dataset.s; renderOrders(); }));
+    app.querySelectorAll('.ord').forEach((b) => (b.onclick = () => openOrder(orders.find((o) => o.orderNo === b.dataset.no))));
+  }
+  function openOrder(o) {
+    const p = o.payment;
+    const { el, close } = NTC.sheet(`
+      <h2>${esc(o.orderNo)} <span class="status-pill ${esc(o.status)}">${esc(o.statusLabel)}</span></h2>
+      <p class="sub">下單 ${new Date(o.createdAt).toLocaleString('zh-TW', { hour12: false })}${o.user ? `・LINE：${esc(o.user.name)}` : '・未登入 LINE'}</p>
+      <div class="panel" style="padding:12px">
+        ${o.lines.map((l) => `<div class="row" style="padding:4px 0;align-items:flex-start"><div style="flex:1"><b>${esc(l.name)}</b> × ${l.qty}${l.detail ? `<div class="note">${esc(l.detail)}</div>` : ''}</div><b>${money(l.subtotal)}</b></div>`).join('')}
+        <div class="row" style="border-top:1px dashed #ead7cc;margin-top:6px;padding-top:6px"><span>運費 ${esc(o.shipping.label)}</span><span class="sp"></span><span>${money(o.shipping.fee)}</span></div>
+        <div class="row"><b>合計</b><span class="sp"></span><b style="color:var(--red);font-size:18px">${money(o.total)}</b></div></div>
+      <dl class="kv" style="margin-bottom:12px"><dt>日期</dt><dd>${NTC.fmtDate(o.date)} <input type="date" id="o-date" value="${esc(o.date)}" style="margin-left:6px;border:1px solid #e6d2c6;border-radius:8px;padding:2px 4px"></dd>
+        <dt>收件人</dt><dd>${esc(o.contact.name)}</dd><dt>手機</dt><dd><a href="tel:${esc(o.contact.phone)}">${esc(o.contact.phone)}</a></dd><dt>地址</dt><dd>${esc(o.contact.address)}</dd>
+        ${o.note ? `<dt>客人留言</dt><dd style="white-space:pre-wrap;font-weight:500">${esc(o.note)}</dd>` : ''}
+        <dt>付款</dt><dd>${esc(PAY[p.method] || '')}・${p.status === 'paid' ? `<span class="flag ok">已收款 ${new Date(p.paidAt).toLocaleString('zh-TW', { hour12: false })}</span>` : '<span class="flag">未收款</span>'}
+          ${p.last5 ? `<br>客人回報末五碼 <b>${esc(p.last5)}</b>` : ''}${p.info ? `<br>${p.info.kind === 'atm' ? `ATM ${esc(p.info.bankCode)}-${esc(p.info.account)}` : `超商代碼 ${esc(p.info.code)}`}` : ''}
+          ${p.simulated ? '<br><span class="flag">測試環境模擬付款</span>' : ''}</dd></dl>
+      ${p.status !== 'paid' && o.status !== 'cancelled' ? '<button class="btn block" id="o-paid" style="margin-bottom:12px">確認已收到款項</button>' : ''}
+      <p style="font-weight:700;margin:0 0 6px">訂單狀態</p>
+      <div class="statusbar" id="o-status" style="margin-bottom:12px">${Object.entries(statuses).map(([k, t]) => `<button data-k="${k}" class="${k === o.status ? 'on' : ''}">${t}</button>`).join('')}</div>
+      <label class="field"><span>給客人看的留言（顯示在客人的訂單頁）</span><input id="o-msg" value="${esc(o.adminMessage)}" maxlength="500" placeholder="例如：已出貨，黑貓單號 1234-5678-9012"></label>
+      <label class="field"><span>內部備註（只有店家看得到）</span><textarea id="o-note" maxlength="1000">${esc(o.adminNote)}</textarea></label>
+      <button class="btn block" id="o-save">儲存</button>
+      <div class="row" style="gap:8px;margin-top:10px"><a class="btn ghost small" style="flex:1" href="order.html?no=${esc(o.orderNo)}&t=${esc(o.token)}" target="_blank">客人看到的頁面</a>
+        <button class="btn ghost small" style="flex:1" id="o-copy">複製客人連結</button></div>
+      <p style="font-weight:700;margin:14px 0 6px">紀錄</p><div class="hist">${(o.history || []).map((h) => `${new Date(h.at).toLocaleString('zh-TW', { hour12: false })}　${esc(h.note)}`).join('<br>')}</div>`);
+    let status = o.status;
+    el.querySelectorAll('#o-status button').forEach((b) => (b.onclick = () => { status = b.dataset.k; el.querySelectorAll('#o-status button').forEach((x) => x.classList.toggle('on', x === b)); }));
+    const save = async (extra = {}) => {
+      NTC.loading(true, '儲存中…');
+      try {
+        const body = { status, adminMessage: el.querySelector('#o-msg').value, adminNote: el.querySelector('#o-note').value, ...extra };
+        const d = el.querySelector('#o-date').value; if (d && d !== o.date) body.date = d;
+        if (body.status === 'cancelled' && o.status !== 'cancelled' && !confirm(`確定取消 ${o.orderNo}？`)) { NTC.loading(false); return; }
+        const { order } = await NTC.api(`/admin/orders/${o.orderNo}`, { method: 'PATCH', body });
+        orders = orders.map((x) => (x.orderNo === order.orderNo ? order : x));
+        close(); renderOrders(); NTC.toast('已儲存');
+      } catch (e) { NTC.toast(e.message, 3500); } finally { NTC.loading(false); }
+    };
+    el.querySelector('#o-save').onclick = () => save();
+    const paid = el.querySelector('#o-paid'); if (paid) paid.onclick = () => { if (confirm(`確認已收到 ${money(o.total)}？`)) save({ markPaid: true }); };
+    el.querySelector('#o-copy').onclick = async () => {
+      const url = new URL(`order.html?no=${o.orderNo}&t=${o.token}`, location.href).href;
+      try { await navigator.clipboard.writeText(url); NTC.toast('已複製，可以貼給客人'); } catch (e) { prompt('客人訂單連結', url); }
+    };
+  }
+
+  // ================= 商品 =================
+  const CATS = { canele: 'N.T Canelé 可麗露（單一口味禮盒價格）', meringue: '馬林糖一口酥' };
+  function renderProducts() {
+    app.innerHTML = Object.entries(CATS).map(([c, t]) => `<section class="panel"><h2>${t}</h2>
+      ${products.filter((p) => p.category === c).map((p) => `<div class="prod" data-id="${esc(p.id)}">
+        <img src="${esc(asset(p.photo || p.card))}" alt=""><div class="i"><b>${esc(p.name)}</b><span>${money(p.price)} / ${esc(p.unit || '')}</span></div>
+        <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
+          <label class="tg">上架<input type="checkbox" data-k="active" ${p.active ? 'checked' : ''}></label>
+          <label class="tg red">售完<input type="checkbox" data-k="soldOut" ${p.soldOut ? 'checked' : ''}></label></div>
+        <button class="btn ghost small edit">編輯</button></div>`).join('')}
+      <button class="btn ghost small add" data-c="${c}" style="margin-top:10px">＋ 新增${c === 'canele' ? '口味' : '商品'}</button></section>`).join('')
+      + '<p class="note">「上架」關掉＝客人看不到；「售完」打開＝看得到但不能買。改名字或價格後，那張卡會改用文字顯示（設計圖上的字是印在圖裡的）。</p>';
+    app.querySelectorAll('.prod input').forEach((i) => (i.onchange = async () => {
+      const p = products.find((x) => x.id === i.closest('.prod').dataset.id);
+      try { const r = await NTC.api(`/admin/products/${p.id}`, { method: 'PUT', body: { ...p, [i.dataset.k]: i.checked } }); Object.assign(p, r.product); NTC.toast(`${p.name}：${i.dataset.k === 'active' ? (p.active ? '已上架' : '已下架') : (p.soldOut ? '標示售完' : '恢復販售')}`); }
+      catch (e) { i.checked = !i.checked; NTC.toast(e.message); }
+    }));
+    app.querySelectorAll('.edit').forEach((b) => (b.onclick = () => editProduct(products.find((x) => x.id === b.closest('.prod').dataset.id))));
+    app.querySelectorAll('.add').forEach((b) => (b.onclick = () => editProduct({ category: b.dataset.c, unit: b.dataset.c === 'canele' ? '盒' : '罐', active: false, soldOut: false, sort: 100, isNew: true })));
+  }
+  async function shrink(file) {
+    const img = await new Promise((ok, ko) => { const i = new Image(); i.onload = () => ok(i); i.onerror = ko; i.src = URL.createObjectURL(file); });
+    const scale = Math.min(1, 900 / Math.max(img.width, img.height));
+    const c = document.createElement('canvas'); c.width = Math.round(img.width * scale); c.height = Math.round(img.height * scale);
+    c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+    for (const qv of [0.85, 0.75, 0.62, 0.5]) { const d = c.toDataURL('image/webp', qv); if (d.startsWith('data:image/webp') && d.length < 370000) return d; const j = c.toDataURL('image/jpeg', qv); if (j.length < 370000) return j; }
+    throw new Error('圖片太大');
+  }
+  function editProduct(p) {
+    const { el, close } = NTC.sheet(`
+      <h2>${p.isNew ? '新增' : '編輯'}・${p.category === 'canele' ? '可麗露口味' : '馬林糖'}</h2>
+      <div class="row" style="margin:6px 0 12px"><img id="e-img" src="${esc(asset(p.photo || p.card || 'assets/favicon.png'))}" style="width:96px;height:96px;border-radius:14px;object-fit:cover" alt="">
+        <label class="btn ghost small">換照片<input type="file" accept="image/*" id="e-file" hidden></label></div>
+      <label class="field"><span>名稱</span><input id="e-name" value="${esc(p.name || '')}" maxlength="40"></label>
+      <div class="grid2"><label class="field"><span>${p.category === 'canele' ? '單一口味禮盒價格（每盒 6 顆）' : '價格'}</span><input id="e-price" type="number" inputmode="numeric" value="${esc(p.price || '')}"></label>
+        <label class="field"><span>單位</span><input id="e-unit" value="${esc(p.unit || '')}" maxlength="4"></label></div>
+      <label class="field"><span>說明（選填，顯示在加入購物車的視窗）</span><textarea id="e-desc" maxlength="300">${esc(p.desc || '')}</textarea></label>
+      <label class="field"><span>排序（數字小的排前面）</span><input id="e-sort" type="number" value="${esc(p.sort ?? 100)}"></label>
+      <div class="row" style="gap:16px;margin-bottom:14px"><label class="tg">上架<input type="checkbox" id="e-active" ${p.active ? 'checked' : ''}></label><label class="tg red">售完<input type="checkbox" id="e-sold" ${p.soldOut ? 'checked' : ''}></label></div>
+      <button class="btn block" id="e-save">儲存</button>
+      ${p.isNew ? '' : '<button class="btn ghost block" id="e-del" style="margin-top:10px;color:var(--red)">刪除這個商品</button>'}`);
+    let photo = p.photo;
+    el.querySelector('#e-file').onchange = async (e) => {
+      const f = e.target.files[0]; if (!f) return;
+      NTC.loading(true, '上傳照片…');
+      try { const dataUrl = await shrink(f); el.querySelector('#e-img').src = dataUrl; photo = (await NTC.api('/admin/images', { method: 'POST', body: { dataUrl } })).url; NTC.toast('照片已上傳'); }
+      catch (err) { NTC.toast(err.message); } finally { NTC.loading(false); }
+    };
+    el.querySelector('#e-save').onclick = async () => {
+      const name = el.querySelector('#e-name').value.trim();
+      const id = p.id || `${p.category}-${Date.now().toString(36)}`;
+      const body = { ...p, id, name, price: +el.querySelector('#e-price').value, unit: el.querySelector('#e-unit').value.trim(), desc: el.querySelector('#e-desc').value.trim(),
+        sort: +el.querySelector('#e-sort').value, active: el.querySelector('#e-active').checked, soldOut: el.querySelector('#e-sold').checked, photo };
+      if (photo !== p.photo) body.card = null; // a new photo replaces the designed card
+      delete body.isNew;
+      NTC.loading(true, '儲存中…');
+      try { const r = await NTC.api(`/admin/products/${id}`, { method: 'PUT', body }); const i = products.findIndex((x) => x.id === id); if (i >= 0) products[i] = r.product; else products.push(r.product); close(); renderProducts(); NTC.toast('已儲存'); }
+      catch (e) { NTC.toast(e.message, 3500); } finally { NTC.loading(false); }
+    };
+    const d = el.querySelector('#e-del');
+    if (d) d.onclick = async () => { if (!confirm(`確定刪除「${p.name}」？（只想暫時不賣的話，用「上架」開關就好）`)) return; await NTC.api(`/admin/products/${p.id}`, { method: 'DELETE' }); products = products.filter((x) => x.id !== p.id); close(); renderProducts(); };
+  }
+
+  // ================= 設定 =================
+  function renderSettings() {
+    const s = settings; const b = s.bank || {}; const c = s.canele;
+    const inviteUrl = new URL(`admin.html?invite=${s.adminInvite}`, location.href).href;
+    const liffInvite = NTC_CONFIG.liffId ? `https://liff.line.me/${NTC_CONFIG.liffId}/admin.html?invite=${s.adminInvite}` : '';
+    app.innerHTML = `
+      <section class="panel"><h2>接單日期</h2>
+        <div class="grid2"><label class="field"><span>最早可預約：今天＋幾天</span><input id="s-lead" type="number" min="0" value="${s.leadDays}"></label>
+          <label class="field"><span>最晚可預約：今天＋幾天</span><input id="s-max" type="number" min="1" value="${s.maxDays}"></label></div>
+        <label class="field"><span>每天最多接幾筆訂單（0＝不限）</span><input id="s-perday" type="number" min="0" value="${s.maxOrdersPerDay}"></label>
+        <p style="font-weight:700;margin:0 0 6px;font-size:13px;color:var(--ink2)">每週公休</p>
+        <div class="chips" id="s-week" style="margin-bottom:12px">${'日一二三四五六'.split('').map((d, i) => `<button type="button" class="chip ${s.closedWeekdays.includes(i) ? 'on' : ''}" data-d="${i}">週${d}</button>`).join('')}</div>
+        <p style="font-weight:700;margin:0 0 6px;font-size:13px;color:var(--ink2)">不接單的日期</p>
+        <div class="chips" id="s-blocked" style="margin-bottom:8px">${s.blockedDates.sort().map((d) => `<button type="button" class="tag-del" data-d="${d}">${d} ✕</button>`).join('') || '<span class="note">無</span>'}</div>
+        <div class="row"><input type="date" id="s-addday" style="flex:1;border:1.5px solid #e6d2c6;border-radius:12px;padding:10px"><button class="btn small" id="s-addbtn" type="button">加入</button></div>
+        <label class="field" style="margin-top:12px"><span>日期欄位的名稱</span><input id="s-datelabel" value="${esc(s.dateLabel)}" maxlength="20"></label></section>
+      <section class="panel"><h2>運費</h2>
+        <div id="s-ship">${s.shippingOptions.map((o, i) => `<div class="grid2" data-i="${i}"><label class="field"><span>配送方式</span><input class="sl" value="${esc(o.label)}"></label><label class="field"><span>運費</span><input class="sf" type="number" value="${o.fee}"></label></div>`).join('')}</div>
+        <label class="field"><span>滿多少免運（0＝不免運）</span><input id="s-free" type="number" min="0" value="${s.freeShippingOver}"></label></section>
+      <section class="panel"><h2>付款方式</h2>
+        <label class="tg" style="display:flex;margin-bottom:8px">LINE Pay ${ready.linepay ? `<span class="flag ok">已串接（${ready.linepayEnv === 'production' ? '正式' : '測試'}）</span>` : '<span class="flag">尚未申請／串接</span>'}<span class="sp"></span><input type="checkbox" id="s-p-lp" ${s.payments.linepay ? 'checked' : ''}></label>
+        <label class="tg" style="display:flex;margin-bottom:8px">信用卡／ATM／超商（綠界） ${ready.ecpay ? `<span class="flag ${ready.ecpayEnv === 'production' ? 'ok' : ''}">${ready.ecpayEnv === 'production' ? '正式' : '測試環境（不會真的扣款）'}</span>` : '<span class="flag">尚未申請／串接</span>'}<span class="sp"></span><input type="checkbox" id="s-p-ec" ${s.payments.ecpay ? 'checked' : ''}></label>
+        <label class="tg" style="display:flex;margin-bottom:12px">銀行轉帳 ${b.account ? '' : '<span class="flag">要先填下面的帳號</span>'}<span class="sp"></span><input type="checkbox" id="s-p-tr" ${s.payments.transfer ? 'checked' : ''}></label>
+        <div class="grid2"><label class="field"><span>銀行名稱</span><input id="s-bname" value="${esc(b.name)}" placeholder="例如：國泰世華"></label><label class="field"><span>銀行代碼</span><input id="s-bcode" value="${esc(b.code)}" placeholder="例如：013" inputmode="numeric"></label></div>
+        <label class="field"><span>帳號</span><input id="s-bacc" value="${esc(b.account)}" inputmode="numeric"></label>
+        <div class="grid2"><label class="field"><span>戶名（選填）</span><input id="s-bholder" value="${esc(b.holder)}"></label><label class="field"><span>轉帳期限（天）</span><input id="s-tdays" type="number" min="1" value="${s.transferDays}"></label></div></section>
+      <section class="panel"><h2>可麗露禮盒規則</h2>
+        <div class="grid2"><label class="field"><span>綜合口味禮盒價格</span><input id="s-aprice" type="number" value="${c.assortedPrice}"></label><label class="field"><span>單一口味最少幾盒</span><input id="s-smin" type="number" min="1" value="${c.singleMinBoxes}"></label></div>
+        ${c.modes.map((m, i) => `<label class="field"><span>任選 ${m.flavors} 種（每種 ${m.each} 顆）最少幾盒</span><input class="s-mode" data-i="${i}" type="number" min="1" value="${m.minBoxes}"></label>`).join('')}</section>
+      <section class="panel"><h2>公告</h2><label class="field"><span>顯示在購物車最上面（選填）</span><textarea id="s-notice" maxlength="300" placeholder="例如：12/24–12/26 聖誕檔期已滿">${esc(s.notice)}</textarea></label></section>
+      <button class="btn block" id="s-save" style="margin-bottom:14px">儲存設定</button>
+      <section class="panel"><h2>管理員</h2>
+        ${(s.admins || []).map((a) => `<div class="row" style="padding:6px 0">${a.picture ? `<img src="${esc(a.picture)}" style="width:30px;height:30px;border-radius:50%" alt="">` : ''}<span class="sp">${esc(a.name)}</span><button class="tag-del" data-rm="${esc(a.sub)}">移除</button></div>`).join('')}
+        <p class="note" style="margin:10px 0 6px">把這個連結傳給要加入的人，用 LINE 打開一次就會變成管理員：</p>
+        <code>${esc(liffInvite || inviteUrl)}</code>
+        <div class="row" style="gap:8px;margin-top:8px"><button class="btn ghost small" id="s-copyinv" style="flex:1">複製邀請連結</button><button class="btn ghost small" id="s-rotate" style="flex:1">換一個新連結</button></div></section>`;
+    let week = [...s.closedWeekdays]; let blocked = [...s.blockedDates];
+    app.querySelectorAll('#s-week .chip').forEach((b) => (b.onclick = () => { const d = +b.dataset.d; week = week.includes(d) ? week.filter((x) => x !== d) : [...week, d]; b.classList.toggle('on'); }));
+    app.querySelectorAll('#s-blocked [data-d]').forEach((b) => (b.onclick = () => { blocked = blocked.filter((x) => x !== b.dataset.d); b.remove(); }));
+    $('#s-addbtn').onclick = () => { const v = $('#s-addday').value; if (v && !blocked.includes(v)) { blocked.push(v); $('#s-blocked').insertAdjacentHTML('beforeend', `<button type="button" class="tag-del" data-d="${v}">${v} ✕</button>`); $('#s-blocked .note')?.remove(); $('#s-blocked').lastElementChild.onclick = (e) => { blocked = blocked.filter((x) => x !== v); e.target.remove(); }; } };
+    const put = async (body, msg = '已儲存') => {
+      NTC.loading(true, '儲存中…');
+      try { settings = (await NTC.api('/admin/settings', { method: 'PUT', body })).settings; renderSettings(); NTC.toast(msg); }
+      catch (e) { NTC.toast(e.message, 3500); } finally { NTC.loading(false); }
+    };
+    $('#s-save').onclick = () => put({
+      leadDays: +$('#s-lead').value, maxDays: +$('#s-max').value, maxOrdersPerDay: +$('#s-perday').value, closedWeekdays: week, blockedDates: blocked,
+      dateLabel: $('#s-datelabel').value.trim() || '希望到貨日期',
+      shippingOptions: [...app.querySelectorAll('#s-ship [data-i]')].map((r, i) => ({ id: s.shippingOptions[i].id, label: r.querySelector('.sl').value.trim(), fee: +r.querySelector('.sf').value })),
+      freeShippingOver: +$('#s-free').value,
+      payments: { linepay: $('#s-p-lp').checked, ecpay: $('#s-p-ec').checked, transfer: $('#s-p-tr').checked },
+      bank: { name: $('#s-bname').value.trim(), code: $('#s-bcode').value.trim(), account: $('#s-bacc').value.trim(), holder: $('#s-bholder').value.trim() },
+      transferDays: +$('#s-tdays').value,
+      canele: { ...c, assortedPrice: +$('#s-aprice').value, singleMinBoxes: +$('#s-smin').value, modes: c.modes.map((m, i) => ({ ...m, minBoxes: +app.querySelector(`.s-mode[data-i="${i}"]`).value })) },
+      notice: $('#s-notice').value.trim(),
+    });
+    $('#s-copyinv').onclick = async () => { try { await navigator.clipboard.writeText(liffInvite || inviteUrl); NTC.toast('已複製'); } catch (e) { prompt('邀請連結', liffInvite || inviteUrl); } };
+    $('#s-rotate').onclick = () => { if (confirm('換新連結後，舊的邀請連結就失效（已經是管理員的人不受影響）。')) put({ rotateInvite: true }, '已換新連結'); };
+    app.querySelectorAll('[data-rm]').forEach((b) => (b.onclick = () => { if (confirm('移除這位管理員？')) put({ removeAdmins: [b.dataset.rm] }, '已移除'); }));
+  }
+
+  show();
+})();
+</script>
+</body>
+</html>

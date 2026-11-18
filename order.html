@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>訂單｜N.T Cookie × N.T Canelé</title>
+<meta name="theme-color" content="#f8ede7">
+<meta name="robots" content="noindex">
+<link rel="icon" href="assets/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<header class="topbar">
+  <a class="circle-btn" href="index.html" aria-label="回首頁"><svg viewBox="0 0 24 24"><path d="M4 11l8-7 8 7v9a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1z"/></svg></a>
+  <h1>訂單明細</h1>
+  <a class="circle-btn" href="orders.html" aria-label="我的訂單"><svg viewBox="0 0 24 24"><path d="M7 3h10a1 1 0 0 1 1 1v17l-3-2-3 2-3-2-3 2V4a1 1 0 0 1 1-1z"/><path d="M9 8h6M9 12h6"/></svg></a>
+</header>
+<main class="wrap" id="app"><div class="spinner"></div></main>
+<script src="js/config.js"></script>
+<script src="js/app.js"></script>
+<script>
+(async function () {
+  const { $, esc, money } = NTC;
+  const q = new URLSearchParams(location.search);
+  const no = q.get('no'); const t = q.get('t') || '';
+  const app = $('#app');
+  let o; let cat;
+  const load = async () => { const r = await NTC.api(`/orders/${encodeURIComponent(no)}?t=${encodeURIComponent(t)}`); o = r.order; };
+  try { [cat] = await Promise.all([NTC.catalog(), load()]); }
+  catch (e) { app.innerHTML = `<div class="empty"><p style="font:900 18px var(--serif)">${esc(e.message)}</p><a class="btn small" href="orders.html">我的訂單</a></div>`; return; }
+
+  const pay = q.get('pay');
+  const copyBtn = (v) => `<button class="copy" data-copy="${esc(v)}">複製</button>`;
+  const PAY_NAMES = { linepay: 'LINE Pay', ecpay: '信用卡／ATM／超商', transfer: '銀行轉帳' };
+
+  function payBlock() {
+    const p = o.payment;
+    if (o.status === 'cancelled') return '<p class="note">這筆訂單已取消。如有疑問請聯絡我們。</p>';
+    if (p.status === 'paid') return `<p style="font:900 18px var(--serif);color:var(--ok);margin:0">✓ 已付款</p><p class="note" style="margin:6px 0 0">${esc(p.label)}・${new Date(p.paidAt).toLocaleString('zh-TW', { hour12: false })}</p>`;
+    let h = '';
+    if (pay === 'fail') h += '<p class="err" style="margin:0 0 10px">付款沒有成功，可以再試一次或換其他付款方式。</p>';
+    if (pay === 'cancel') h += '<p class="err" style="margin:0 0 10px">付款已取消，訂單還保留著，可以再付款。</p>';
+    if (p.method === 'transfer') {
+      const b = o.bank || {};
+      h += `<p class="note" style="margin:0 0 10px">請在 <b>${esc(p.deadline || '')}</b> 前轉帳 <b style="color:var(--red)">${money(o.total)}</b> 到以下帳戶，轉好後填帳號末五碼：</p>
+        <dl class="kv"><dt>銀行</dt><dd>${esc(b.name)}${b.code ? `（${esc(b.code)}）` : ''}</dd>
+        <dt>帳號</dt><dd>${esc(b.account)} ${copyBtn(b.account)}</dd>${b.holder ? `<dt>戶名</dt><dd>${esc(b.holder)}</dd>` : ''}
+        <dt>金額</dt><dd>${money(o.total)} ${copyBtn(o.total)}</dd></dl>
+        ${p.last5 ? `<p class="note" style="margin:12px 0 0">✓ 已回報末五碼 <b>${esc(p.last5)}</b>，店家對帳後會更新為「已付款」。</p>` : ''}
+        <div class="row" style="margin-top:12px"><input id="last5" inputmode="numeric" maxlength="5" placeholder="帳號末五碼" style="flex:1;border:1.5px solid #e6d2c6;border-radius:12px;padding:12px;font-size:16px" value="${esc(p.last5 || '')}">
+        <button class="btn small" id="sendLast5">${p.last5 ? '更新' : '回報已轉帳'}</button></div>`;
+    } else if (p.method === 'ecpay' && p.info) {
+      const i = p.info;
+      h += i.kind === 'atm'
+        ? `<p class="note" style="margin:0 0 10px">請用 ATM／網銀轉帳到以下虛擬帳號：</p><dl class="kv"><dt>銀行代碼</dt><dd>${esc(i.bankCode)}</dd><dt>虛擬帳號</dt><dd>${esc(i.account)} ${copyBtn(i.account)}</dd><dt>金額</dt><dd>${money(o.total)}</dd><dt>期限</dt><dd>${esc(i.expire)}</dd></dl>`
+        : `<p class="note" style="margin:0 0 10px">請到超商機台輸入繳費代碼付款：</p><dl class="kv"><dt>繳費代碼</dt><dd>${esc(i.code)} ${copyBtn(i.code)}</dd><dt>金額</dt><dd>${money(o.total)}</dd><dt>期限</dt><dd>${esc(i.expire)}</dd></dl>`;
+      h += '<p class="note" style="margin:10px 0 0">付款完成後這裡會自動變成「已付款」。</p>';
+    } else {
+      h += `<p class="note" style="margin:0 0 10px">這筆訂單還沒付款（${esc(PAY_NAMES[p.method] || '')}）。</p><button class="btn block" id="payNow">前往付款・${money(o.total)}</button>`;
+    }
+    const others = Object.entries(cat.settings.payments).filter(([k, on]) => on && k !== p.method);
+    if (others.length) h += `<div style="margin-top:12px"><p class="note" style="margin:0 0 6px">或改用：</p><div class="chips">${others.map(([k]) => `<button class="chip switch" data-k="${k}">${PAY_NAMES[k]}</button>`).join('')}</div></div>`;
+    return h;
+  }
+
+  function render() {
+    const fresh = q.get('new') === '1' || pay === 'ok';
+    app.innerHTML = `
+      ${fresh && o.payment.status === 'paid' ? '<div class="panel" style="text-align:center;background:#f3faf4"><p style="font:900 22px var(--serif);margin:4px 0">付款成功，謝謝您 ♡</p><p class="note" style="margin:0">我們會依日期為您手作，出貨時會再通知。</p></div>'
+        : fresh ? '<div class="panel" style="text-align:center"><p style="font:900 22px var(--serif);margin:4px 0">訂單已送出 ♡</p><p class="note" style="margin:0">完成付款後就會開始安排製作。</p></div>' : ''}
+      <section class="panel">
+        <div class="row"><b style="font:900 18px var(--serif);letter-spacing:.04em">${esc(o.orderNo)}</b><span class="sp"></span><span class="status-pill ${esc(o.status)}">${esc(o.statusLabel)}</span></div>
+        <p class="note" style="margin:6px 0 0">下單時間 ${new Date(o.createdAt).toLocaleString('zh-TW', { hour12: false })}</p>
+        ${o.adminMessage ? `<p style="margin:10px 0 0;padding:10px 12px;background:#fff6ec;border-radius:12px;font-size:14px">店家留言：${esc(o.adminMessage)}</p>` : ''}
+      </section>
+      <section class="panel"><h2>付款</h2>${payBlock()}</section>
+      <section class="panel"><h2>商品</h2>
+        ${o.lines.map((l) => `<div class="line-item"><div class="info"><div class="nm">${esc(l.name)} × ${l.qty}</div>${l.detail ? `<div class="dt">${esc(l.detail)}</div>` : ''}</div><div class="pr">${money(l.subtotal)}</div></div>`).join('')}
+        <div class="totals" style="margin-top:6px">
+          <div class="row"><span>商品小計</span><span class="sp"></span><span>${money(o.subtotal)}</span></div>
+          <div class="row"><span>運費（${esc(o.shipping.label)}）</span><span class="sp"></span><span>${o.shipping.fee ? money(o.shipping.fee) : '免運'}</span></div>
+          <div class="row"><b>合計</b><span class="sp"></span><span class="grand">${money(o.total)}</span></div></div>
+      </section>
+      <section class="panel"><h2>收件</h2>
+        <dl class="kv"><dt>日期</dt><dd>${NTC.fmtDate(o.date)}</dd><dt>收件人</dt><dd>${esc(o.contact.name)}</dd><dt>手機</dt><dd>${esc(o.contact.phone)}</dd><dt>地址</dt><dd>${esc(o.contact.address)}</dd>${o.note ? `<dt>留言</dt><dd style="font-weight:500;white-space:pre-wrap">${esc(o.note)}</dd>` : ''}</dl>
+      </section>
+      <div class="row" style="gap:10px"><a class="btn ghost block" href="${NTC.chatUrl(`您好，我想詢問訂單 ${o.orderNo}`)}">聯絡店家</a><a class="btn block" href="index.html">繼續逛逛</a></div>`;
+    app.querySelectorAll('[data-copy]').forEach((b) => (b.onclick = async () => { try { await navigator.clipboard.writeText(b.dataset.copy); NTC.toast('已複製'); } catch (e) { NTC.toast(b.dataset.copy); } }));
+    const s5 = $('#sendLast5');
+    if (s5) s5.onclick = async () => {
+      const v = $('#last5').value.trim();
+      if (!/^\d{5}$/.test(v)) { NTC.toast('請填 5 個數字'); return; }
+      NTC.loading(true); try { o = (await NTC.api(`/orders/${o.orderNo}/transfer`, { method: 'POST', body: { t, last5: v } })).order; render(); NTC.toast('已回報，謝謝您'); } catch (e) { NTC.toast(e.message); } finally { NTC.loading(false); }
+    };
+    const go = async (method) => {
+      NTC.loading(true, '前往付款…');
+      try {
+        const { next } = await NTC.api(`/orders/${o.orderNo}/pay`, { method: 'POST', body: { t, method, returnBase: location.href } });
+        if (next.type === 'redirect') { location.href = next.url; return; }
+        if (next.type === 'form') {
+          const f = document.createElement('form'); f.method = 'POST'; f.action = next.action;
+          Object.entries(next.fields).forEach(([k, v]) => { const i = document.createElement('input'); i.type = 'hidden'; i.name = k; i.value = v; f.appendChild(i); });
+          document.body.appendChild(f); f.submit(); return;
+        }
+        await load(); NTC.loading(false); render();
+      } catch (e) { NTC.loading(false); NTC.toast(e.message, 3500); }
+    };
+    const pn = $('#payNow'); if (pn) pn.onclick = () => go(o.payment.method);
+    app.querySelectorAll('.switch').forEach((b) => (b.onclick = () => go(b.dataset.k)));
+  }
+  render();
+  // card / LINE Pay results can land a moment after the redirect: re-check a few times
+  if (o.payment.status !== 'paid' && (pay === 'ok' || pay === 'number')) {
+    for (let i = 0; i < 5 && o.payment.status !== 'paid'; i++) { await new Promise((r) => setTimeout(r, 2000)); await load().catch(() => {}); }
+    render();
+  }
+})();
+</script>
+</body>
+</html>

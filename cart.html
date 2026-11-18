@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>購物車・結帳｜N.T Cookie × N.T Canelé</title>
+<meta name="theme-color" content="#f8ede7">
+<meta name="robots" content="noindex">
+<link rel="icon" href="assets/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="circle-btn" id="back" aria-label="返回"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
+  <h1>購物車・結帳</h1>
+  <a class="circle-btn" href="orders.html" aria-label="我的訂單"><svg viewBox="0 0 24 24"><path d="M7 3h10a1 1 0 0 1 1 1v17l-3-2-3 2-3-2-3 2V4a1 1 0 0 1 1-1z"/><path d="M9 8h6M9 12h6"/></svg></a>
+</header>
+<main class="wrap" id="app"><div class="spinner"></div></main>
+
+<script src="js/config.js"></script>
+<script src="js/app.js"></script>
+<script src="js/shop.js"></script>
+<script>
+(async function () {
+  const { $, esc, money, asset } = NTC;
+  const app = $('#app');
+  $('#back').onclick = NTC.back;
+  let cat;
+  try { cat = await NTC.catalog(); } catch (e) { app.innerHTML = `<p class="err">${esc(e.message)}</p>`; return; }
+  const S = cat.settings;
+  const form = { date: NTC.date.get(), shippingId: (S.shippingOptions[0] || {}).id, payment: '', note: '', contact: { name: '', phone: '', address: '' } };
+  const saved = (() => { try { return JSON.parse(localStorage.getItem('ntc-contact') || 'null'); } catch (e) { return null; } })();
+  if (saved) form.contact = { ...form.contact, ...saved };
+  const pays = [
+    ['linepay', 'LINE Pay', '用 LINE Pay 付款（可綁信用卡、LINE Points 折抵）'],
+    ['ecpay', '信用卡／ATM 轉帳／超商代碼', '由綠界科技安全付款'],
+    ['transfer', '銀行轉帳（匯款）', '下單後顯示匯款帳號，轉帳後回報末五碼'],
+  ].filter(([k]) => S.payments[k]);
+  form.payment = pays.length ? pays[0][0] : '';
+
+  let me = null; // LINE member
+  const loadMe = async () => {
+    if (!(await NTC.loggedIn())) return;
+    try {
+      const r = await NTC.api('/me'); me = r.user;
+      if (r.contact && !saved) form.contact = { ...form.contact, ...r.contact };
+      if (!form.contact.name && me.name) form.contact.name = me.name;
+    } catch (e) { /* token expired etc. */ }
+  };
+  await loadMe();
+
+  function render() {
+    const items = NTC.cart.items();
+    if (!items.length) {
+      app.innerHTML = `<div class="empty"><img src="assets/v2/01-canele/photo-01-original.webp" alt=""><p style="font:900 18px var(--serif)">購物車是空的</p>
+        <p class="note">逛逛我們的手作甜點吧 ♡</p><div class="row" style="justify-content:center;margin-top:16px;gap:10px">
+        <a class="btn small" href="canele.html">可麗露專區</a><a class="btn small ghost" href="meringue.html">馬林糖一口酥</a></div></div>`;
+      return;
+    }
+    const pc = NTC.priceCart(items, cat);
+    const ship = S.shippingOptions.find((o) => o.id === form.shippingId) || S.shippingOptions[0];
+    const fee = ship ? (S.freeShippingOver > 0 && pc.subtotal >= S.freeShippingOver ? 0 : ship.fee) : 0;
+    const total = pc.subtotal + fee;
+    const dateOk = NTC.dateRules(S, cat.fullDates).ok(form.date);
+    app.innerHTML = `
+      ${S.notice ? `<div class="panel note" style="background:#fff6ec">${esc(S.notice)}</div>` : ''}
+      <section class="panel"><h2><span class="n">1</span>購物車</h2>
+        <div id="lines">${pc.lines.map((l) => `
+          <div class="line-item" data-i="${l.idx}">
+            <img class="th" src="${esc(asset(l.photo))}" alt="">
+            <div class="info"><div class="nm">${esc(l.name)}</div>${l.detail ? `<div class="dt">${esc(l.detail)}</div>` : ''}
+              <div class="row" style="margin-top:8px"><div class="st"></div><span class="sp"></span><span class="pr">${money(l.subtotal)}</span></div>
+              ${l.error ? `<p class="err">${esc(l.error)}</p>` : ''}
+              <button class="rm" type="button">移除</button></div>
+          </div>`).join('')}</div>
+        <div class="row" style="margin-top:6px;gap:8px"><a class="btn small ghost" href="canele.html">＋ 可麗露</a><a class="btn small ghost" href="meringue.html">＋ 馬林糖</a></div>
+      </section>
+
+      <section class="panel"><h2><span class="n">2</span>${esc(S.dateLabel || '日期')}</h2>
+        <p class="note" style="margin:-4px 0 10px">手工製作，最早可預約 ${NTC.fmtDate(NTC.dateRules(S).min)}。${form.date && dateOk ? `已選 <b>${NTC.fmtDate(form.date)}</b>` : '請選擇日期'}</p>
+        <div id="cal"></div>
+      </section>
+
+      <section class="panel"><h2><span class="n">3</span>收件資料</h2>
+        <div id="member" style="margin:-2px 0 12px">${me
+          ? `<div class="who">${me.picture ? `<img src="${esc(me.picture)}" alt="">` : ''}<span>已用 LINE「${esc(me.name)}」下單，資料會記住，下次不用再填</span></div>`
+          : `<button class="btn line block" id="lineLogin" type="button">用 LINE 登入・自動帶入資料</button><p class="note" style="margin:8px 0 0">不登入也可以直接填寫下單。</p>`}</div>
+        <label class="field"><span>收件人姓名</span><input id="f-name" autocomplete="name" value="${esc(form.contact.name)}" maxlength="40"></label>
+        <label class="field"><span>手機</span><input id="f-phone" type="tel" inputmode="tel" autocomplete="tel" value="${esc(form.contact.phone)}" maxlength="20" placeholder="09xx-xxx-xxx"></label>
+        <label class="field"><span>收件地址</span><input id="f-addr" autocomplete="street-address" value="${esc(form.contact.address)}" maxlength="160" placeholder="縣市＋區＋路名門牌"></label>
+        <div style="margin-top:4px">${S.shippingOptions.map((o) => `<button type="button" class="opt ship ${o.id === form.shippingId ? 'on' : ''}" data-id="${esc(o.id)}"><span class="dot"></span><span class="t">${esc(o.label)}${S.freeShippingOver > 0 ? `<small>滿 ${money(S.freeShippingOver)} 免運</small>` : ''}</span><span class="r">${o.fee ? money(o.fee) : '免運'}</span></button>`).join('')}</div>
+      </section>
+
+      <section class="panel"><h2><span class="n">4</span>留言給店家</h2>
+        <label class="field" style="margin:0"><span class="sr-only">留言</span><textarea id="f-note" maxlength="500" placeholder="例如：送禮用、想放卡片、收件時段、其他需求…">${esc(form.note)}</textarea></label>
+      </section>
+
+      <section class="panel"><h2><span class="n">5</span>付款方式</h2>
+        ${pays.length ? pays.map(([k, t, d]) => `<button type="button" class="opt pay ${k === form.payment ? 'on' : ''}" data-k="${k}"><span class="dot"></span><span class="t">${t}<small>${d}</small></span></button>`).join('')
+          : '<p class="note">線上付款準備中，請先用 LINE 聯絡我們下單 ♡</p>'}
+      </section>
+
+      <section class="panel totals">
+        <div class="row"><span>商品小計</span><span class="sp"></span><span>${money(pc.subtotal)}</span></div>
+        <div class="row"><span>運費</span><span class="sp"></span><span>${fee ? money(fee) : '免運'}</span></div>
+        <div class="row" style="border-top:1px dashed #ead7cc;margin-top:6px;padding-top:10px"><b>合計</b><span class="sp"></span><span class="grand">${money(total)}</span></div>
+        <p class="err" id="formErr" hidden></p>
+        <button class="btn block" id="submit" style="margin-top:12px" ${pays.length ? '' : 'disabled'}>確認下單・${money(total)}</button>
+        <p class="note" style="margin:10px 0 0;text-align:center">${NTC.inLine() ? '下單後會在聊天室留一則訂單摘要給店家' : '下單後可在「我的訂單」查看進度'}</p>
+      </section>`;
+
+    app.querySelectorAll('.line-item').forEach((row) => {
+      const i = +row.dataset.i; const l = pc.lines.find((x) => x.idx === i);
+      NTC.stepper(row.querySelector('.st'), { value: l.qty, min: Math.min(l.min, l.qty), onChange: (v) => { NTC.cart.setQty(i, v); keep(); render(); } });
+      row.querySelector('.st').classList.add('sm');
+      row.querySelector('.rm').onclick = () => { NTC.cart.remove(i); keep(); render(); };
+    });
+    NTC.calendar($('#cal'), { settings: S, fullDates: cat.fullDates, value: form.date, onChange: (d) => { form.date = d; NTC.date.set(d); keep(); render(); } });
+    app.querySelectorAll('.opt.ship').forEach((b) => (b.onclick = () => { keep(); form.shippingId = b.dataset.id; render(); }));
+    app.querySelectorAll('.opt.pay').forEach((b) => (b.onclick = () => { keep(); form.payment = b.dataset.k; render(); }));
+    const ll = $('#lineLogin'); if (ll) ll.onclick = () => { keep(); persist(); NTC.login(); };
+    $('#submit').onclick = () => submit(pc);
+  }
+  // keep what was typed when the page re-renders
+  function keep() {
+    if (!$('#f-name')) return;
+    form.contact = { name: $('#f-name').value.trim(), phone: $('#f-phone').value.trim(), address: $('#f-addr').value.trim() };
+    form.note = $('#f-note').value;
+  }
+  function persist() { try { localStorage.setItem('ntc-contact', JSON.stringify(form.contact)); } catch (e) { /* ignore */ } }
+  function fail(msg) { const e = $('#formErr'); e.textContent = msg; e.hidden = false; e.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
+
+  async function submit(pc) {
+    keep();
+    if (!pc.valid) return fail(pc.lines.find((l) => l.error)?.error || '購物車有問題，請檢查');
+    if (!NTC.dateRules(S, cat.fullDates).ok(form.date)) return fail(`請選擇${S.dateLabel || '日期'}`);
+    if (!form.contact.name) return fail('請填收件人姓名');
+    if (!/^[0-9+\-() ]{8,20}$/.test(form.contact.phone)) return fail('請填正確的手機號碼');
+    if (!form.contact.address) return fail('請填收件地址');
+    if (!form.payment) return fail('請選擇付款方式');
+    persist();
+    NTC.loading(true, '送出訂單中…');
+    try {
+      const r = await NTC.api('/orders', { method: 'POST', body: {
+        items: NTC.cart.items(), date: form.date, shippingId: form.shippingId, contact: form.contact, note: form.note,
+        payment: form.payment, returnBase: location.href, inLine: false,
+      } });
+      // remember the order in this browser (guests find it again from 我的訂單)
+      try { const list = JSON.parse(localStorage.getItem('ntc-orders') || '[]'); list.unshift({ no: r.orderNo, t: r.token, total: r.total, at: Date.now() }); localStorage.setItem('ntc-orders', JSON.stringify(list.slice(0, 30))); } catch (e) { /* ignore */ }
+      NTC.cart.clear(); NTC.date.set('');
+      if (NTC.inLine() && window.liff.sendMessages) { await window.liff.sendMessages([{ type: 'text', text: r.summary }]).catch(() => {}); }
+      const n = r.next;
+      if (n.type === 'redirect') { NTC.loading(true, '前往 LINE Pay…'); location.href = n.url; return; }
+      if (n.type === 'form') {
+        NTC.loading(true, '前往付款頁…');
+        const f = document.createElement('form'); f.method = 'POST'; f.action = n.action;
+        Object.entries(n.fields).forEach(([k, v]) => { const i = document.createElement('input'); i.type = 'hidden'; i.name = k; i.value = v; f.appendChild(i); });
+        document.body.appendChild(f); f.submit(); return;
+      }
+      location.href = n.url.replace(/^.*\/(order\.html.*)$/, '$1') + '&new=1';
+    } catch (e) { NTC.loading(false); fail(e.message); }
+  }
+  render();
+  document.addEventListener('ntc:cart', () => { /* other tab changed the cart */ });
+})();
+</script>
+</body>
+</html>
