@@ -99,7 +99,7 @@
 
       <section class="panel"><h2><span class="n">5</span>付款方式</h2>
         ${pays.length ? pays.map(([k, t, d]) => `<button type="button" class="opt pay ${k === form.payment ? 'on' : ''}" data-k="${k}"><span class="dot"></span><span class="t">${t}<small>${d}</small></span></button>`).join('')
-          : '<p class="note">線上付款準備中，請先用 LINE 聯絡我們下單 ♡</p>'}
+          : '<p class="note" style="margin:0">線上付款準備中 ♡ 請按下面的按鈕，把這張訂單用 LINE 傳給我們，確認後會告訴您付款方式。</p>'}
       </section>
 
       <section class="panel totals">
@@ -107,8 +107,10 @@
         <div class="row"><span>運費</span><span class="sp"></span><span>${fee ? money(fee) : '免運'}</span></div>
         <div class="row" style="border-top:1px dashed #ead7cc;margin-top:6px;padding-top:10px"><b>合計</b><span class="sp"></span><span class="grand">${money(total)}</span></div>
         <p class="err" id="formErr" hidden></p>
-        <button class="btn block" id="submit" style="margin-top:12px" ${pays.length ? '' : 'disabled'}>確認下單・${money(total)}</button>
-        <p class="note" style="margin:10px 0 0;text-align:center">${NTC.inLine() ? '下單後會在聊天室留一則訂單摘要給店家' : '下單後可在「我的訂單」查看進度'}</p>
+        ${pays.length
+          ? `<button class="btn block" id="submit" style="margin-top:12px">確認下單・${money(total)}</button>
+             <p class="note" style="margin:10px 0 0;text-align:center">${NTC.inLine() ? '下單後會在聊天室留一則訂單摘要給店家' : '下單後可在「我的訂單」查看進度'}</p>`
+          : `<button class="btn line block" id="chatOrder" style="margin-top:12px">用 LINE 傳訂單給店家・${money(total)}</button>`}
       </section>`;
 
     app.querySelectorAll('.line-item').forEach((row) => {
@@ -121,7 +123,8 @@
     app.querySelectorAll('.opt.ship').forEach((b) => (b.onclick = () => { keep(); form.shippingId = b.dataset.id; render(); }));
     app.querySelectorAll('.opt.pay').forEach((b) => (b.onclick = () => { keep(); form.payment = b.dataset.k; render(); }));
     const ll = $('#lineLogin'); if (ll) ll.onclick = () => { keep(); persist(); NTC.login(); };
-    $('#submit').onclick = () => submit(pc);
+    if ($('#submit')) $('#submit').onclick = () => submit(pc);
+    if ($('#chatOrder')) $('#chatOrder').onclick = () => chatOrder(pc, fee, total);
   }
   // keep what was typed when the page re-renders
   function keep() {
@@ -132,6 +135,29 @@
   function persist() { try { localStorage.setItem('ntc-contact', JSON.stringify(form.contact)); } catch (e) { /* ignore */ } }
   function fail(msg) { const e = $('#formErr'); e.textContent = msg; e.hidden = false; e.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
 
+  function checkForm(pc) {
+    if (!pc.valid) return pc.lines.find((l) => l.error)?.error || '購物車有問題，請檢查';
+    if (!NTC.dateRules(S, cat.fullDates).ok(form.date)) return `請選擇${S.dateLabel || '日期'}`;
+    if (!form.contact.name) return '請填收件人姓名';
+    if (!/^[0-9+\-() ]{8,20}$/.test(form.contact.phone)) return '請填正確的手機號碼';
+    if (!form.contact.address) return '請填收件地址';
+    return '';
+  }
+  // while online payment isn't open yet: send the whole order as a LINE message to the shop
+  function chatOrder(pc, fee, total) {
+    keep();
+    const err = checkForm(pc); if (err) return fail(err);
+    persist();
+    const text = ['您好，我想訂購：', ...pc.lines.map((l) => `・${l.name} ×${l.qty}${l.it.type === 'canele-assorted' ? `（${l.detail}）` : ''}　${money(l.subtotal)}`),
+      `運費 ${fee ? money(fee) : '免運'}／合計 ${money(total)}`, `${S.dateLabel || '日期'}：${NTC.fmtDate(form.date)}`,
+      `收件人：${form.contact.name} ${form.contact.phone}`, `地址：${form.contact.address}`, form.note ? `留言：${form.note}` : ''].filter(Boolean).join('\n');
+    if (NTC.inLine() && window.liff.sendMessages) {
+      window.liff.sendMessages([{ type: 'text', text }]).then(() => { NTC.toast('已傳到聊天室，我們會盡快回覆您 ♡', 3500); setTimeout(() => window.liff.closeWindow(), 1500); })
+        .catch(() => { location.href = NTC.chatUrl(text); });
+      return;
+    }
+    location.href = NTC.chatUrl(text);
+  }
   async function submit(pc) {
     keep();
     if (!pc.valid) return fail(pc.lines.find((l) => l.error)?.error || '購物車有問題，請檢查');

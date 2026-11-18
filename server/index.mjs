@@ -86,6 +86,7 @@ const DEFAULT_SETTINGS = {
     ],
   },
   notice: '',
+  testMode: true, // 測試模式：只有管理員能線上結帳；客人看到「用 LINE 傳訂單給店家」
   admins: [],
 };
 
@@ -100,16 +101,19 @@ async function getSettings() {
 const linepayReady = () => !!(env.LINEPAY_CHANNEL_ID && env.LINEPAY_CHANNEL_SECRET);
 const ecpayReady = () => !!(env.ECPAY_MERCHANT_ID && env.ECPAY_HASH_KEY && env.ECPAY_HASH_IV);
 
-function publicSettings(s) {
+const isAdminOf = (s, u) => !!(u && (s.admins || []).some((a) => a.sub === u.sub));
+function publicSettings(s, admin = false) {
   const bankReady = !!(s.bank?.account);
+  const open = !s.testMode || admin; // while testing, only admins can pay online
   return {
+    testMode: !!s.testMode,
     leadDays: s.leadDays, maxDays: s.maxDays, closedWeekdays: s.closedWeekdays, blockedDates: s.blockedDates,
     maxOrdersPerDay: s.maxOrdersPerDay, dateLabel: s.dateLabel,
     shippingOptions: s.shippingOptions, freeShippingOver: s.freeShippingOver,
     payments: {
-      linepay: !!(s.payments?.linepay && linepayReady()),
-      ecpay: !!(s.payments?.ecpay && ecpayReady()),
-      transfer: !!(s.payments?.transfer && bankReady),
+      linepay: !!(open && s.payments?.linepay && linepayReady()),
+      ecpay: !!(open && s.payments?.ecpay && ecpayReady()),
+      transfer: !!(open && s.payments?.transfer && bankReady),
     },
     canele: s.canele, notice: s.notice, today: twDate(),
   };
@@ -317,7 +321,7 @@ async function createOrder(event) {
   if (!/^[0-9+\-() ]{8,20}$/.test(contact.phone)) throw bad('請填正確的手機號碼');
   if (!contact.address) throw bad('請填收件地址');
   const method = b.payment;
-  const pub = publicSettings(settings);
+  const pub = publicSettings(settings, isAdminOf(settings, user));
   if (!pub.payments[method]) throw bad('這個付款方式目前不能用');
   await takeDateSlot(b.date, settings);
   const orderNo = await nextOrderNo();
@@ -498,10 +502,10 @@ export async function handler(event) {
   try {
     // ---- public
     if (method === 'GET' && path === '/catalog') {
-      const [settings, products] = await Promise.all([getSettings(), listProducts()]);
+      const [settings, products, viewer] = await Promise.all([getSettings(), listProducts(), getUser(event).catch(() => null)]);
       return json(200, {
         products: products.filter((p) => p.active),
-        settings: publicSettings(settings),
+        settings: publicSettings(settings, isAdminOf(settings, viewer)),
         fullDates: await fullDates(settings),
       }, { 'cache-control': 'no-cache' });
     }
@@ -527,7 +531,8 @@ export async function handler(event) {
         if (o.payment?.status === 'paid' || o.status === 'cancelled') throw bad('這筆訂單不需要付款');
         const settings = await getSettings();
         const m = b.method || o.payment.method;
-        if (!publicSettings(settings).payments[m]) throw bad('這個付款方式目前不能用');
+        const viewer = await getUser(event).catch(() => null);
+        if (!publicSettings(settings, isAdminOf(settings, viewer)).payments[m]) throw bad('這個付款方式目前不能用');
         const payment = { ...o.payment, method: m, deadline: m === 'transfer' ? addDays(twDate(), int(settings.transferDays, 2)) : o.payment.deadline };
         const n = await setOrder(o.orderNo, { payment }, m !== o.payment.method ? `改用 ${PAY_LABEL[m]} 付款` : '重新付款');
         return json(200, { next: await startPayment(n, b.returnBase, b.inLine) });
@@ -619,7 +624,7 @@ export async function handler(event) {
       }
       if (method === 'PUT' && path === '/admin/settings') {
         const b = parseBody(event);
-        const keys = ['leadDays', 'maxDays', 'maxOrdersPerDay', 'closedWeekdays', 'blockedDates', 'dateLabel', 'shippingOptions', 'freeShippingOver', 'payments', 'bank', 'transferDays', 'canele', 'notice'];
+        const keys = ['leadDays', 'maxDays', 'maxOrdersPerDay', 'closedWeekdays', 'blockedDates', 'dateLabel', 'shippingOptions', 'freeShippingOver', 'payments', 'bank', 'transferDays', 'canele', 'notice', 'testMode'];
         const next = { ...settings, ...pick(b, keys), pk: 'SETTINGS', sk: 'main' };
         if (b.rotateInvite) next.adminInvite = randAlnum(10);
         if (Array.isArray(b.removeAdmins)) next.admins = (next.admins || []).filter((a) => !b.removeAdmins.includes(a.sub));
