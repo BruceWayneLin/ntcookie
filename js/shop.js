@@ -159,8 +159,7 @@
       ['reserve.html', '預約／訂購（選日期）'], ['cart.html', '購物車'], ['orders.html', '我的訂單'],
     ];
     const { el } = NTC.sheet(`<h2>選單</h2><div style="margin-top:12px">${links.map(([u, t]) => `<a class="opt" href="${u}" style="text-decoration:none"><span class="t">${t}</span><span class="r">›</span></a>`).join('')}
-      <a class="opt" href="${NTC.chatUrl('您好，我想詢問')}" style="text-decoration:none"><span class="t">聯絡客服（LINE 聊天）</span><span class="r">›</span></a></div>
-      ${NTC.isAdminHere() || NTC.adminToken() ? '<a class="opt" href="admin.html" style="text-decoration:none;margin-top:6px"><span class="t">店家後台</span><span class="r">›</span></a>' : ''}`);
+      <a class="opt" href="${NTC.chatUrl('您好，我想詢問')}" style="text-decoration:none"><span class="t">聯絡客服（LINE 聊天）</span><span class="r">›</span></a></div>`);
     return el;
   };
   NTC.back = () => { if (history.length > 1 && document.referrer && new URL(document.referrer).origin === location.origin) history.back(); else location.href = NTC.HOME; };
