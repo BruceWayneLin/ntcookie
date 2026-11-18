@@ -9,7 +9,7 @@
 <link rel="icon" href="assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css?v=1118s">
+<link rel="stylesheet" href="css/app.css?v=1118t">
 </head>
 <body>
 <header class="topbar">
@@ -18,8 +18,8 @@
   <a class="circle-btn" href="orders.html" aria-label="我的訂單"><svg viewBox="0 0 24 24"><path d="M7 3h10a1 1 0 0 1 1 1v17l-3-2-3 2-3-2-3 2V4a1 1 0 0 1 1-1z"/><path d="M9 8h6M9 12h6"/></svg></a>
 </header>
 <main class="wrap" id="app"><div class="spinner"></div></main>
-<script src="js/config.js?v=1118s"></script>
-<script src="js/app.js?v=1118s"></script>
+<script src="js/config.js?v=1118t"></script>
+<script src="js/app.js?v=1118t"></script>
 <script>
 (async function () {
   const { $, esc, money } = NTC;
@@ -37,7 +37,7 @@
 
   function payBlock() {
     const p = o.payment;
-    if (o.status === 'cancelled') return '<p class="note">這筆訂單已取消。如有疑問請聯絡我們。</p>';
+    if (o.status === 'cancelled') return `<p style="margin:0 0 6px;font-weight:700">這筆訂單已被店家取消。</p>${o.adminMessage ? '' : ''}<p class="note" style="margin:0 0 12px">如有任何問題，請聯絡客服。</p><a class="btn line block small" href="${NTC.chatUrl(`您好，我想詢問被取消的訂單 ${o.orderNo}`)}">聯絡客服</a>`;
     if (p.status === 'paid') return `<p style="font:900 18px var(--serif);color:var(--ok);margin:0">✓ 已付款</p><p class="note" style="margin:6px 0 0">${esc(p.label)}・${new Date(p.paidAt).toLocaleString('zh-TW', { hour12: false })}</p>`;
     let h = '';
     if (pay === 'fail') h += '<p class="err" style="margin:0 0 10px">付款沒有成功，可以再試一次或換其他付款方式。</p>';

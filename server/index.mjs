@@ -835,7 +835,7 @@ async function route(event) {
         const n = Object.keys(fields).length ? await setOrder(o.orderNo, fields, notes.join('；') || null) : o;
         if (fields.payment?.status === 'paid' && o.payment?.status !== 'paid') await pushTo(o.user?.sub, `您的訂單 ${o.orderNo} 已確認收到款項（付款成功）✓\n我們會依預約日期為您製作 ♡`).catch(() => {});
         const note = fields.adminMessage || o.adminMessage;
-        if (fields.status === 'cancelled') await pushTo(o.user?.sub, `很抱歉，您的訂單 ${o.orderNo} 已由店家取消。${note ? `\n店家說明：${note}` : ''}\n如有疑問，直接在這裡留言給我們 ♡`).catch(() => {});
+        if (fields.status === 'cancelled') await pushTo(o.user?.sub, `很抱歉，您的訂單 ${o.orderNo} 已由店家取消。${note ? `\n店家說明：${note}` : ''}\n如有任何問題，請聯絡客服：直接在這個聊天室留言即可 ♡`).catch(() => {});
         else if (fields.status && !['paid', 'reported'].includes(fields.status)) await pushTo(o.user?.sub, `您的訂單 ${o.orderNo} 狀態更新：${STATUS[fields.status]}${note ? `\n${note}` : ''}`).catch(() => {});
         return json(200, { order: adminOrder(n) });
       }

@@ -54,7 +54,7 @@ ok('after shipping, the auto-reply shows 已出貨 + the shop message', /已出�
 const o2 = (await api('POST', '/orders', { items: [{ type: 'product', productId: 'meringue-butter', qty: 1 }], date: ymd(10), contact: { name: '卡蘿', phone: '0912345678', address: '台北市' }, note: '', payment: 'transfer' }, CAROL + '|Carol')).json;
 sent.length = 0; await api('PATCH', `/admin/orders/${o2.orderNo}`, { status: 'cancelled', adminMessage: '那天檔期滿了' }, 'Uqa-admin|QA');
 const cx = sent.find((m) => m.kind === 'push' && m.body.to === CAROL)?.body.messages[0].text || '';
-ok('shop cancels → the LINE customer is told, with the shop\'s reason', /已由店家取消/.test(cx) && cx.includes(o2.orderNo) && /那天檔期滿了/.test(cx), cx);
+ok('shop cancels → the LINE customer is told, with the reason and 請聯絡客服', /已由店家取消/.test(cx) && cx.includes(o2.orderNo) && /那天檔期滿了/.test(cx) && /請聯絡客服/.test(cx), cx);
 const guest = (await api('POST', '/orders', { items: [{ type: 'product', productId: 'meringue-butter', qty: 1 }], date: ymd(10), contact: { name: 'G', phone: '0912000000', address: 'x' }, note: '', payment: 'transfer' })).json;
 sent.length = 0; await api('PATCH', `/admin/orders/${guest.orderNo}`, { status: 'cancelled' }, 'Uqa-admin|QA');
 ok('guest order (no LINE account) → no customer push attempted', !sent.some((m) => m.body.to !== process.env.OWNER_LINE_IDS), sent.map((m) => m.body.to));
