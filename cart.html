@@ -9,7 +9,7 @@
 <link rel="icon" href="assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css?v=1118q">
+<link rel="stylesheet" href="css/app.css?v=1118r">
 </head>
 <body>
 <header class="topbar">
@@ -19,9 +19,9 @@
 </header>
 <main class="wrap" id="app"><div class="spinner"></div></main>
 
-<script src="js/config.js?v=1118q"></script>
-<script src="js/app.js?v=1118q"></script>
-<script src="js/shop.js?v=1118q"></script>
+<script src="js/config.js?v=1118r"></script>
+<script src="js/app.js?v=1118r"></script>
+<script src="js/shop.js?v=1118r"></script>
 <script>
 (async function () {
   const { $, esc, money, asset } = NTC;
@@ -46,7 +46,6 @@
     try {
       const r = await NTC.api('/me'); me = r.user;
       if (r.contact && !saved) form.contact = { ...form.contact, ...r.contact };
-      if (!form.contact.name && me.name) form.contact.name = me.name;
     } catch (e) { /* token expired etc. */ }
   };
   await loadMe();
@@ -110,7 +109,8 @@
         <div id="member" style="margin:-2px 0 12px">${me
           ? `<div class="who">${me.picture ? `<img src="${esc(me.picture)}" alt="">` : ''}<span>已用 LINE「${esc(me.name)}」下單，資料會記住，下次不用再填</span></div>`
           : `<button class="btn line block" id="lineLogin" type="button">用 LINE 登入・自動帶入資料</button><p class="note" style="margin:8px 0 0">不登入也可以直接填寫下單。</p>`}</div>
-        <label class="field"><span>收件人姓名</span><input id="f-name" autocomplete="name" value="${esc(form.contact.name)}" maxlength="40"></label>
+        <label class="field"><span>收件人姓名（請填真實姓名）</span><input id="f-name" autocomplete="name" value="${esc(form.contact.name)}" maxlength="40" placeholder="例如：王小明">
+          <small class="note" style="display:block;margin-top:6px">黑貓送達時會核對收件人，請填<b>真實姓名</b>，不要用 LINE 暱稱，以免無人收件或被退回。</small></label>
         <label class="field"><span>手機</span><input id="f-phone" type="tel" inputmode="tel" autocomplete="tel" value="${esc(form.contact.phone)}" maxlength="20" placeholder="09xx-xxx-xxx"></label>
         <label class="field"><span>收件地址</span><input id="f-addr" autocomplete="street-address" value="${esc(form.contact.address)}" maxlength="160" placeholder="縣市＋區＋路名門牌"></label>
         <div class="totals" id="shipbox" style="margin-top:4px;padding:10px 12px;border-radius:12px;background:#fbf3ee">
