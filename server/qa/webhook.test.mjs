@@ -63,23 +63,21 @@ ok('shop cancels → the LINE customer is told, with the reason and 請聯絡客
 const guest = (await api('POST', '/orders', { items: [{ type: 'product', productId: 'meringue-butter', qty: 1 }], date: ymd(10), contact: { name: 'G', phone: '0912000000', address: 'x' }, note: '', payment: 'transfer' })).json;
 sent.length = 0; await api('PATCH', `/admin/orders/${guest.orderNo}`, { status: 'cancelled' }, 'Uqa-admin|QA');
 ok('guest order (no LINE account) → no customer push attempted', !sent.some((m) => m.body.to !== process.env.OWNER_LINE_IDS), sent.map((m) => m.body.to));
-// ---- daily morning digest
-const Q = (n) => api('POST', '/orders', { items: [{ type: 'product', productId: 'meringue-butter', qty: 1 }], date: ymd(n), contact: { name: '早安客' + n, phone: '0912345678', address: 'x' }, note: '', payment: 'transfer' }, 'Uqa-dg' + n + '|DG');
+// ---- daily morning digest: orders customers receive in 5 days
+const Q = (n, name) => api('POST', '/orders', { items: [{ type: 'product', productId: 'meringue-butter', qty: 1 }], date: ymd(n), contact: { name, phone: '0912345678', address: 'x' }, note: '', payment: 'transfer' }, 'Uqa-dg' + n + name + '|DG');
 await api('PUT', '/admin/settings', { leadDays: 0 }, 'Uqa-admin|QA');
-const d0 = (await Q(0)).json, d3 = (await Q(3)).json, d4 = (await Q(4)).json;
-const tst = (await api('POST', '/orders', { items: [{ type: 'product', productId: 'meringue-butter', qty: 1 }], date: ymd(1), contact: { name: '測試', phone: '0912345678', address: 'x' }, payment: 'transfer' }, 'Uqa-admin|QA')).json;
-await api('PATCH', `/admin/orders/${d0.orderNo}`, { markPaid: true }, 'Uqa-admin|QA');
+for (const x of (await api('GET', '/admin/orders', undefined, 'Uqa-admin|QA')).json.orders) if (x.status === 'reported') await api('PATCH', `/admin/orders/${x.orderNo}`, { markPaid: true }, 'Uqa-admin|QA');
+const f1 = (await Q(5, '五天客甲')).json, f2 = (await Q(5, '五天客乙')).json, d4 = (await Q(4, '四天客')).json, d6 = (await Q(6, '六天客')).json;
+const tst = (await api('POST', '/orders', { items: [{ type: 'product', productId: 'meringue-butter', qty: 1 }], date: ymd(5), contact: { name: '測試單', phone: '0912345678', address: 'x' }, payment: 'transfer' }, 'Uqa-admin|QA')).json;
+await api('PATCH', `/admin/orders/${f1.orderNo}`, { markPaid: true }, 'Uqa-admin|QA');
 sent.length = 0; let dr = await handler({ source: 'ntcookie.daily' });
-const dg = sent.filter((m) => m.kind === 'push');
-const dt = dg[0]?.body.messages[0].text || '';
-ok('morning digest: one message, only to the fixed admin', dg.length === 1 && dg[0].body.to === process.env.OWNER_LINE_IDS && dr.sent, [dg.length, dg[0]?.body.to, dr]);
-ok('lists orders due today…+3 days, by date, with paid/unpaid flags', dt.includes(d0.orderNo) && dt.includes(d3.orderNo) && /（今天）/.test(dt) && /已付款/.test(dt) && /⚠️未付款/.test(dt), dt);
-ok('leaves out day+4, shop test orders, and cancelled/shipped ones', !dt.includes(d4.orderNo) && !dt.includes(tst.orderNo), dt);
-for (const x of [d0, d3]) await api('PATCH', `/admin/orders/${x.orderNo}`, { status: 'shipped', markPaid: true }, 'Uqa-admin|QA');
-for (const x of [o]) await api('PATCH', `/admin/orders/${x.orderNo}`, { status: 'done' }, 'Uqa-admin|QA');
-const leftovers = (await api('GET', '/admin/orders', undefined, 'Uqa-admin|QA')).json.orders.filter((x) => !x.byShop && x.date <= ymd(3) && !['shipped', 'done', 'cancelled'].includes(x.status) || x.status === 'reported');
-for (const x of leftovers) await api('PATCH', `/admin/orders/${x.orderNo}`, { status: 'cancelled' }, 'Uqa-admin|QA');
+const dg = sent.filter((m) => m.kind === 'push'); const dt = dg[0]?.body.messages[0].text || '';
+ok('morning reminder: one message, only to the fixed admin', dg.length === 1 && dg[0].body.to === process.env.OWNER_LINE_IDS && dr.sent, [dg.length, dr]);
+ok('clear header <<--- 5 天後 … 客人要收到的訂單：2 筆 --->>', /<<--- 5 天後 .* 客人要收到的訂單：2 筆 --->>/.test(dt), dt.split('\n').slice(0, 4));
+ok('lists exactly the orders due in 5 days, numbered, with paid / unpaid', /① /.test(dt) && dt.includes(f1.orderNo) && dt.includes(f2.orderNo) && /已付款 ✓/.test(dt) && /⚠️ 還沒付款/.test(dt) && /五天客甲/.test(dt), dt);
+ok('leaves out 4-day and 6-day orders and shop test orders', !dt.includes(d4.orderNo) && !dt.includes(d6.orderNo) && !dt.includes(tst.orderNo), dt);
+for (const x of [f1, f2]) await api('PATCH', `/admin/orders/${x.orderNo}`, { status: 'cancelled' }, 'Uqa-admin|QA');
 sent.length = 0; dr = await handler({ source: 'ntcookie.daily' });
-ok('nothing due → no message at all (saves the monthly quota)', !dr.sent && sent.length === 0, [dr, sent.length]);
+ok('nothing due in 5 days → no message (saves the monthly quota)', !dr.sent && sent.length === 0, [dr, sent.length]);
 await api('PUT', '/admin/settings', { leadDays: 5 }, 'Uqa-admin|QA');
 console.log(`${pass} passed, ${fail} failed`); process.exit(fail ? 1 : 0);

@@ -632,24 +632,26 @@ async function getImage(id) {
   return { statusCode: 200, headers: { 'content-type': it.type, 'cache-control': 'public, max-age=31536000, immutable' }, body: it.data, isBase64Encoded: true };
 }
 
-// ---------------------------------------------------------------- 每天早上 9 點：接下來 3 天的訂單提醒（只傳給最大管理員；沒有訂單就不傳，省推播額度）
+// ---------------------------------------------------------------- 每天早上 9 點：提醒「5 天後客人要收到」的訂單（只傳給最大管理員；沒有就不傳，省推播額度）
+const DIGEST_DAYS = 5;
 async function dailyDigest() {
   if (!env.LINE_MESSAGING_TOKEN || !OWNER_IDS.size) return { sent: false, reason: 'not configured' };
-  const today = twDate(); const until = addDays(today, 3);
+  const today = twDate(); const target = addDays(today, DIGEST_DAYS);
   const all = await queryAll({ KeyConditionExpression: 'pk = :p', ExpressionAttributeValues: { ':p': 'ORDER' } });
-  const due = all.filter((o) => !o.byShop && o.date >= today && o.date <= until && !['shipped', 'done', 'cancelled'].includes(o.status))
-    .sort((a, b) => a.date.localeCompare(b.date) || a.orderNo.localeCompare(b.orderNo));
+  const due = all.filter((o) => !o.byShop && o.date === target && o.status !== 'cancelled').sort((a, b) => a.orderNo.localeCompare(b.orderNo));
   const reported = all.filter((o) => !o.byShop && o.status === 'reported');
   if (!due.length && !reported.length) return { sent: false, reason: 'nothing due' };
-  const lines = [`☀️ 早安！接下來 3 天（${twDay(today)}～${twDay(until)}）要準備的訂單：${due.length} 筆`];
-  let day = '';
-  for (const o of due) {
-    if (o.date !== day) { day = o.date; lines.push('', `📅 ${twDay(day)}${day === today ? '（今天）' : ''}`); }
-    const paid = o.payment?.status === 'paid' ? '已付款' : o.status === 'reported' ? '⚠️匯款待確認' : '⚠️未付款';
-    lines.push(`・${o.orderNo} ${o.contact?.name || ''} $${o.total}｜${paid}｜${STATUS[o.status]}`, `　${o.lines.map((l) => `${l.name}×${l.qty}`).join('、').slice(0, 80)}`);
+  const n = ['①', '②', '③', '④', '⑤', '⑥', '⑦', '⑧', '⑨', '⑩'];
+  const lines = ['🔔 出貨提醒', ''];
+  if (due.length) {
+    lines.push(`<<--- ${DIGEST_DAYS} 天後 ${twDay(target)} 客人要收到的訂單：${due.length} 筆 --->>`, '');
+    due.forEach((o, i) => {
+      const paid = o.payment?.status === 'paid' ? '已付款 ✓' : o.status === 'reported' ? '⚠️ 匯款待確認' : '⚠️ 還沒付款';
+      lines.push(`${n[i] || `(${i + 1})`} ${o.orderNo}　${o.contact?.name || ''}`, `　${o.lines.map((l) => `${l.name}×${l.qty}`).join('、').slice(0, 90)}`, `　$${o.total}｜${paid}`, '');
+    });
   }
-  if (reported.length) lines.push('', `🏦 客人回報已匯款、還沒確認的：${reported.map((o) => o.orderNo).join('、')}`);
-  lines.push('', `後台：${ADMIN_URL}`);
+  if (reported.length) lines.push(`🏦 客人回報已匯款、還沒確認：${reported.map((o) => o.orderNo).join('、')}`, '');
+  lines.push(`後台：${ADMIN_URL}`);
   await Promise.all([...OWNER_IDS].map((id) => pushTo(id, lines.join('\n'))));
   return { sent: true, orders: due.length };
 }
