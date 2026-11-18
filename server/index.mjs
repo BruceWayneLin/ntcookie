@@ -178,7 +178,7 @@ async function getUser(event) {
   const tok = m[1];
   if (tok.startsWith('adm.')) {
     if (env.ALLOW_PASSCODE === '1' && readSession(tok, await getSettings())) return SHOP_ADMIN;
-    throw new HttpError(401, '登入已過期，請重新輸入店家密碼');
+    throw new HttpError(401, '請用管理員的 LINE 帳號登入');
   }
   const hit = tokenCache.get(tok);
   if (hit && hit.exp * 1000 > Date.now()) return hit.user;
