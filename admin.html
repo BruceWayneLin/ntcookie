@@ -9,7 +9,7 @@
 <link rel="icon" href="assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css?v=1118o">
+<link rel="stylesheet" href="css/app.css?v=1118p">
 <style>
   :root { --page: 760px; }
   .tabs { position: sticky; top: 63px; z-index: 20; display: flex; gap: 6px; max-width: var(--page); margin: 0 auto; padding: 8px 14px; background: rgba(248, 237, 231, .96); }
@@ -61,8 +61,8 @@
 <div class="shopbar" id="shopbar" hidden></div>
 <main class="wrap" id="app"><div class="spinner"></div></main>
 <p class="note" id="ver" style="text-align:center;margin:0 0 24px;color:var(--muted)"></p>
-<script src="js/config.js?v=1118o"></script>
-<script src="js/app.js?v=1118o"></script>
+<script src="js/config.js?v=1118p"></script>
+<script src="js/app.js?v=1118p"></script>
 <script>
 (async function () {
   const { $, esc, money, asset } = NTC;
@@ -86,10 +86,10 @@
     card(`${me.picture ? `<img src="${esc(me.picture)}" alt="" style="width:64px;height:64px;border-radius:50%;margin:4px auto 8px">` : ''}
       <p style="font:900 19px var(--serif);margin:0 0 6px">「${esc(me.name)}」不是管理員</p>
       <p class="note" style="margin:0 0 14px">這裡是店家後台，只有管理員的 LINE 帳號可以進入。</p>
-      <form id="phoneform" style="text-align:left"><label class="field"><span>店家負責人：輸入你的手機號碼，第一次綁定後就不用再輸入</span>
+      <form id="phoneform" style="text-align:left"><label class="field"><span>如果管理員已經幫你新增手機，輸入那個號碼就會成為管理員（只需要一次）</span>
         <input id="bindphone" type="tel" inputmode="tel" autocomplete="tel" placeholder="09xx-xxx-xxx" maxlength="20" style="text-align:center;font-size:18px"></label>
         <p class="err" id="phoneerr" hidden></p><button class="btn block">綁定並進入後台</button></form>
-      <button class="btn ghost block small" id="askadmin" style="margin-top:14px">我不是負責人：申請成為管理員</button><p class="note" id="askmsg" style="margin:10px 0 0" hidden></p>
+      <button class="btn ghost block small" id="askadmin" style="margin-top:14px">沒有手機號碼？申請成為管理員</button><p class="note" id="askmsg" style="margin:10px 0 0" hidden></p>
       ${NTC.inLineApp() ? '' : '<button class="btn ghost block small" id="switchacc" style="margin-top:10px">換一個 LINE 帳號</button>'}
       <a class="btn ghost block small" href="index.html" style="margin-top:10px">回官網</a>`);
     $('#phoneform').onsubmit = async (e) => {
