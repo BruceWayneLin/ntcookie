@@ -374,10 +374,12 @@ async function markPaid(o, detail, note) {
 // optional: LINE Messaging API push (only when the OA has Messaging API enabled and a token is set)
 async function pushTo(to, message) {
   if (!env.LINE_MESSAGING_TOKEN || !to || !/^U[0-9a-f]{32}$/.test(to)) return; // only real LINE user IDs
-  await fetch('https://api.line.me/v2/bot/message/push', {
+  const r = await fetch('https://api.line.me/v2/bot/message/push', {
     method: 'POST', headers: { 'content-type': 'application/json', authorization: `Bearer ${env.LINE_MESSAGING_TOKEN}` },
     body: JSON.stringify({ to, messages: [{ type: 'text', text: message.slice(0, 4900) }] }),
   });
+  // one log line per notification (no message text): to whom (masked), what kind, LINE's answer
+  console.log(JSON.stringify({ push: to.slice(0, 5) + '…' + to.slice(-4), kind: message.split('\n')[0].slice(0, 20), status: r.status, error: r.ok ? undefined : (await r.text()).slice(0, 160) }));
 }
 async function notifyAdmins(message) {
   if (!env.LINE_MESSAGING_TOKEN) return;
