@@ -9,7 +9,7 @@
 <link rel="icon" href="assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css?v=1118i">
+<link rel="stylesheet" href="css/app.css?v=1118j">
 </head>
 <body>
 <header class="topbar">
@@ -19,9 +19,9 @@
 </header>
 <main class="wrap" id="app"><div class="spinner"></div></main>
 
-<script src="js/config.js?v=1118i"></script>
-<script src="js/app.js?v=1118i"></script>
-<script src="js/shop.js?v=1118i"></script>
+<script src="js/config.js?v=1118j"></script>
+<script src="js/app.js?v=1118j"></script>
+<script src="js/shop.js?v=1118j"></script>
 <script>
 (async function () {
   const { $, esc, money, asset } = NTC;
@@ -66,18 +66,8 @@
     const shipNote = [frozen ? `可麗露皆採冷凍宅配寄送${frozen.parcels > 1 ? `；單件包裹最多 ${frozen.max} 盒，這張訂單會拆成 ${frozen.parcels} 件寄出，運費依各件盒數計算` : ''}。` : '',
       frozen && ambient ? '馬林糖一口酥為常溫，會和冷凍的可麗露分開寄送。' : ''].filter(Boolean).join('');
     const dateOk = NTC.dateRules(S, cat.fullDates).ok(form.date);
-    if (S.pauseOrders) { // shop not taking orders yet: show the cart, no checkout
-      app.innerHTML = `${S.notice ? `<div class="panel note" style="background:#fff6ec">${esc(S.notice)}</div>` : ''}
-        <section class="panel"><h2>購物車</h2>${pc.lines.map((l) => `<div class="line-item"><img class="th" src="${esc(asset(l.photo))}" alt=""><div class="info"><div class="nm">${esc(l.name)} × ${l.qty}</div>${l.detail ? `<div class="dt">${esc(l.detail)}</div>` : ''}<div class="pr">${money(l.subtotal)}</div></div></div>`).join('')}</section>
-        <section class="panel" style="text-align:center"><p style="font:900 19px var(--serif);margin:4px 0 6px">目前暫停接單 ♡</p>
-          <p class="note" style="margin:0 0 14px">恢復接單時會在 LINE 通知大家。有任何問題歡迎直接聊天詢問。</p>
-          <a class="btn line block" href="${NTC.chatUrl('您好，我想詢問')}">LINE 聊天詢問</a></section>`;
-      return;
-    }
-    const testBanner = S.preview ? `<div class="panel note" style="background:#eef4fb;border-color:#c9dcf2"><b>🔧 店家測試模式</b>　你已用店家身分登入，可以實際下單測試（這張單會標成「店家測試單」，後台可以刪）。<br>客人現在看到的是：<b>${S.preview.closed ? '「目前暫停接單」，不能下單' : S.preview.testMode ? '「用 LINE 傳訂單給店家」' : '跟你一樣的結帳畫面'}</b>。</div>` : '';
-    app.innerHTML = `
-      ${testBanner}${S.notice ? `<div class="panel note" style="background:#fff6ec">${esc(S.notice)}</div>` : ''}
-      <section class="panel"><h2><span class="n">1</span>購物車</h2>
+    // the cart list (quantities, remove) is the same whether or not the shop is taking orders
+    const cartPanel = (numbered) => `<section class="panel"><h2>${numbered ? '<span class="n">1</span>' : ''}購物車</h2>
         <div id="lines">${pc.lines.map((l) => `
           <div class="line-item" data-i="${l.idx}">
             <img class="th" src="${esc(asset(l.photo))}" alt="">
@@ -87,7 +77,29 @@
               <button class="rm" type="button">移除</button></div>
           </div>`).join('')}</div>
         <div class="row" style="margin-top:6px;gap:8px"><a class="btn small ghost" href="canele.html">＋ 可麗露</a><a class="btn small ghost" href="meringue.html">＋ 馬林糖</a></div>
-      </section>
+      </section>`;
+    const wireLines = () => app.querySelectorAll('.line-item').forEach((row) => {
+      const i = +row.dataset.i; const l = pc.lines.find((x) => x.idx === i);
+      NTC.stepper(row.querySelector('.st'), { value: l.qty, min: Math.min(l.min, l.qty), onChange: (v) => { NTC.cart.setQty(i, v); keep(); render(); } });
+      row.querySelector('.st').classList.add('sm');
+      row.querySelector('.rm').onclick = () => { NTC.cart.remove(i); keep(); render(); };
+    });
+    if (S.pauseOrders) { // shop not taking orders: the cart still works (+/−, remove), only the checkout is closed
+      app.innerHTML = `${S.notice ? `<div class="panel note" style="background:#fff6ec">${esc(S.notice)}</div>` : ''}
+        ${cartPanel(false)}
+        <section class="panel totals"><div class="row"><span>商品小計</span><span class="sp"></span><span>${money(pc.subtotal)}</span></div>
+          <div class="row"><span>運費</span><span class="sp"></span><span>${pc.shipping.fee ? money(pc.shipping.fee) : '免運'}</span></div>
+          <div class="row" style="border-top:1px dashed #ead7cc;margin-top:6px;padding-top:10px"><b>合計</b><span class="sp"></span><span class="grand">${money(pc.total)}</span></div></section>
+        <section class="panel" style="text-align:center"><p style="font:900 19px var(--serif);margin:4px 0 6px">目前暫停接單 ♡</p>
+          <p class="note" style="margin:0 0 14px">恢復接單時會在 LINE 通知大家。有任何問題歡迎直接聊天詢問。</p>
+          <a class="btn line block" href="${NTC.chatUrl('您好，我想詢問')}">LINE 聊天詢問</a></section>`;
+      wireLines();
+      return;
+    }
+    const testBanner = S.preview ? `<div class="panel note" style="background:#eef4fb;border-color:#c9dcf2"><b>🔧 店家測試模式</b>　你已用店家身分登入，可以實際下單測試（這張單會標成「店家測試單」，後台可以刪）。<br>客人現在看到的是：<b>${S.preview.closed ? '「目前暫停接單」，不能下單' : S.preview.testMode ? '「用 LINE 傳訂單給店家」' : '跟你一樣的結帳畫面'}</b>。</div>` : '';
+    app.innerHTML = `
+      ${testBanner}${S.notice ? `<div class="panel note" style="background:#fff6ec">${esc(S.notice)}</div>` : ''}
+      ${cartPanel(true)}
 
       <section class="panel"><h2><span class="n">2</span>${esc(S.dateLabel || '日期')}</h2>
         <p class="note" style="margin:-4px 0 10px">${esc(S.dateNote || '手工製作，需要準備時間。')}<br>最早可預約 ${NTC.fmtDate(NTC.dateRules(S).min)}。${form.date && dateOk ? `已選 <b>${NTC.fmtDate(form.date)}</b>` : '請選擇日期'}</p>
@@ -127,12 +139,7 @@
           : `<button class="btn line block" id="chatOrder" style="margin-top:12px">用 LINE 傳訂單給店家・${money(total)}</button>`}
       </section>`;
 
-    app.querySelectorAll('.line-item').forEach((row) => {
-      const i = +row.dataset.i; const l = pc.lines.find((x) => x.idx === i);
-      NTC.stepper(row.querySelector('.st'), { value: l.qty, min: Math.min(l.min, l.qty), onChange: (v) => { NTC.cart.setQty(i, v); keep(); render(); } });
-      row.querySelector('.st').classList.add('sm');
-      row.querySelector('.rm').onclick = () => { NTC.cart.remove(i); keep(); render(); };
-    });
+    wireLines();
     NTC.calendar($('#cal'), { settings: S, fullDates: cat.fullDates, value: form.date, onChange: (d) => { form.date = d; NTC.date.set(d); keep(); render(); } });
     app.querySelectorAll('.opt.pay').forEach((b) => (b.onclick = () => { keep(); form.payment = b.dataset.k; render(); }));
     const ll = $('#lineLogin'); if (ll) ll.onclick = () => { keep(); persist(); NTC.login(); };

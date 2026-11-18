@@ -53,8 +53,14 @@
   NTC.isAdminHere = () => { try { return localStorage.getItem('ntc-is-admin') === '1'; } catch (e) { return false; } };
   NTC.markAdmin = (yes) => { try { yes ? localStorage.setItem('ntc-is-admin', '1') : localStorage.removeItem('ntc-is-admin'); } catch (e) { /* ignore */ } };
   NTC.isDev = () => !!(sess.get('ntc-devkey') && sess.get('ntc-devuser'));
-  NTC.loggedIn = async () => { if (NTC.isDev()) return true; const l = await NTC.liff(); return !!(l && l.isLoggedIn()); };
-  NTC.idToken = async () => { const l = await NTC.liff(); return l && l.isLoggedIn() ? l.getIDToken() : null; };
+  // a LINE login only counts while its ID token is still valid (LINE's token lasts about an hour outside the LINE app)
+  NTC.idToken = async () => {
+    const l = await NTC.liff(); if (!l || !l.isLoggedIn()) return null;
+    const t = l.getIDToken(); const d = l.getDecodedIDToken();
+    if (!t || !d || d.exp * 1000 < Date.now() + 60e3) { try { l.logout(); } catch (e) { /* ignore */ } return null; }
+    return t;
+  };
+  NTC.loggedIn = async () => (NTC.isDev() ? true : !!(await NTC.idToken()));
   NTC.lineProfile = async () => {
     if (NTC.isDev()) { const [sub, name] = sess.get('ntc-devuser').split('|'); return { sub, name: name || '測試', picture: '' }; }
     const l = await NTC.liff(); if (!l || !l.isLoggedIn()) return null;

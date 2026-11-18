@@ -278,8 +278,8 @@ r = await call(`/admin/orders/${OP.orderNo}`, { method: 'DELETE' }); ok('deletin
 r = await call(`/admin/orders/${OP.orderNo}`, { method: 'DELETE', user: ALICE }); ok('a customer cannot delete orders', r.status === 403, r.status);
 r = await call(`/admin/orders/${OP.orderNo}`, { method: 'DELETE', headers: bearer(T) }); g = await call(`/orders/${OP.orderNo}?t=${OP.token}`);
 ok('the shop can delete its own test order', r.status === 200 && g.status === 404, [r.status, g.status]);
-await call('/admin/claim', { method: 'POST', headers: bearer(T), body: { invite: INVITE } }); r = await call('/admin/settings', { user: ADMIN });
-ok('a passcode session opening an invite link adds no fake admin', !r.json.settings.admins.some((a) => a.sub === 'shop-admin'), r.json.settings.admins);
+g = await call('/admin/claim', { method: 'POST', headers: bearer(T), body: { invite: INVITE } }); r = await call('/admin/settings', { user: ADMIN });
+ok('an invite opened with only the passcode says to use LINE, adds no fake admin', g.status === 400 && /LINE/.test(g.json.error) && !r.json.settings.admins.some((a) => a.sub === 'shop-admin'), [g.status, g.json?.error]);
 section('綁定 LINE 帳號（店家密碼 → 自動認得）');
 const DAVE = 'Uqa-dave|Dave';
 r = await call('/admin/orders', { user: DAVE }); ok('a LINE user is not admin by default', r.status === 403, r.status);

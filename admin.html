@@ -9,7 +9,7 @@
 <link rel="icon" href="assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css?v=1118i">
+<link rel="stylesheet" href="css/app.css?v=1118j">
 <style>
   :root { --page: 760px; }
   .tabs { position: sticky; top: 63px; z-index: 20; display: flex; gap: 6px; max-width: var(--page); margin: 0 auto; padding: 8px 14px; background: rgba(248, 237, 231, .96); }
@@ -61,8 +61,8 @@
 <div class="shopbar" id="shopbar" hidden></div>
 <main class="wrap" id="app"><div class="spinner"></div></main>
 <p class="note" id="ver" style="text-align:center;margin:0 0 24px;color:var(--muted)"></p>
-<script src="js/config.js?v=1118i"></script>
-<script src="js/app.js?v=1118i"></script>
+<script src="js/config.js?v=1118j"></script>
+<script src="js/app.js?v=1118j"></script>
 <script>
 (async function () {
   const { $, esc, money, asset } = NTC;
@@ -109,21 +109,23 @@
     };
     if ($('#switchacc')) $('#switchacc').onclick = async () => { await NTC.logout(); location.reload(); };
   };
-  if (!NTC.isDev() && !NTC.adminToken()) {
+  const invite = q.get('invite');
+  if (!NTC.isDev() && (invite || !NTC.adminToken())) { // an invite always needs the LINE account, even on a device logged in with the passcode
     const l = await NTC.liff();
-    if (l && !l.isLoggedIn()) {
+    if (l && !(await NTC.loggedIn())) {
       let tried = false; try { tried = sessionStorage.getItem('ntc-auto-login') === '1'; } catch (e) { /* ignore */ }
       if (NTC.inLineApp() && !tried) { // inside LINE: log in silently with the LINE account
         try { sessionStorage.setItem('ntc-auto-login', '1'); } catch (e) { /* ignore */ }
         NTC.loading(true, '用 LINE 確認身分中…'); l.login({ redirectUri: location.href.split('#')[0] }); return;
       }
+      if (invite) { card(`<p style="font:900 20px var(--serif);margin:6px 0 4px">管理員邀請</p><p class="note" style="margin:0 0 14px">用你的 LINE 帳號登入，這個帳號就會成為店家管理員。</p><button class="btn line block" id="login">用 LINE 登入並接受邀請</button>`); $('#login').onclick = NTC.login; return; }
       loginScreen(); return;
     }
     if (!l) { loginScreen('LINE 登入暫時無法使用，可以先用店家密碼'); return; }
   }
-  if (q.get('invite')) {
-    try { await NTC.api('/admin/claim', { method: 'POST', body: { invite: q.get('invite') } }); NTC.toast('已加入管理員'); }
-    catch (e) { NTC.toast(e.message, 4000); }
+  if (invite) {
+    try { await NTC.api('/admin/claim', { method: 'POST', body: { invite }, asLine: true }); const me = await NTC.lineProfile().catch(() => null); NTC.toast(`已把 LINE「${me ? me.name : ''}」加成管理員`, 3500); }
+    catch (e) { NTC.toast(e.message, 4500); }
     history.replaceState(null, '', location.pathname);
   }
   try { await loadOrders(); NTC.markAdmin(true); }

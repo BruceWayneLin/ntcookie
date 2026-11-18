@@ -656,6 +656,7 @@ async function route(event) {
         const b = parseBody(event);
         const s = await getSettings();
         if (!b.invite || b.invite !== s.adminInvite) throw new HttpError(403, '邀請碼不正確或已失效');
+        if (u.shopAdmin) throw bad('邀請連結要用 LINE 帳號打開：請在手機 LINE 裡點這個連結');
         if (!u.shopAdmin && !(s.admins || []).some((a) => a.sub === u.sub)) { // a passcode session is already admin: nothing to add
           const admins = [...(s.admins || []), { sub: u.sub, name: u.name, picture: u.picture, addedAt: new Date().toISOString() }];
           await put({ ...s, pk: 'SETTINGS', sk: 'main', admins });
