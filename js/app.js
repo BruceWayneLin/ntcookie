@@ -49,6 +49,9 @@
     try { await window.liff.init({ liffId: CFG.liffId }); return window.liff; } catch (e) { console.warn('liff.init', e); return null; }
   })());
   NTC.inLine = () => !!(window.liff && window.liff.isInClient && window.liff.isInClient());
+  NTC.inLineApp = () => NTC.inLine() || / Line\//i.test(navigator.userAgent); // LINE's own browser (LIFF or a link tapped in a chat)
+  NTC.isAdminHere = () => { try { return localStorage.getItem('ntc-is-admin') === '1'; } catch (e) { return false; } };
+  NTC.markAdmin = (yes) => { try { yes ? localStorage.setItem('ntc-is-admin', '1') : localStorage.removeItem('ntc-is-admin'); } catch (e) { /* ignore */ } };
   NTC.isDev = () => !!(sess.get('ntc-devkey') && sess.get('ntc-devuser'));
   NTC.loggedIn = async () => { if (NTC.isDev()) return true; const l = await NTC.liff(); return !!(l && l.isLoggedIn()); };
   NTC.idToken = async () => { const l = await NTC.liff(); return l && l.isLoggedIn() ? l.getIDToken() : null; };
@@ -59,9 +62,10 @@
   };
   NTC.login = async () => {
     const l = await NTC.liff();
-    if (!l) { NTC.toast('LINE 登入還沒開通，請先用一般方式填寫'); return; }
-    l.login({ redirectUri: location.href });
+    if (!l) { NTC.toast('LINE 登入暫時無法使用，請稍後再試'); return; }
+    l.login({ redirectUri: location.href.split('#')[0] });
   };
+  NTC.logout = async () => { const l = await NTC.liff(); if (l && l.isLoggedIn()) l.logout(); NTC.markAdmin(false); };
   NTC.chatUrl = (text) => 'https://line.me/R/oaMessage/' + encodeURIComponent(CFG.lineId || '@ntcookie') + '/' + (text ? '?' + encodeURIComponent(text) : '');
   NTC.open = (url, external) => {
     if (window.liff && NTC.inLine() && (external || /^https?:/.test(url) && !url.startsWith(location.origin))) { window.liff.openWindow({ url, external: !!external }); return; }

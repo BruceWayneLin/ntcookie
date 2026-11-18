@@ -296,6 +296,22 @@ r = await putSettings({ newAdminPass: 'qa-pass-1357' }); g = await call('/admin/
 r = await call('/admin/login', { method: 'POST', body: { pass: 'qa-pass-2468' } }); ok('old passcode stops working', r.status === 403, r.status);
 r = await call('/admin/login', { method: 'POST', body: { pass: 'qa-pass-1357' } }); ok('new passcode works', r.status === 200, r.status);
 
+section('申請成為管理員（LINE 會員）');
+const FRAN = 'Uqa-fran|Fran';
+r = await call('/admin/request', { method: 'POST', body: {} }); ok('request needs a LINE identity', r.status === 401, r.status);
+r = await call('/admin/request', { method: 'POST', user: FRAN, body: {} }); ok('LINE member can ask', r.json?.pending === true, r.json);
+r = await call('/admin/requests', { user: FRAN }); ok('the asker cannot see or approve requests', r.status === 403, r.status);
+r = await call(`/admin/requests/Uqa-fran/approve`, { method: 'POST', user: FRAN, body: {} }); ok('the asker cannot approve themselves', r.status === 403, r.status);
+r = await call('/admin/requests', { user: ADMIN }); ok('admin sees the request', r.json.requests.some((x) => x.sub === 'Uqa-fran' && x.name === 'Fran'), r.json);
+r = await call('/admin/orders', { user: FRAN }); ok('still no access while pending', r.status === 403, r.status);
+r = await call(`/admin/requests/Uqa-fran/approve`, { method: 'POST', user: ADMIN, body: {} }); g = await call('/admin/orders', { user: FRAN });
+ok('approved → straight in', r.status === 200 && g.status === 200, [r.status, g.status]);
+r = await call('/admin/requests', { user: ADMIN }); ok('request is cleared after approval', !r.json.requests.some((x) => x.sub === 'Uqa-fran'), r.json);
+r = await call('/admin/request', { method: 'POST', user: FRAN, body: {} }); ok('an admin asking again just gets "admin"', r.json?.admin === true, r.json);
+await call('/admin/request', { method: 'POST', user: 'Uqa-gus|Gus', body: {} }); r = await call(`/admin/requests/Uqa-gus/reject`, { method: 'POST', user: ADMIN, body: {} }); g = await call('/admin/orders', { user: 'Uqa-gus|Gus' });
+ok('rejected → still no access', r.status === 200 && g.status === 403, [r.status, g.status]);
+await putSettings({ removeAdmins: ['Uqa-fran'] });
+
 section('admin invite');
 r = await putSettings({ rotateInvite: true }); const NEWINV = r.json.settings.adminInvite;
 ok('invite rotated', NEWINV && NEWINV !== INVITE, NEWINV);

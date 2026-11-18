@@ -662,6 +662,14 @@ async function route(event) {
         }
         return json(200, { ok: true });
       }
+      if (method === 'POST' && path === '/admin/request') { // a LINE member who isn't an admin asks to become one
+        const u = await requireUser(event);
+        if (u.shopAdmin) return json(200, { admin: true });
+        const s = await getSettings();
+        if (isAdminOf(s, u)) return json(200, { admin: true });
+        await put({ pk: 'ADMINREQ', sk: u.sub, name: u.name, picture: u.picture, at: new Date().toISOString() });
+        return json(200, { pending: true });
+      }
       if (method === 'POST' && path === '/admin/bind-line') { // 綁定：已用店家密碼登入的人，把自己的 LINE 帳號加成管理員（之後在 LINE 打開後台自動認得）
         const u = await requireUser(event);
         if (u.shopAdmin) throw bad('請在 LINE 裡打開後台再綁定');
@@ -727,6 +735,19 @@ async function route(event) {
         if (!o.byShop) throw bad('只有店家自己下的測試單可以刪除；客人的訂單請改成「已取消」');
         if (o.status !== 'cancelled') await releaseDateSlot(o.date);
         await del('ORDER', o.orderNo);
+        return json(200, { ok: true });
+      }
+      if (method === 'GET' && path === '/admin/requests') {
+        const reqs = await queryAll({ KeyConditionExpression: 'pk = :p', ExpressionAttributeValues: { ':p': 'ADMINREQ' } });
+        return json(200, { requests: reqs.map((r) => ({ sub: r.sk, name: r.name, picture: r.picture, at: r.at })) });
+      }
+      if (method === 'POST' && seg[1] === 'requests' && seg[2] && ['approve', 'reject'].includes(seg[3])) {
+        const r = await get('ADMINREQ', seg[2]);
+        if (!r) throw new HttpError(404, '找不到這個申請');
+        if (seg[3] === 'approve' && !(settings.admins || []).some((a) => a.sub === r.sk)) {
+          await put({ ...settings, pk: 'SETTINGS', sk: 'main', admins: [...(settings.admins || []), { sub: r.sk, name: r.name, picture: r.picture, addedAt: new Date().toISOString(), via: 'request' }] });
+        }
+        await del('ADMINREQ', r.sk);
         return json(200, { ok: true });
       }
       if (method === 'GET' && path === '/admin/products') return json(200, { products: await listProducts() });
