@@ -257,6 +257,14 @@ r = await call('/orders', { method: 'POST', headers: bearer(T), body: { items: [
 const OP = r.json; g = await call('/admin/orders', { headers: bearer(T) });
 ok('passcode session can test-order while closed; the order is not tied to any LINE member', r.status === 200 && g.json.orders.find((o) => o.orderNo === OP.orderNo) && !g.json.orders.find((o) => o.orderNo === OP.orderNo).user, r.status);
 await putSettings({ pauseOrders: false });
+ok('order from a shop login is marked 店家測試單', g.json.orders.find((o) => o.orderNo === OP.orderNo).byShop === true && g.json.orders.find((o) => o.orderNo === O1.orderNo).byShop === false, 'flag');
+r = await call('/catalog', { headers: bearer(T) }); g = await call('/catalog');
+ok('only a shop login is told what customers currently see', r.json.settings.preview && r.json.settings.preview.closed === false && !('preview' in g.json.settings), [r.json.settings.preview, g.json.settings.preview]);
+r = await call(`/admin/orders/${O1.orderNo}`, { method: 'DELETE', headers: bearer(T) }); ok('a customer order cannot be deleted (cancel instead)', r.status === 400, r.status);
+r = await call(`/admin/orders/${OP.orderNo}`, { method: 'DELETE' }); ok('deleting needs a login', r.status === 401, r.status);
+r = await call(`/admin/orders/${OP.orderNo}`, { method: 'DELETE', user: ALICE }); ok('a customer cannot delete orders', r.status === 403, r.status);
+r = await call(`/admin/orders/${OP.orderNo}`, { method: 'DELETE', headers: bearer(T) }); g = await call(`/orders/${OP.orderNo}?t=${OP.token}`);
+ok('the shop can delete its own test order', r.status === 200 && g.status === 404, [r.status, g.status]);
 await call('/admin/claim', { method: 'POST', headers: bearer(T), body: { invite: INVITE } }); r = await call('/admin/settings', { user: ADMIN });
 ok('a passcode session opening an invite link adds no fake admin', !r.json.settings.admins.some((a) => a.sub === 'shop-admin'), r.json.settings.admins);
 r = await putSettings({ newAdminPass: 'qa-pass-1357' }); g = await call('/admin/orders', { headers: bearer(T) }); ok('changing the passcode signs out older sessions', g.status === 401, g.status);

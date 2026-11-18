@@ -129,6 +129,7 @@ function publicSettings(s, admin = false) {
       transfer: !!(open && s.payments?.transfer && bankReady),
     },
     canele: s.canele, notice: s.notice, today: twDate(),
+    preview: admin ? { closed: !!s.pauseOrders, testMode: !!s.testMode } : undefined, // 店家登入時：客人實際看到的狀態
   };
 }
 
@@ -314,7 +315,7 @@ function publicOrder(o, settings) {
   v.adminMessage = o.adminMessage || '';
   return v;
 }
-const adminOrder = (o) => ({ ...publicOrder(o), token: o.token, user: o.user, payment: o.payment, adminNote: o.adminNote || '', adminMessage: o.adminMessage || '', history: o.history || [] });
+const adminOrder = (o) => ({ ...publicOrder(o), byShop: !!o.byShop, token: o.token, user: o.user, payment: o.payment, adminNote: o.adminNote || '', adminMessage: o.adminMessage || '', history: o.history || [] });
 
 async function loadOrder(no, event, token) {
   const o = await get('ORDER', String(no || ''));
@@ -390,6 +391,7 @@ async function createOrder(event) {
     lines: priced.lines, subtotal: priced.subtotal, shipping: priced.shipping, total: priced.total,
     date: b.date, note: str(b.note, 500), contact,
     payment: { method, status: 'unpaid', deadline: method === 'transfer' ? addDays(twDate(), int(settings.transferDays, 2)) : undefined },
+    byShop: isAdminOf(settings, viewer) ? true : undefined, // 店家自己下的單（測試用），後台可以刪
     user: user ? { sub: user.sub, name: user.name, picture: user.picture } : undefined,
     gsi1pk: user ? `USER#${user.sub}` : undefined, gsi1sk: user ? now : undefined,
     history: [{ at: now, note: `建立訂單（${PAY_LABEL[method]}）` }],
@@ -686,6 +688,14 @@ async function route(event) {
         const n = Object.keys(fields).length ? await setOrder(o.orderNo, fields, notes.join('；') || null) : o;
         if (fields.status && fields.status !== 'paid') await pushTo(o.user?.sub, `您的訂單 ${o.orderNo} 狀態：${STATUS[fields.status]}`).catch(() => {});
         return json(200, { order: adminOrder(n) });
+      }
+      if (method === 'DELETE' && seg[1] === 'orders' && seg[2]) { // only the shop's own test orders can be deleted; real orders are cancelled instead
+        const o = await get('ORDER', seg[2]);
+        if (!o) throw new HttpError(404, '找不到訂單');
+        if (!o.byShop) throw bad('只有店家自己下的測試單可以刪除；客人的訂單請改成「已取消」');
+        if (o.status !== 'cancelled') await releaseDateSlot(o.date);
+        await del('ORDER', o.orderNo);
+        return json(200, { ok: true });
       }
       if (method === 'GET' && path === '/admin/products') return json(200, { products: await listProducts() });
       if (method === 'PUT' && seg[1] === 'products' && seg[2]) {

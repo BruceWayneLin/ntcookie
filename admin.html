@@ -9,7 +9,7 @@
 <link rel="icon" href="assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css?v=1118e">
+<link rel="stylesheet" href="css/app.css?v=1118f">
 <style>
   :root { --page: 760px; }
   .tabs { position: sticky; top: 63px; z-index: 20; display: flex; gap: 6px; max-width: var(--page); margin: 0 auto; padding: 8px 14px; background: rgba(248, 237, 231, .96); }
@@ -61,8 +61,8 @@
 <div class="shopbar" id="shopbar" hidden></div>
 <main class="wrap" id="app"><div class="spinner"></div></main>
 <p class="note" id="ver" style="text-align:center;margin:0 0 24px;color:var(--muted)"></p>
-<script src="js/config.js?v=1118e"></script>
-<script src="js/app.js?v=1118e"></script>
+<script src="js/config.js?v=1118f"></script>
+<script src="js/app.js?v=1118f"></script>
 <script>
 (async function () {
   const { $, esc, money, asset } = NTC;
@@ -106,11 +106,13 @@
   function renderShopBar() {
     const bar = $('#shopbar'); if (!settings) return;
     const open = !settings.pauseOrders;
+    const pays = [settings.payments.transfer && settings.bank.account ? '銀行轉帳' : '', settings.payments.ecpay && ready.ecpay ? '信用卡／ATM／超商' : '', settings.payments.linepay && ready.linepay ? 'LINE Pay' : ''].filter(Boolean).join('、');
     const how = !open ? '客人可以逛，但不能下單（休息、檔期滿都用這個）'
-      : settings.testMode ? '客人結帳會「用 LINE 傳訂單給店家」（線上付款還在測試）' : '客人可以直接線上付款下單';
+      : settings.testMode ? '客人結帳會「用 LINE 傳訂單給店家」（測試模式開著）' : `客人可以下單，付款方式：${pays || '（還沒開任何付款方式）'}`;
     bar.hidden = false;
     bar.innerHTML = `<div class="box ${open ? 'on' : 'off'}"><span class="dot2"></span><span class="t"><b>${open ? '接單中' : '關閉接單中'}</b>${how}</span>
-      <button class="btn small ${open ? 'ghost' : ''}" id="toggleShop">${open ? '關閉接單' : '開店接單'}</button></div>`;
+      <button class="btn small ${open ? 'ghost' : ''}" id="toggleShop">${open ? '關閉接單' : '開店接單'}</button></div>
+      <a class="btn ghost block small" href="shop.html" style="margin-top:8px">🔧 自己下一張測試單（${open ? '' : '關閉接單時也可以，'}只有登入的店家能下）</a>`;
     $('#toggleShop').onclick = async () => {
       const next = !open;
       if (!confirm(next ? '確定開店接單？客人馬上就能下單。' : '確定關閉接單？客人會看到「目前暫停接單」，已經下的訂單不受影響。')) return;
@@ -142,7 +144,7 @@
       <div class="row" style="margin-bottom:10px"><span class="note">${list.length} 筆</span><span class="sp"></span>
         <div class="statusbar"><button data-s="created" class="${sortBy === 'created' ? 'on' : ''}">依下單時間</button><button data-s="date" class="${sortBy === 'date' ? 'on' : ''}">依出貨日期</button></div></div>
       ${list.map((o) => `<button class="ord" data-no="${esc(o.orderNo)}">
-        <div class="top"><b>${esc(o.orderNo)}</b><span class="status-pill ${esc(o.status)}">${esc(o.statusLabel)}</span><span class="sp"></span><span class="amt">${money(o.total)}</span></div>
+        <div class="top"><b>${esc(o.orderNo)}</b><span class="status-pill ${esc(o.status)}">${esc(o.statusLabel)}</span>${o.byShop ? '<span class="flag" style="background:#e2ecf7;color:#2d5785">店家測試單</span>' : ''}<span class="sp"></span><span class="amt">${money(o.total)}</span></div>
         <div class="mid">📅 ${NTC.fmtDate(o.date)}　👤 ${esc(o.contact.name)}　${esc(PAY[o.payment.method] || '')}
           ${o.payment.status === 'paid' ? '<span class="flag ok">已收款</span>' : o.payment.last5 ? `<span class="flag">回報末五碼 ${esc(o.payment.last5)}</span>` : '<span class="flag">未付款</span>'}<br>
           ${esc(o.lines.map((l) => `${l.name}×${l.qty}`).join('、'))}${o.note ? `<br>💬 ${esc(o.note.slice(0, 60))}` : ''}</div></button>`).join('') || '<p class="empty note">沒有訂單</p>'}`;
@@ -173,6 +175,7 @@
       <button class="btn block" id="o-save">儲存</button>
       <div class="row" style="gap:8px;margin-top:10px"><a class="btn ghost small" style="flex:1" href="order.html?no=${esc(o.orderNo)}&t=${esc(o.token)}" target="_blank">客人看到的頁面</a>
         <button class="btn ghost small" style="flex:1" id="o-copy">複製客人連結</button></div>
+      ${o.byShop ? '<button class="btn ghost block small" id="o-del" style="margin-top:10px;color:var(--red)">刪除這張測試單</button>' : ''}
       <p style="font-weight:700;margin:14px 0 6px">紀錄</p><div class="hist">${(o.history || []).map((h) => `${new Date(h.at).toLocaleString('zh-TW', { hour12: false })}　${esc(h.note)}`).join('<br>')}</div>`);
     let status = o.status;
     el.querySelectorAll('#o-status button').forEach((b) => (b.onclick = () => { status = b.dataset.k; el.querySelectorAll('#o-status button').forEach((x) => x.classList.toggle('on', x === b)); }));
@@ -188,6 +191,13 @@
       } catch (e) { NTC.toast(e.message, 3500); } finally { NTC.loading(false); }
     };
     el.querySelector('#o-save').onclick = () => save();
+    const delBtn = el.querySelector('#o-del');
+    if (delBtn) delBtn.onclick = async () => {
+      if (!confirm(`確定刪除測試單 ${o.orderNo}？刪掉就找不回來。`)) return;
+      NTC.loading(true, '刪除中…');
+      try { await NTC.api(`/admin/orders/${o.orderNo}`, { method: 'DELETE' }); orders = orders.filter((x) => x.orderNo !== o.orderNo); close(); renderOrders(); NTC.toast('已刪除測試單'); }
+      catch (e) { NTC.toast(e.message, 3500); } finally { NTC.loading(false); }
+    };
     const paid = el.querySelector('#o-paid'); if (paid) paid.onclick = () => { if (confirm(`確認已收到 ${money(o.total)}？`)) save({ markPaid: true }); };
     el.querySelector('#o-copy').onclick = async () => {
       const url = new URL(`order.html?no=${o.orderNo}&t=${o.token}`, location.href).href;

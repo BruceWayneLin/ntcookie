@@ -9,7 +9,7 @@
 <link rel="icon" href="assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css?v=1118e">
+<link rel="stylesheet" href="css/app.css?v=1118f">
 </head>
 <body>
 <header class="topbar">
@@ -19,9 +19,9 @@
 </header>
 <main class="wrap" id="app"><div class="spinner"></div></main>
 
-<script src="js/config.js?v=1118e"></script>
-<script src="js/app.js?v=1118e"></script>
-<script src="js/shop.js?v=1118e"></script>
+<script src="js/config.js?v=1118f"></script>
+<script src="js/app.js?v=1118f"></script>
+<script src="js/shop.js?v=1118f"></script>
 <script>
 (async function () {
   const { $, esc, money, asset } = NTC;
@@ -74,8 +74,9 @@
           <a class="btn line block" href="${NTC.chatUrl('您好，我想詢問')}">LINE 聊天詢問</a></section>`;
       return;
     }
+    const testBanner = S.preview ? `<div class="panel note" style="background:#eef4fb;border-color:#c9dcf2"><b>🔧 店家測試模式</b>　你已用店家身分登入，可以實際下單測試（這張單會標成「店家測試單」，後台可以刪）。<br>客人現在看到的是：<b>${S.preview.closed ? '「目前暫停接單」，不能下單' : S.preview.testMode ? '「用 LINE 傳訂單給店家」' : '跟你一樣的結帳畫面'}</b>。</div>` : '';
     app.innerHTML = `
-      ${S.notice ? `<div class="panel note" style="background:#fff6ec">${esc(S.notice)}</div>` : ''}
+      ${testBanner}${S.notice ? `<div class="panel note" style="background:#fff6ec">${esc(S.notice)}</div>` : ''}
       <section class="panel"><h2><span class="n">1</span>購物車</h2>
         <div id="lines">${pc.lines.map((l) => `
           <div class="line-item" data-i="${l.idx}">
@@ -106,6 +107,7 @@
       </section>
 
       <section class="panel"><h2><span class="n">4</span>備註（留言給店家）</h2>
+        <p class="note" style="margin:-4px 0 8px">有什麼想跟店家說的都可以寫在這裡，店家會在訂單上看到。</p>
         <label class="field" style="margin:0"><span class="sr-only">備註</span><textarea id="f-note" maxlength="500" placeholder="例如：送禮用、想放卡片、希望收件時段、其他需求…">${esc(form.note)}</textarea></label>
       </section>
 
