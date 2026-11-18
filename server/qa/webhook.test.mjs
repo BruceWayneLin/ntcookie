@@ -44,7 +44,8 @@ sent.length = 0; await hook([{ type: 'follow', replyToken: 'x', source: { userId
 ok('follow / sticker events are ignored', sent.length === 0, sent);
 
 sent.length = 0; await api('POST', `/orders/${o.orderNo}/transfer`, { t: o.token, last5: '13579' });
-ok('customer reports transfer → admins get a LINE push', sent.some((m) => m.kind === 'push' && /回報已轉帳/.test(m.body.messages[0].text)), sent.map((m) => m.body.messages[0].text));
+const tr = sent.find((m) => m.kind === 'push' && /回報已轉帳/.test(m.body.messages[0].text))?.body.messages[0].text || '';
+ok('customer reports transfer → admins get a LINE push with the customer name (+ LINE name), phone, amount, digits', /卡蘿（LINE：Carol）/.test(tr) && /0912345678/.test(tr) && /\$930/.test(tr) && /13579/.test(tr) && /admin\.html/.test(tr), tr);
 sent.length = 0; await api('PATCH', `/admin/orders/${o.orderNo}`, { markPaid: true }, 'Uqa-admin|QA');
 ok('shop confirms payment → customer gets 已付款 push', sent.some((m) => m.kind === 'push' && m.body.to === CAROL && /付款成功/.test(m.body.messages[0].text)), sent.map((m) => [m.body.to.slice(0, 5), m.body.messages[0].text]));
 sent.length = 0; await api('PATCH', `/admin/orders/${o.orderNo}`, { status: 'shipped', adminMessage: '黑貓 1234-5678' }, 'Uqa-admin|QA');

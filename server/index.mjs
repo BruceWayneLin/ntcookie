@@ -364,7 +364,7 @@ async function markPaid(o, detail, note) {
   const payment = { ...(o.payment || {}), ...detail, status: 'paid', paidAt: new Date().toISOString() };
   const status = ['pending', 'reported'].includes(o.status) ? 'paid' : o.status;
   const n = await setOrder(o.orderNo, { payment, status }, note);
-  await notifyAdmins(`💰 已付款 ${o.orderNo}｜$${o.total}｜${PAY_LABEL[payment.method] || ''}｜${o.contact?.name || ''}`).catch(() => {});
+  await notifyAdmins(`💰 已付款 ${o.orderNo}｜$${o.total}｜${PAY_LABEL[payment.method] || ''}｜${o.contact?.name || ''}${o.user?.name && o.user.name !== o.contact?.name ? `（LINE：${o.user.name}）` : ''}`).catch(() => {});
   await pushTo(o.user?.sub, `您的訂單 ${o.orderNo} 已付款成功，我們會依預約日期為您製作 ♡`).catch(() => {});
   return n;
 }
@@ -684,7 +684,8 @@ async function route(event) {
         const fields = { payment: { ...o.payment, last5, reportedAt: new Date().toISOString() } };
         if (o.status === 'pending') fields.status = 'reported'; // customer says the money is sent; the shop still confirms it arrived
         const n = await setOrder(o.orderNo, fields, `客人回報已匯款，末五碼 ${last5}`);
-        await notifyAdmins(`🏦 ${o.orderNo} 回報已轉帳 $${o.total}，末五碼 ${last5}`).catch(() => {});
+        const who = `${o.contact?.name || ''}${o.user?.name && o.user.name !== o.contact?.name ? `（LINE：${o.user.name}）` : ''}`;
+        await notifyAdmins(`🏦 客人回報已轉帳\n訂單：${o.orderNo}\n客人：${who || '（未填）'}　${o.contact?.phone || ''}\n金額：$${o.total}\n帳號末五碼：${last5}\n\n請到網銀確認入帳後，在後台按「確認已收到款項」：\nhttps://liff.line.me/2012677349-KI6PM6Pz/admin.html`).catch(() => {});
         return json(200, { order: publicOrder(n, await getSettings()) });
       }
       if (method === 'POST' && seg[2] === 'pay') { // retry / switch payment
