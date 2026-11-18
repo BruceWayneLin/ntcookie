@@ -131,15 +131,28 @@ g = await call('/me', { user: ADMIN }); ok('/me marks the admin', g.json.isAdmin
 section('bank transfer');
 for (const v of ['1234', '123456', '12a45', '']) { r = await call(`/orders/${O1.orderNo}/transfer`, { method: 'POST', body: { t: O1.token, last5: v } }); ok(`last5 "${v}" rejected`, r.status === 400, r.status); }
 r = await call(`/orders/${O1.orderNo}/transfer`, { method: 'POST', body: { t: 'wrong', last5: '12345' } }); ok('last5 with wrong token → 403', r.status === 403, r.status);
-r = await call(`/orders/${O1.orderNo}/transfer`, { method: 'POST', body: { t: O1.token, last5: '54321' } }); ok('last5 saved, still unpaid', r.json?.order.payment.last5 === '54321' && r.json.order.payment.status === 'unpaid', r.json?.order?.payment);
+r = await call(`/orders/${O1.orderNo}/transfer`, { method: 'POST', body: { t: O1.token, last5: '54321' } }); ok('last5 saved → 已匯款（待確認）, money not yet confirmed', r.json?.order.payment.last5 === '54321' && r.json.order.payment.status === 'unpaid' && r.json.order.status === 'reported' && r.json.order.statusLabel === '已匯款（待確認）', [r.json?.order?.status, r.json?.order?.payment]);
+r = await call(`/orders/${O1.orderNo}/transfer`, { method: 'POST', body: { t: O1.token, last5: '54322' } }); ok('customer can correct the digits, status stays 已匯款（待確認）', r.json?.order.payment.last5 === '54322' && r.json.order.status === 'reported', r.json?.order?.status);
+r = await call('/admin/orders', { user: ADMIN }); ok('admin list shows 已匯款（待確認） as its own status', r.json.statuses.reported === '已匯款（待確認）' && r.json.orders.find((o) => o.orderNo === O1.orderNo).status === 'reported', r.json.statuses);
 r = await call(`/admin/orders/${O1.orderNo}`, { method: 'PATCH', user: BOB, body: { markPaid: true } }); ok('non-admin cannot mark paid', r.status === 403, r.status);
 r = await call(`/admin/orders/${O1.orderNo}`, { method: 'PATCH', user: ADMIN, body: { markPaid: true } }); ok('admin marks paid → 已付款', r.json?.order.status === 'paid' && r.json.order.payment.status === 'paid', r.json?.order?.status);
 r = await call(`/orders/${O1.orderNo}/pay`, { method: 'POST', body: { t: O1.token } }); ok('paid order cannot be paid again', r.status === 400, r.status);
+r = await call(`/orders/${O1.orderNo}/transfer`, { method: 'POST', body: { t: O1.token, last5: '11111' } }); ok('after 已付款 the customer cannot re-report', r.status === 400, r.status);
+
+section('查詢訂單（訂單編號＋手機）');
+r = await call('/orders/lookup', { method: 'POST', body: { no: O1.orderNo.toLowerCase(), phone: '0912 345 678' } }); ok('right number + phone (any format) → link to the order', r.json?.no === O1.orderNo && r.json.t === O1.token, r.json);
+r = await call('/orders/lookup', { method: 'POST', body: { no: O1.orderNo, phone: '0912345679' } }); ok('wrong phone → not found', r.status === 404 && !r.json.t, r.status);
+r = await call('/orders/lookup', { method: 'POST', body: { no: 'NT000000999', phone: '0912345678' } }); ok('unknown order → not found (same message)', r.status === 404, r.status);
+r = await call('/orders/lookup', { method: 'POST', body: { no: O1.orderNo, phone: '' } }); ok('empty phone → not found', r.status === 404, r.status);
 
 section('admin order handling');
 r = await order(); const O2 = r.json;
-r = await call(`/admin/orders/${O2.orderNo}`, { method: 'PATCH', user: ADMIN, body: { status: 'paid' } });
-ok('choosing status 已付款 also records the payment', r.json?.order.status === 'paid' && r.json.order.payment.status === 'paid', [r.json?.order?.status, r.json?.order?.payment?.status]);
+for (const st of ['paid', 'making', 'shipped', 'done']) { r = await call(`/admin/orders/${O2.orderNo}`, { method: 'PATCH', user: ADMIN, body: { status: st } }); ok(`unpaid order cannot jump to ${st} without confirming the money`, r.status === 400 && /確認收款/.test(r.json.error), [r.status, r.json?.error]); }
+g = await call(`/orders/${O2.orderNo}?t=${O2.token}`); ok('…and it stays 待付款／unpaid', g.json.order.status === 'pending' && g.json.order.payment.status === 'unpaid', g.json.order.status);
+r = await call(`/admin/orders/${O2.orderNo}`, { method: 'PATCH', user: ADMIN, body: { status: 'cancelled' } }); ok('cancelling an unpaid order needs no payment', r.json?.order.status === 'cancelled', r.json?.order?.status);
+r = await call(`/admin/orders/${O2.orderNo}`, { method: 'PATCH', user: ADMIN, body: { status: 'pending' } });
+r = await call(`/admin/orders/${O2.orderNo}`, { method: 'PATCH', user: ADMIN, body: { status: 'paid', markPaid: true } });
+ok('with the shop\'s confirmation → 已付款 and the payment is recorded', r.json?.order.status === 'paid' && r.json.order.payment.status === 'paid' && r.json.order.payment.confirmedBy === 'admin', [r.json?.order?.status, r.json?.order?.payment?.status]);
 r = await call(`/admin/orders/${O2.orderNo}`, { method: 'PATCH', user: ADMIN, body: { status: 'bogus' } }); ok('unknown status ignored', r.json?.order.status === 'paid', r.json?.order?.status);
 r = await call(`/admin/orders/${O2.orderNo}`, { method: 'PATCH', user: ADMIN, body: { status: 'shipped', adminMessage: '已出貨 <b>黑貓</b> 1234', adminNote: '內部備註' } });
 g = await call(`/orders/${O2.orderNo}?t=${O2.token}`); ok('customer sees status + shop message, not the internal note', g.json.order.status === 'shipped' && g.json.order.adminMessage.includes('黑貓') && !JSON.stringify(g.json).includes('內部備註'), g.json.order.status);
@@ -279,6 +292,11 @@ r = await call('/admin/claim', { method: 'POST', user: BOB, body: { invite: NEWI
 await putSettings({ removeAdmins: ['Uqa-bob'] }); r = await call('/admin/orders', { user: BOB }); ok('removed admin is locked out', r.status === 403, r.status);
 r = await call('/admin/settings', { method: 'PUT', user: ADMIN, body: { admins: [{ sub: 'Uhacker', name: 'x' }], adminInvite: 'AAAA' } });
 ok('admins / invite cannot be overwritten through settings', !r.json.settings.admins.some((a) => a.sub === 'Uhacker') && r.json.settings.adminInvite === NEWINV, r.json.settings.admins);
+
+section('查詢鎖定（放最後）');
+const lk = []; for (let i = 0; i < 7; i++) lk.push((await call('/orders/lookup', { method: 'POST', body: { no: 'NT0000000' + i, phone: '0911111111' } })).status);
+r = await call('/orders/lookup', { method: 'POST', body: { no: O1.orderNo, phone: '0912345678' } });
+ok('10 failed lookups → locked 15 minutes, even with the right details', lk.every((x) => x === 404) && r.status === 429, [lk, r.status]);
 
 section('登入鎖定（放最後：這個 IP 接下來 15 分鐘會被鎖）');
 const tries = []; for (let i = 0; i < 8; i++) tries.push((await call('/admin/login', { method: 'POST', body: { pass: 'guess-' + i } })).status);

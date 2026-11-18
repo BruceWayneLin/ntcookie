@@ -210,6 +210,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
 .empty img { width: 120px; margin: 0 auto 12px; opacity: .9; }
 .status-pill { display: inline-block; padding: 4px 10px; border-radius: 999px; font: 700 12.5px/1.3 var(--sans); background: #f1e1d8; color: var(--ink2); }
 .status-pill.pending { background: #fdecd3; color: #9a5b0b; }
+.status-pill.reported { background: #e8eefc; color: #3a4f9a; }
 .status-pill.paid, .status-pill.making { background: #e3f1e6; color: #2f6b3d; }
 .status-pill.shipped, .status-pill.done { background: #e2ecf7; color: #2d5785; }
 .status-pill.cancelled { background: #eee; color: #888; }

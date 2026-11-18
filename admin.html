@@ -9,7 +9,7 @@
 <link rel="icon" href="assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css?v=1118f">
+<link rel="stylesheet" href="css/app.css?v=1118g">
 <style>
   :root { --page: 760px; }
   .tabs { position: sticky; top: 63px; z-index: 20; display: flex; gap: 6px; max-width: var(--page); margin: 0 auto; padding: 8px 14px; background: rgba(248, 237, 231, .96); }
@@ -61,8 +61,8 @@
 <div class="shopbar" id="shopbar" hidden></div>
 <main class="wrap" id="app"><div class="spinner"></div></main>
 <p class="note" id="ver" style="text-align:center;margin:0 0 24px;color:var(--muted)"></p>
-<script src="js/config.js?v=1118f"></script>
-<script src="js/app.js?v=1118f"></script>
+<script src="js/config.js?v=1118g"></script>
+<script src="js/app.js?v=1118g"></script>
 <script>
 (async function () {
   const { $, esc, money, asset } = NTC;
@@ -167,7 +167,7 @@
         <dt>付款</dt><dd>${esc(PAY[p.method] || '')}・${p.status === 'paid' ? `<span class="flag ok">已收款 ${new Date(p.paidAt).toLocaleString('zh-TW', { hour12: false })}</span>` : '<span class="flag">未收款</span>'}
           ${p.last5 ? `<br>客人回報末五碼 <b>${esc(p.last5)}</b>` : ''}${p.info ? `<br>${p.info.kind === 'atm' ? `ATM ${esc(p.info.bankCode)}-${esc(p.info.account)}` : `超商代碼 ${esc(p.info.code)}`}` : ''}
           ${p.simulated ? '<br><span class="flag">測試環境模擬付款</span>' : ''}</dd></dl>
-      ${p.status !== 'paid' && o.status !== 'cancelled' ? '<button class="btn block" id="o-paid" style="margin-bottom:12px">確認已收到款項</button>' : ''}
+      ${p.status !== 'paid' && o.status !== 'cancelled' ? `${o.status === 'reported' ? `<div class="note" style="margin:0 0 8px;padding:10px 12px;border-radius:12px;background:#eef4fb">客人說<b>已經匯款</b>（末五碼 <b>${esc(p.last5 || '')}</b>）。請先到網銀確認真的收到 <b>${money(o.total)}</b>，再按下面的按鈕。</div>` : ''}<button class="btn block" id="o-paid" style="margin-bottom:12px">確認已收到款項</button>` : ''}
       <p style="font-weight:700;margin:0 0 6px">訂單狀態</p>
       <div class="statusbar" id="o-status" style="margin-bottom:12px">${Object.entries(statuses).map(([k, t]) => `<button data-k="${k}" class="${k === o.status ? 'on' : ''}">${t}</button>`).join('')}</div>
       <label class="field"><span>給客人看的留言（顯示在客人的訂單頁）</span><input id="o-msg" value="${esc(o.adminMessage)}" maxlength="500" placeholder="例如：已出貨，黑貓單號 1234-5678-9012"></label>
@@ -185,6 +185,10 @@
         const body = { status, adminMessage: el.querySelector('#o-msg').value, adminNote: el.querySelector('#o-note').value, ...extra };
         const d = el.querySelector('#o-date').value; if (d && d !== o.date) body.date = d;
         if (body.status === 'cancelled' && o.status !== 'cancelled' && !confirm(`確定取消 ${o.orderNo}？`)) { NTC.loading(false); return; }
+        if (['paid', 'making', 'shipped', 'done'].includes(body.status) && body.status !== o.status && o.payment.status !== 'paid' && !body.markPaid) {
+          if (!confirm(moneyCheck())) { NTC.loading(false); return; }
+          body.markPaid = true;
+        }
         const { order } = await NTC.api(`/admin/orders/${o.orderNo}`, { method: 'PATCH', body });
         orders = orders.map((x) => (x.orderNo === order.orderNo ? order : x));
         close(); renderOrders(); NTC.toast('已儲存');
@@ -198,7 +202,10 @@
       try { await NTC.api(`/admin/orders/${o.orderNo}`, { method: 'DELETE' }); orders = orders.filter((x) => x.orderNo !== o.orderNo); close(); renderOrders(); NTC.toast('已刪除測試單'); }
       catch (e) { NTC.toast(e.message, 3500); } finally { NTC.loading(false); }
     };
-    const paid = el.querySelector('#o-paid'); if (paid) paid.onclick = () => { if (confirm(`確認已收到 ${money(o.total)}？`)) save({ markPaid: true }); };
+    function moneyCheck() {
+      return `這筆訂單還沒確認收款。\n\n請先到網銀確認已經收到：\n金額 ${money(o.total)}${o.payment.last5 ? `\n客人帳號末五碼 ${o.payment.last5}` : '\n（客人還沒回報末五碼）'}\n\n確定錢已經入帳了嗎？`;
+    }
+    const paid = el.querySelector('#o-paid'); if (paid) paid.onclick = () => { if (confirm(moneyCheck())) save({ markPaid: true }); };
     el.querySelector('#o-copy').onclick = async () => {
       const url = new URL(`order.html?no=${o.orderNo}&t=${o.token}`, location.href).href;
       try { await navigator.clipboard.writeText(url); NTC.toast('已複製，可以貼給客人'); } catch (e) { prompt('客人訂單連結', url); }

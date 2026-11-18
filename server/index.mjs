@@ -302,7 +302,7 @@ async function nextOrderNo() {
 
 // ---------------------------------------------------------------- orders
 const STATUS = {
-  pending: '待付款', paid: '已付款', making: '製作中', shipped: '已出貨', done: '已完成', cancelled: '已取消',
+  pending: '待付款', reported: '已匯款（待確認）', paid: '已付款', making: '製作中', shipped: '已出貨', done: '已完成', cancelled: '已取消',
 };
 const PAY_LABEL = { linepay: 'LINE Pay', ecpay: '信用卡／ATM／超商', transfer: '銀行轉帳' };
 
@@ -342,7 +342,7 @@ async function setOrder(no, fields, historyNote) {
 async function markPaid(o, detail, note) {
   if (o.payment?.status === 'paid') return o;
   const payment = { ...(o.payment || {}), ...detail, status: 'paid', paidAt: new Date().toISOString() };
-  const status = o.status === 'pending' ? 'paid' : o.status;
+  const status = ['pending', 'reported'].includes(o.status) ? 'paid' : o.status;
   const n = await setOrder(o.orderNo, { payment, status }, note);
   await notifyAdmins(`💰 已付款 ${o.orderNo}｜$${o.total}｜${PAY_LABEL[payment.method] || ''}｜${o.contact?.name || ''}`).catch(() => {});
   await pushTo(o.user?.sub, `您的訂單 ${o.orderNo} 已付款成功，我們會依預約日期為您製作 ♡`).catch(() => {});
@@ -582,6 +582,20 @@ async function route(event) {
     }
     if (method === 'GET' && seg[0] === 'img' && seg[1]) return getImage(seg[1]);
     if (method === 'POST' && path === '/orders') return await createOrder(event);
+    if (method === 'POST' && path === '/orders/lookup') { // 查詢訂單：訂單編號＋下單時填的手機
+      const b = parseBody(event);
+      const ip = event.requestContext?.http?.sourceIp || 'unknown';
+      const rec = (await get('LOOKUPFAIL', ip)) || { count: 0, until: 0 };
+      if (rec.until > Date.now()) throw new HttpError(429, '查詢太多次，請 15 分鐘後再試，或直接用 LINE 問我們');
+      const digits = (v) => String(v ?? '').replace(/\D/g, '');
+      const o = await get('ORDER', str(b.no, 20).toUpperCase().replace(/\s/g, ''));
+      if (!o || digits(o.contact?.phone).length < 8 || digits(o.contact.phone) !== digits(b.phone)) {
+        const count = (rec.count || 0) + 1;
+        await put({ pk: 'LOOKUPFAIL', sk: ip, count: count >= 10 ? 0 : count, until: count >= 10 ? Date.now() + 15 * 60e3 : 0 });
+        throw new HttpError(404, '找不到這筆訂單，請確認訂單編號和手機號碼');
+      }
+      return json(200, { no: o.orderNo, t: o.token, total: o.total });
+    }
     if (seg[0] === 'orders' && seg[1]) {
       const q = new URLSearchParams(event.rawQueryString || '');
       if (method === 'GET' && seg.length === 2) {
@@ -593,7 +607,10 @@ async function route(event) {
         const o = await loadOrder(seg[1], event, b.t);
         const last5 = String(b.last5 ?? '').trim();
         if (!/^\d{5}$/.test(last5)) throw bad('請填帳號末五碼（5 個數字）');
-        const n = await setOrder(o.orderNo, { payment: { ...o.payment, last5, reportedAt: new Date().toISOString() } }, `客人回報轉帳末五碼 ${last5}`);
+        if (o.payment?.status === 'paid' || o.status === 'cancelled') throw bad('這筆訂單不需要再回報匯款');
+        const fields = { payment: { ...o.payment, last5, reportedAt: new Date().toISOString() } };
+        if (o.status === 'pending') fields.status = 'reported'; // customer says the money is sent; the shop still confirms it arrived
+        const n = await setOrder(o.orderNo, fields, `客人回報已匯款，末五碼 ${last5}`);
         await notifyAdmins(`🏦 ${o.orderNo} 回報已轉帳 $${o.total}，末五碼 ${last5}`).catch(() => {});
         return json(200, { order: publicOrder(n, await getSettings()) });
       }
@@ -672,14 +689,19 @@ async function route(event) {
         if (!o) throw new HttpError(404, '找不到訂單');
         const b = parseBody(event);
         const fields = {}; const notes = [];
+        // money first: an unpaid order only moves to 已付款 / 製作中 / 已出貨 / 已完成 when the shop explicitly confirms the payment arrived
+        const AFTER_PAY = ['paid', 'making', 'shipped', 'done'];
+        if (AFTER_PAY.includes(b.status) && b.status !== o.status && o.payment?.status !== 'paid' && !b.markPaid) {
+          throw bad('這筆還沒確認收款。請先到網銀確認錢已入帳，再按「確認已收到款項」。');
+        }
         if (b.status && STATUS[b.status] && b.status !== o.status) {
           fields.status = b.status; notes.push(`狀態 → ${STATUS[b.status]}`);
           if (b.status === 'cancelled') await releaseDateSlot(o.date);
           if (o.status === 'cancelled') await takeDateSlot(o.date, { ...settings, maxOrdersPerDay: 0 });
         }
-        if ((b.markPaid || b.status === 'paid') && o.payment?.status !== 'paid') {
+        if (b.markPaid && o.payment?.status !== 'paid') {
           fields.payment = { ...o.payment, status: 'paid', paidAt: new Date().toISOString(), confirmedBy: 'admin' };
-          if ((fields.status || o.status) === 'pending') fields.status = 'paid';
+          if (['pending', 'reported'].includes(fields.status || o.status)) fields.status = 'paid';
           notes.push('管理員確認已收款');
         }
         if (b.adminNote !== undefined) fields.adminNote = str(b.adminNote, 1000);

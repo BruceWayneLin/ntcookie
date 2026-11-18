@@ -9,7 +9,7 @@
 <link rel="icon" href="assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css?v=1118f">
+<link rel="stylesheet" href="css/app.css?v=1118g">
 </head>
 <body>
 <header class="topbar">
@@ -18,8 +18,8 @@
   <a class="circle-btn" href="orders.html" aria-label="我的訂單"><svg viewBox="0 0 24 24"><path d="M7 3h10a1 1 0 0 1 1 1v17l-3-2-3 2-3-2-3 2V4a1 1 0 0 1 1-1z"/><path d="M9 8h6M9 12h6"/></svg></a>
 </header>
 <main class="wrap" id="app"><div class="spinner"></div></main>
-<script src="js/config.js?v=1118f"></script>
-<script src="js/app.js?v=1118f"></script>
+<script src="js/config.js?v=1118g"></script>
+<script src="js/app.js?v=1118g"></script>
 <script>
 (async function () {
   const { $, esc, money } = NTC;
@@ -48,9 +48,10 @@
         <dl class="kv"><dt>銀行</dt><dd>${esc(b.name)}${b.code ? `（${esc(b.code)}）` : ''}</dd>
         <dt>帳號</dt><dd>${esc(b.account)} ${copyBtn(b.account)}</dd>${b.holder ? `<dt>戶名</dt><dd>${esc(b.holder)}</dd>` : ''}
         <dt>金額</dt><dd>${money(o.total)} ${copyBtn(o.total)}</dd></dl>
-        ${p.last5 ? `<p class="note" style="margin:12px 0 0">✓ 已回報末五碼 <b>${esc(p.last5)}</b>，店家對帳後會更新為「已付款」。</p>` : ''}
+        ${p.last5 ? `<div style="margin:12px 0 0;padding:10px 12px;border-radius:12px;background:#eef4fb"><b>✓ 已回報匯款</b>（末五碼 ${esc(p.last5)}）<br><span class="note">店家確認收到後，這裡會變成「已付款」。想讓店家更快看到，可以按下面的按鈕用 LINE 通知。</span>
+          <a class="btn line block small" style="margin-top:10px" href="${NTC.chatUrl(`您好，我已經匯款了\n訂單：${o.orderNo}\n金額：${money(o.total)}\n帳號末五碼：${p.last5}`)}">用 LINE 通知店家我已匯款</a></div>` : ''}
         <div class="row" style="margin-top:12px"><input id="last5" inputmode="numeric" maxlength="5" placeholder="帳號末五碼" style="flex:1;border:1.5px solid #e6d2c6;border-radius:12px;padding:12px;font-size:16px" value="${esc(p.last5 || '')}">
-        <button class="btn small" id="sendLast5">${p.last5 ? '更新' : '回報已轉帳'}</button></div>`;
+        <button class="btn small" id="sendLast5">${p.last5 ? '更新' : '回報已匯款'}</button></div>`;
     } else if (p.method === 'ecpay' && p.info) {
       const i = p.info;
       h += i.kind === 'atm'
@@ -68,6 +69,8 @@
   function render() {
     const fresh = q.get('new') === '1' || pay === 'ok';
     app.innerHTML = `
+      ${fresh && o.payment.method === 'transfer' && o.payment.status !== 'paid' ? `<div class="panel" style="background:#fff6ec"><b>請記下訂單編號 ${esc(o.orderNo)}</b><p class="note" style="margin:4px 0 10px">匯款後回到這一頁填末五碼。找不到這頁時：官網選單 →「我的訂單」→ 用訂單編號＋手機查詢；或按下面把訂單傳到 LINE 聊天室留著。</p>
+        <a class="btn line block small" href="${NTC.chatUrl(`您好，我下了一張訂單\n訂單：${o.orderNo}\n金額：${money(o.total)}\n${location.href.replace(/&new=1|&pay=[a-z]+/g, '')}`)}">把訂單傳到 LINE（店家也會看到）</a></div>` : ''}
       ${fresh && o.payment.status === 'paid' ? '<div class="panel" style="text-align:center;background:#f3faf4"><p style="font:900 22px var(--serif);margin:4px 0">付款成功，謝謝您 ♡</p><p class="note" style="margin:0">我們會依日期為您手作，出貨時會再通知。</p></div>'
         : fresh ? '<div class="panel" style="text-align:center"><p style="font:900 22px var(--serif);margin:4px 0">訂單已送出 ♡</p><p class="note" style="margin:0">完成付款後就會開始安排製作。</p></div>' : ''}
       <section class="panel">
