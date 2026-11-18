@@ -9,7 +9,7 @@
 <link rel="icon" href="assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css?v=1118n">
+<link rel="stylesheet" href="css/app.css?v=1118o">
 <style>
   :root { --page: 760px; }
   .tabs { position: sticky; top: 63px; z-index: 20; display: flex; gap: 6px; max-width: var(--page); margin: 0 auto; padding: 8px 14px; background: rgba(248, 237, 231, .96); }
@@ -61,8 +61,8 @@
 <div class="shopbar" id="shopbar" hidden></div>
 <main class="wrap" id="app"><div class="spinner"></div></main>
 <p class="note" id="ver" style="text-align:center;margin:0 0 24px;color:var(--muted)"></p>
-<script src="js/config.js?v=1118n"></script>
-<script src="js/app.js?v=1118n"></script>
+<script src="js/config.js?v=1118o"></script>
+<script src="js/app.js?v=1118o"></script>
 <script>
 (async function () {
   const { $, esc, money, asset } = NTC;
@@ -367,7 +367,7 @@
         <p class="note" style="margin:0 0 8px">輸入對方的手機號碼和名字 → 請對方在 LINE 打開後台（<code>liff.line.me/2012677349-KI6PM6Pz/admin.html</code>），輸入同一個手機號碼，就會成為管理員，以後在 LINE 打開會自動進來。每個號碼只能綁一個 LINE 帳號。</p>
         ${(s.adminPhones || []).map((p) => `<div class="row" style="padding:5px 0"><span class="sp">${esc(p.phone.replace(/^(\d{4})(\d{3})(\d+)$/, '$1-$2-$3'))}${p.label ? `（${esc(p.label)}）` : ''}　${p.owner ? '<span class="flag ok">固定・最大權限</span>' : p.boundSub ? `<span class="flag ok">已綁定 ${esc(p.boundName || '')}</span>` : '<span class="flag">等待綁定</span>'}</span>${p.owner ? '' : `<button class="tag-del" data-rmphone="${esc(p.phone)}">移除</button>`}</div>`).join('') || '<p class="note" style="margin:0 0 6px">還沒有新增</p>'}
         <div class="row" style="gap:8px;margin:6px 0 14px"><input id="s-addphone" type="tel" inputmode="tel" placeholder="09xx-xxx-xxx" style="flex:1;border:1.5px solid #e6d2c6;border-radius:12px;padding:10px"><input id="s-addlabel" placeholder="名字（選填）" style="width:34%;border:1.5px solid #e6d2c6;border-radius:12px;padding:10px"><button class="btn small" id="s-addphonebtn" type="button">新增</button></div>
-        ${(s.admins || []).map((a) => `<div class="row" style="padding:6px 0">${a.picture ? `<img src="${esc(a.picture)}" style="width:30px;height:30px;border-radius:50%" alt="">` : ''}<span class="sp">${esc(a.name)}${a.owner ? ' <span class="flag ok">負責人</span>' : ''}</span><button class="tag-del" data-rm="${esc(a.sub)}">移除</button></div>`).join('')}
+        ${(s.admins || []).map((a) => `<div class="row" style="padding:6px 0">${a.picture ? `<img src="${esc(a.picture)}" style="width:30px;height:30px;border-radius:50%" alt="">` : ''}<span class="sp">${esc(a.name)}${a.fixed ? ' <span class="flag ok">最大管理員・固定</span>' : a.owner ? ' <span class="flag ok">負責人</span>' : ''}</span>${a.fixed ? '' : `<button class="tag-del" data-rm="${esc(a.sub)}">移除</button>`}</div>`).join('')}
         <p class="note" style="margin:10px 0 6px">把這個連結傳給要加入的人，用 LINE 打開一次就會變成管理員：</p>
         <code>${esc(liffInvite || inviteUrl)}</code>
         <div class="row" style="gap:8px;margin-top:8px"><button class="btn ghost small" id="s-copyinv" style="flex:1">複製邀請連結</button><button class="btn ghost small" id="s-rotate" style="flex:1">換一個新連結</button></div></section>`;

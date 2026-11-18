@@ -112,7 +112,7 @@ async function getSettings() {
 const linepayReady = () => !!(env.LINEPAY_CHANNEL_ID && env.LINEPAY_CHANNEL_SECRET);
 const ecpayReady = () => !!(env.ECPAY_MERCHANT_ID && env.ECPAY_HASH_KEY && env.ECPAY_HASH_IV);
 
-const isAdminOf = (s, u) => !!(u && (u.shopAdmin || (s.admins || []).some((a) => a.sub === u.sub)));
+const isAdminOf = (s, u) => !!(u && (u.shopAdmin || OWNER_IDS.has(u.sub) || (s.admins || []).some((a) => a.sub === u.sub)));
 function publicSettings(s, admin = false) {
   const bankReady = !!(s.bank?.account);
   const open = !s.testMode || admin; // while testing, only admins can pay online
@@ -161,8 +161,12 @@ function readSession(tok, s) {
 const SHOP_ADMIN = { sub: 'shop-admin', name: '店家', picture: '', shopAdmin: true };
 // 負責人手機：寫死在伺服器設定（OWNER_PHONE），後台刪不掉；任何 LINE 帳號輸入這個號碼都會成為「負責人」等級的管理員
 const OWNER_PHONE = String(env.OWNER_PHONE || '').replace(/\D/g, '');
-const isOwnerOf = (s, u) => !!(u && (s.admins || []).some((a) => a.sub === u.sub && a.owner));
+// 最大管理員：寫死的 LINE 帳號 ID（OWNER_LINE_IDS，逗號分隔），永遠是負責人、後台刪不掉
+const OWNER_IDS = new Set(String(env.OWNER_LINE_IDS || '').split(',').map((x) => x.trim()).filter(Boolean));
+const isOwnerOf = (s, u) => !!(u && (OWNER_IDS.has(u.sub) || (s.admins || []).some((a) => a.sub === u.sub && a.owner)));
 const adminView = (s) => ({ ...s, pk: undefined, sk: undefined, adminPass: undefined, sessionSecret: undefined, hasAdminPass: !!s.adminPass,
+  admins: [...(s.admins || []).map((a) => (OWNER_IDS.has(a.sub) ? { ...a, owner: true, fixed: true } : a)),
+    ...[...OWNER_IDS].filter((id) => !(s.admins || []).some((a) => a.sub === id)).map((id) => ({ sub: id, name: '負責人（還沒登入過）', owner: true, fixed: true }))],
   adminPhones: [...(OWNER_PHONE ? [{ phone: OWNER_PHONE, label: '負責人', owner: true }] : []), ...(s.adminPhones || []).filter((p) => p.phone !== OWNER_PHONE)] });
 
 // ---------------------------------------------------------------- auth (LIFF ID token)
@@ -740,6 +744,13 @@ async function route(event) {
         return json(200, { token: signSession(s) });
       }
       const { settings, user: me } = await requireAdmin(event);
+      if (OWNER_IDS.has(me.sub)) {
+        const cur = (settings.admins || []).find((a) => a.sub === me.sub);
+        if (!cur || cur.name !== me.name || cur.picture !== me.picture) {
+          settings.admins = [...(settings.admins || []).filter((a) => a.sub !== me.sub), { sub: me.sub, name: me.name, picture: me.picture, addedAt: cur?.addedAt || new Date().toISOString(), owner: true, via: 'fixed' }];
+          await put({ ...settings, pk: 'SETTINGS', sk: 'main' });
+        }
+      }
       if (method === 'GET' && path === '/admin/orders') {
         const q = new URLSearchParams(event.rawQueryString || '');
         let orders = await queryAll({ KeyConditionExpression: 'pk = :p', ExpressionAttributeValues: { ':p': 'ORDER' }, ScanIndexForward: false });
@@ -849,6 +860,7 @@ async function route(event) {
         if (Array.isArray(b.removeAdminPhones)) next.adminPhones = (next.adminPhones || settings.adminPhones || []).filter((p) => !b.removeAdminPhones.includes(p.phone));
         if (b.rotateInvite) next.adminInvite = randAlnum(10);
         if (Array.isArray(b.removeAdmins)) {
+          if (b.removeAdmins.some((id) => OWNER_IDS.has(id))) throw new HttpError(403, '最大管理員是固定的，不能移除');
           const owner = isOwnerOf(settings, me);
           if (!owner && (next.admins || []).some((a) => a.owner && b.removeAdmins.includes(a.sub))) throw new HttpError(403, '負責人只能由負責人自己移除');
           next.admins = (next.admins || []).filter((a) => !b.removeAdmins.includes(a.sub));

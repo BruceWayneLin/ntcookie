@@ -341,6 +341,21 @@ r = await call('/admin/settings', { method: 'PUT', user: JAY, body: { removeAdmi
 ok('the owner can remove another owner account', r.status === 200 && g.status === 403, [r.status, g.status]);
 r = await call('/admin/settings', { method: 'PUT', user: JAY, body: { removeAdmins: ['Uqa-jay'] } }); ok('the owner can remove themselves', r.status === 200, r.status);
 
+section('最大管理員（寫死的 LINE 帳號）');
+const BOSS = 'Uqa-boss|Boss';
+r = await call('/admin/orders', { user: BOSS }); ok('the fixed LINE account is admin with no invite, phone or approval', r.status === 200, r.status);
+r = await call('/admin/settings', { user: ADMIN }); const bossRow = r.json.settings.admins.find((a) => a.sub === 'Uqa-boss');
+ok('listed as 最大管理員 (fixed, owner)', bossRow && bossRow.fixed && bossRow.owner && bossRow.name === 'Boss', bossRow);
+r = await putSettings({ removeAdmins: ['Uqa-boss'] }); ok('nobody can remove the fixed admin', r.status === 403, r.status);
+r = await call('/admin/settings', { method: 'PUT', user: BOSS, body: { removeAdmins: ['Uqa-boss'] } }); ok('not even themselves', r.status === 403, r.status);
+await call('/admin/bind-phone', { method: 'POST', user: 'Uqa-lia|Lia', body: { phone: '0900123456' } });
+r = await call('/admin/settings', { method: 'PUT', user: BOSS, body: { removeAdmins: ['Uqa-lia'] } }); g = await call('/admin/orders', { user: 'Uqa-lia|Lia' });
+ok('the fixed admin can remove a 負責人 added by phone', r.status === 200 && g.status === 403, [r.status, g.status]);
+r = await call('/admin/settings', { method: 'PUT', user: BOSS, body: { addAdminPhones: [{ phone: '0933444555', label: '幫手' }] } });
+g = await call('/admin/bind-phone', { method: 'POST', user: 'Uqa-max|Max', body: { phone: '0933444555' } }); r = await call('/admin/orders', { user: 'Uqa-max|Max' });
+ok('others get in only how she allows: a phone she adds', g.status === 200 && r.status === 200, [g.status, r.status]);
+await putSettings({ removeAdmins: ['Uqa-max'], removeAdminPhones: ['0933444555'] });
+
 section('admin invite');
 r = await putSettings({ rotateInvite: true }); const NEWINV = r.json.settings.adminInvite;
 ok('invite rotated', NEWINV && NEWINV !== INVITE, NEWINV);
