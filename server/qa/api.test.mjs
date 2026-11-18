@@ -273,7 +273,7 @@ await putSettings({ pauseOrders: false });
 ok('order from a shop login is marked 店家測試單', g.json.orders.find((o) => o.orderNo === OP.orderNo).byShop === true && g.json.orders.find((o) => o.orderNo === O1.orderNo).byShop === false, 'flag');
 r = await call('/catalog', { headers: bearer(T) }); g = await call('/catalog');
 ok('only a shop login is told what customers currently see', r.json.settings.preview && r.json.settings.preview.closed === false && !('preview' in g.json.settings), [r.json.settings.preview, g.json.settings.preview]);
-r = await call(`/admin/orders/${O1.orderNo}`, { method: 'DELETE', headers: bearer(T) }); ok('a customer order cannot be deleted (cancel instead)', r.status === 400, r.status);
+r = await call(`/admin/orders/${O1.orderNo}`, { method: 'DELETE', headers: bearer(T) }); ok('a normal admin cannot delete a customer order (cancel instead)', r.status === 403, r.status);
 r = await call(`/admin/orders/${OP.orderNo}`, { method: 'DELETE' }); ok('deleting needs a login', r.status === 401, r.status);
 r = await call(`/admin/orders/${OP.orderNo}`, { method: 'DELETE', user: ALICE }); ok('a customer cannot delete orders', r.status === 403, r.status);
 r = await call(`/admin/orders/${OP.orderNo}`, { method: 'DELETE', headers: bearer(T) }); g = await call(`/orders/${OP.orderNo}?t=${OP.token}`);
@@ -355,6 +355,19 @@ r = await call('/admin/settings', { method: 'PUT', user: BOSS, body: { addAdminP
 g = await call('/admin/bind-phone', { method: 'POST', user: 'Uqa-max|Max', body: { phone: '0933444555' } }); r = await call('/admin/orders', { user: 'Uqa-max|Max' });
 ok('others get in only how she allows: a phone she adds', g.status === 200 && r.status === 200, [g.status, r.status]);
 await putSettings({ removeAdmins: ['Uqa-max'], removeAdminPhones: ['0933444555'] });
+
+section('刪除客人訂單（只有最大管理員）');
+r = await order({}, 'Uqa-cust|Cust'); const OD = r.json;
+r = await call(`/admin/orders/${OD.orderNo}`, { method: 'DELETE', user: BOSS }); ok('not cancelled yet → refused', r.status === 400 && /已取消/.test(r.json.error), [r.status, r.json?.error]);
+await call(`/admin/orders/${OD.orderNo}`, { method: 'PATCH', user: ADMIN, body: { status: 'cancelled' } });
+r = await call(`/admin/orders/${OD.orderNo}`, { method: 'DELETE', user: ADMIN }); ok('a normal admin cannot delete a customer order', r.status === 403, r.status);
+r = await call('/admin/orders', { user: ADMIN }); g = await call('/admin/orders', { user: BOSS }); ok('only the fixed admin is told they may delete', r.json.canDeleteReal === false && g.json.canDeleteReal === true, [r.json.canDeleteReal, g.json.canDeleteReal]);
+r = await call(`/admin/orders/${OD.orderNo}`, { method: 'DELETE', user: BOSS }); g = await call(`/orders/${OD.orderNo}?t=${OD.token}`);
+ok('Irene (fixed admin) deletes a cancelled, unpaid order', r.status === 200 && g.status === 404, [r.status, g.status]);
+r = await order({}, 'Uqa-cust|Cust'); const OP2 = r.json;
+await call(`/admin/orders/${OP2.orderNo}`, { method: 'PATCH', user: ADMIN, body: { markPaid: true } });
+await call(`/admin/orders/${OP2.orderNo}`, { method: 'PATCH', user: ADMIN, body: { status: 'cancelled' } });
+r = await call(`/admin/orders/${OP2.orderNo}`, { method: 'DELETE', user: BOSS }); ok('a paid order is never deletable, even when cancelled', r.status === 400 && /收過款/.test(r.json.error), [r.status, r.json?.error]);
 
 section('admin invite');
 r = await putSettings({ rotateInvite: true }); const NEWINV = r.json.settings.adminInvite;

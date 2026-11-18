@@ -9,7 +9,7 @@
 <link rel="icon" href="assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css?v=1118r">
+<link rel="stylesheet" href="css/app.css?v=1118s">
 <style>
   :root { --page: 760px; }
   .tabs { position: sticky; top: 63px; z-index: 20; display: flex; gap: 6px; max-width: var(--page); margin: 0 auto; padding: 8px 14px; background: rgba(248, 237, 231, .96); }
@@ -61,8 +61,8 @@
 <div class="shopbar" id="shopbar" hidden></div>
 <main class="wrap" id="app"><div class="spinner"></div></main>
 <p class="note" id="ver" style="text-align:center;margin:0 0 24px;color:var(--muted)"></p>
-<script src="js/config.js?v=1118r"></script>
-<script src="js/app.js?v=1118r"></script>
+<script src="js/config.js?v=1118s"></script>
+<script src="js/app.js?v=1118s"></script>
 <script>
 (async function () {
   const { $, esc, money, asset } = NTC;
@@ -70,6 +70,7 @@
   $('#ver').textContent = '版本 ' + (NTC_CONFIG.version || '');
   const q = new URLSearchParams(location.search);
   const PAY = { linepay: 'LINE Pay', ecpay: '綠界', transfer: '轉帳' };
+  let canDeleteReal = false; // only the fixed top admin may delete customer orders
   let tab = 'orders'; let statuses = {}; let orders = []; let filter = 'open'; let sortBy = 'created';
   let products = []; let settings = null; let ready = {};
 
@@ -168,7 +169,7 @@
     };
   }
 
-  async function loadOrders() { const r = await NTC.api('/admin/orders'); orders = r.orders; statuses = r.statuses; }
+  async function loadOrders() { const r = await NTC.api('/admin/orders'); orders = r.orders; statuses = r.statuses; canDeleteReal = !!r.canDeleteReal; }
   async function loadSettings() { const r = await NTC.api('/admin/settings'); settings = r.settings; ready = r.ready; }
   async function show() {
     if (tab === 'orders') return renderOrders();
@@ -221,7 +222,8 @@
       <button class="btn block" id="o-save">儲存</button>
       <div class="row" style="gap:8px;margin-top:10px"><a class="btn ghost small" style="flex:1" href="order.html?no=${esc(o.orderNo)}&t=${esc(o.token)}" target="_blank">客人看到的頁面</a>
         <button class="btn ghost small" style="flex:1" id="o-copy">複製客人連結</button></div>
-      ${o.byShop ? '<button class="btn ghost block small" id="o-del" style="margin-top:10px;color:var(--red)">刪除這張測試單</button>' : ''}
+      ${o.byShop ? '<button class="btn ghost block small" id="o-del" style="margin-top:10px;color:var(--red)">刪除這張測試單</button>'
+        : canDeleteReal && o.status === 'cancelled' && p.status !== 'paid' ? '<button class="btn ghost block small" id="o-del" style="margin-top:10px;color:var(--red)">刪除這筆訂單（只有最大管理員看得到）</button>' : ''}
       <p style="font-weight:700;margin:14px 0 6px">紀錄</p><div class="hist">${(o.history || []).map((h) => `${new Date(h.at).toLocaleString('zh-TW', { hour12: false })}　${esc(h.note)}`).join('<br>')}</div>`);
     let status = o.status;
     el.querySelectorAll('#o-status button').forEach((b) => (b.onclick = () => { status = b.dataset.k; el.querySelectorAll('#o-status button').forEach((x) => x.classList.toggle('on', x === b)); }));
@@ -243,9 +245,10 @@
     el.querySelector('#o-save').onclick = () => save();
     const delBtn = el.querySelector('#o-del');
     if (delBtn) delBtn.onclick = async () => {
-      if (!confirm(`確定刪除測試單 ${o.orderNo}？刪掉就找不回來。`)) return;
+      if (!confirm(o.byShop ? `確定刪除測試單 ${o.orderNo}？刪掉就找不回來。` : `確定刪除客人的訂單 ${o.orderNo}（${o.contact.name}）？\n刪除後客人的訂單連結也會失效，而且找不回來。`)) return;
+      if (!o.byShop && !confirm('再確認一次：真的要永久刪除這筆訂單？')) return;
       NTC.loading(true, '刪除中…');
-      try { await NTC.api(`/admin/orders/${o.orderNo}`, { method: 'DELETE' }); orders = orders.filter((x) => x.orderNo !== o.orderNo); close(); renderOrders(); NTC.toast('已刪除測試單'); }
+      try { await NTC.api(`/admin/orders/${o.orderNo}`, { method: 'DELETE' }); orders = orders.filter((x) => x.orderNo !== o.orderNo); close(); renderOrders(); NTC.toast(o.byShop ? '已刪除測試單' : '已刪除訂單'); }
       catch (e) { NTC.toast(e.message, 3500); } finally { NTC.loading(false); }
     };
     function moneyCheck() {

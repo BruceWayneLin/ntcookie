@@ -371,7 +371,7 @@ async function markPaid(o, detail, note) {
 
 // optional: LINE Messaging API push (only when the OA has Messaging API enabled and a token is set)
 async function pushTo(to, message) {
-  if (!env.LINE_MESSAGING_TOKEN || !to) return;
+  if (!env.LINE_MESSAGING_TOKEN || !to || !/^U[0-9a-f]{32}$/.test(to)) return; // only real LINE user IDs
   await fetch('https://api.line.me/v2/bot/message/push', {
     method: 'POST', headers: { 'content-type': 'application/json', authorization: `Bearer ${env.LINE_MESSAGING_TOKEN}` },
     body: JSON.stringify({ to, messages: [{ type: 'text', text: message.slice(0, 4900) }] }),
@@ -380,7 +380,58 @@ async function pushTo(to, message) {
 async function notifyAdmins(message) {
   if (!env.LINE_MESSAGING_TOKEN) return;
   const s = await getSettings();
-  await Promise.all((s.admins || []).map((a) => pushTo(a.sub, message)));
+  const ids = new Set([...OWNER_IDS, ...(s.admins || []).map((a) => a.sub)]);
+  await Promise.all([...ids].map((id) => pushTo(id, message).catch(() => {})));
+}
+
+// ---------------------------------------------------------------- LINE 官方帳號自動回覆（Messaging API webhook）
+// 客人在聊天室傳訂單編號 → 自動回目前狀態；傳「訂單／查詢／進度」→ 回這個 LINE 帳號最近的訂單。其他訊息不回（留給店家聊天）。
+async function lineReply(replyToken, textMsg) {
+  if (!env.LINE_MESSAGING_TOKEN || !replyToken) return;
+  await fetch('https://api.line.me/v2/bot/message/reply', {
+    method: 'POST', headers: { 'content-type': 'application/json', authorization: `Bearer ${env.LINE_MESSAGING_TOKEN}` },
+    body: JSON.stringify({ replyToken, messages: [{ type: 'text', text: textMsg.slice(0, 4900) }] }),
+  });
+}
+const twDay = (ymd) => { const d = new Date(ymd + 'T00:00:00Z'); return `${d.getUTCMonth() + 1}/${d.getUTCDate()}（${'日一二三四五六'[d.getUTCDay()]}）`; };
+function payLine(o) {
+  if (o.status === 'cancelled') return '';
+  if (o.payment?.status === 'paid') return '付款：已確認收到 ✓';
+  if (o.status === 'reported') return `付款：已收到您的匯款回報（末五碼 ${o.payment.last5}），店家確認中`;
+  if (o.payment?.method === 'transfer') return `付款：請匯款 $${o.total}，再到訂單頁回報帳號末五碼`;
+  return '付款：尚未完成';
+}
+function statusText(o, mine) {
+  if (!mine) return `📦 ${o.orderNo}
+目前狀態：${STATUS[o.status] || o.status}`; // not this LINE account's order: status only, no personal details
+  return [`📦 ${o.orderNo}`, `目前狀態：${STATUS[o.status] || o.status}`, payLine(o), `${'希望到貨'}：${twDay(o.date)}`, `合計：$${o.total}`, o.adminMessage ? `店家留言：${o.adminMessage}` : ''].filter(Boolean).join('\n');
+}
+async function lineWebhook(event) {
+  const raw = event.isBase64Encoded ? Buffer.from(event.body || '', 'base64').toString('utf8') : (event.body || '');
+  const sig = String(event.headers?.['x-line-signature'] || '');
+  const good = crypto.createHmac('sha256', env.LINE_MESSAGING_SECRET || 'unset').update(raw).digest('base64');
+  if (!env.LINE_MESSAGING_SECRET || sig.length !== good.length || !crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(good))) return text(401, 'bad signature');
+  let body; try { body = JSON.parse(raw || '{}'); } catch { return text(400, 'bad body'); }
+  for (const ev of body.events || []) {
+    try {
+      if (ev.type !== 'message' || ev.message?.type !== 'text' || !ev.replyToken) continue;
+      const msg = String(ev.message.text || ''); const uid = ev.source?.userId;
+      const nos = [...new Set(msg.toUpperCase().replace(/\s/g, '').match(/NT\d{9}/g) || [])].slice(0, 3);
+      if (nos.length) {
+        const parts = [];
+        for (const no of nos) { const o = await get('ORDER', no); parts.push(o ? statusText(o, !!uid && o.user?.sub === uid) : `📦 ${no}\n找不到這筆訂單，請確認編號是否正確`); }
+        parts.push(`完整明細：官網「我的訂單」輸入訂單編號＋手機\n${SITE_URL}orders.html\n（有其他問題直接留言，店家看到會盡快回覆 ♡）`);
+        await lineReply(ev.replyToken, parts.join('\n\n'));
+      } else if (/訂單|查詢|進度|出貨了嗎|寄出/.test(msg)) {
+        const mine = uid ? await queryAll({ IndexName: 'gsi1', KeyConditionExpression: 'gsi1pk = :p', ExpressionAttributeValues: { ':p': `USER#${uid}` }, ScanIndexForward: false }) : [];
+        const recent = mine.filter((o) => o.status !== 'cancelled').slice(0, 3);
+        await lineReply(ev.replyToken, recent.length
+          ? `您最近的訂單：\n\n${recent.map((o) => statusText(o, true)).join('\n\n')}\n\n完整明細：${SITE_URL}orders.html`
+          : `想查訂單進度，請直接傳「訂單編號」給我們（例如 NT261118006），會自動回覆目前狀態 ♡\n也可以到官網「我的訂單」用訂單編號＋手機查詢：\n${SITE_URL}orders.html`);
+      }
+    } catch (e) { console.error('webhook event', e.message); }
+  }
+  return text(200, 'OK');
 }
 
 function orderSummaryText(o) {
@@ -593,6 +644,7 @@ async function route(event) {
   const seg = path.split('/').filter(Boolean);
   try {
     // ---- public
+    if (method === 'POST' && path === '/line/webhook') return await lineWebhook(event);
     if (method === 'GET' && path === '/catalog') {
       const [settings, products, viewer] = await Promise.all([getSettings(), listProducts(), getUser(event).catch(() => null)]);
       return json(200, {
@@ -755,7 +807,7 @@ async function route(event) {
         const q = new URLSearchParams(event.rawQueryString || '');
         let orders = await queryAll({ KeyConditionExpression: 'pk = :p', ExpressionAttributeValues: { ':p': 'ORDER' }, ScanIndexForward: false });
         if (q.get('status')) orders = orders.filter((o) => o.status === q.get('status'));
-        return json(200, { orders: orders.map(adminOrder), statuses: STATUS });
+        return json(200, { orders: orders.map(adminOrder), statuses: STATUS, canDeleteReal: OWNER_IDS.has(me.sub) });
       }
       if (method === 'PATCH' && seg[1] === 'orders' && seg[2]) {
         const o = await get('ORDER', seg[2]);
@@ -781,13 +833,21 @@ async function route(event) {
         if (b.adminMessage !== undefined) { fields.adminMessage = str(b.adminMessage, 500); notes.push('更新給客人的訊息'); }
         if (b.date && b.date !== o.date && /^\d{4}-\d{2}-\d{2}$/.test(b.date)) { fields.date = b.date; notes.push(`日期 ${o.date} → ${b.date}`); await releaseDateSlot(o.date); await takeDateSlot(b.date, { ...settings, maxOrdersPerDay: 0 }); }
         const n = Object.keys(fields).length ? await setOrder(o.orderNo, fields, notes.join('；') || null) : o;
-        if (fields.status && fields.status !== 'paid') await pushTo(o.user?.sub, `您的訂單 ${o.orderNo} 狀態：${STATUS[fields.status]}`).catch(() => {});
+        if (fields.payment?.status === 'paid' && o.payment?.status !== 'paid') await pushTo(o.user?.sub, `您的訂單 ${o.orderNo} 已確認收到款項（付款成功）✓\n我們會依預約日期為您製作 ♡`).catch(() => {});
+        const note = fields.adminMessage || o.adminMessage;
+        if (fields.status === 'cancelled') await pushTo(o.user?.sub, `很抱歉，您的訂單 ${o.orderNo} 已由店家取消。${note ? `\n店家說明：${note}` : ''}\n如有疑問，直接在這裡留言給我們 ♡`).catch(() => {});
+        else if (fields.status && !['paid', 'reported'].includes(fields.status)) await pushTo(o.user?.sub, `您的訂單 ${o.orderNo} 狀態更新：${STATUS[fields.status]}${note ? `\n${note}` : ''}`).catch(() => {});
         return json(200, { order: adminOrder(n) });
       }
-      if (method === 'DELETE' && seg[1] === 'orders' && seg[2]) { // only the shop's own test orders can be deleted; real orders are cancelled instead
+      if (method === 'DELETE' && seg[1] === 'orders' && seg[2]) {
+        // 店家測試單：管理員可以刪。客人的真實訂單：只有最大管理員（OWNER_LINE_IDS）能刪，而且要已取消、從沒付過款
         const o = await get('ORDER', seg[2]);
         if (!o) throw new HttpError(404, '找不到訂單');
-        if (!o.byShop) throw bad('只有店家自己下的測試單可以刪除；客人的訂單請改成「已取消」');
+        if (!o.byShop) {
+          if (!OWNER_IDS.has(me.sub)) throw new HttpError(403, '客人的訂單只有最大管理員可以刪除；請改成「已取消」');
+          if (o.status !== 'cancelled') throw bad('要先把訂單改成「已取消」才能刪除');
+          if (o.payment?.status === 'paid') throw bad('這筆訂單收過款，不能刪除（保留付款紀錄）');
+        }
         if (o.status !== 'cancelled') await releaseDateSlot(o.date);
         await del('ORDER', o.orderNo);
         return json(200, { ok: true });
