@@ -640,7 +640,7 @@ async function dailyDigest() {
   const all = await queryAll({ KeyConditionExpression: 'pk = :p', ExpressionAttributeValues: { ':p': 'ORDER' } });
   const due = all.filter((o) => !o.byShop && o.date === target && o.status !== 'cancelled').sort((a, b) => a.orderNo.localeCompare(b.orderNo));
   const reported = all.filter((o) => !o.byShop && o.status === 'reported');
-  if (!due.length && !reported.length) return { sent: false, reason: 'nothing due' };
+  if (!due.length) return { sent: false, reason: 'nothing due in 5 days' }; // SK: no orders that day → no message at all
   const n = ['①', '②', '③', '④', '⑤', '⑥', '⑦', '⑧', '⑨', '⑩'];
   const lines = ['🔔 出貨提醒', ''];
   if (due.length) {

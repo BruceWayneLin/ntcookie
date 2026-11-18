@@ -77,7 +77,8 @@ ok('clear header <<--- 5 天後 … 客人要收到的訂單：2 筆 --->>', /<<
 ok('lists exactly the orders due in 5 days, numbered, with paid / unpaid', /① /.test(dt) && dt.includes(f1.orderNo) && dt.includes(f2.orderNo) && /已付款 ✓/.test(dt) && /⚠️ 還沒付款/.test(dt) && /五天客甲/.test(dt), dt);
 ok('leaves out 4-day and 6-day orders and shop test orders', !dt.includes(d4.orderNo) && !dt.includes(d6.orderNo) && !dt.includes(tst.orderNo), dt);
 for (const x of [f1, f2]) await api('PATCH', `/admin/orders/${x.orderNo}`, { status: 'cancelled' }, 'Uqa-admin|QA');
+await api('POST', `/orders/${d6.orderNo}/transfer`, { t: d6.token, last5: '24680' });
 sent.length = 0; dr = await handler({ source: 'ntcookie.daily' });
-ok('nothing due in 5 days → no message (saves the monthly quota)', !dr.sent && sent.length === 0, [dr, sent.length]);
+ok('nothing due in 5 days → no message, even with a transfer awaiting confirmation', !dr.sent && sent.length === 0, [dr, sent.length]);
 await api('PUT', '/admin/settings', { leadDays: 5 }, 'Uqa-admin|QA');
 console.log(`${pass} passed, ${fail} failed`); process.exit(fail ? 1 : 0);
