@@ -86,6 +86,7 @@ const DEFAULT_SETTINGS = {
     ],
   },
   notice: '',
+  pauseOrders: true, // 暫停接單：客人只能看、不能下單（管理員照樣能測）
   testMode: true, // 測試模式：只有管理員能線上結帳；客人看到「用 LINE 傳訂單給店家」
   admins: [],
 };
@@ -107,6 +108,7 @@ function publicSettings(s, admin = false) {
   const open = !s.testMode || admin; // while testing, only admins can pay online
   return {
     testMode: !!s.testMode,
+    pauseOrders: !!(s.pauseOrders && !admin),
     leadDays: s.leadDays, maxDays: s.maxDays, closedWeekdays: s.closedWeekdays, blockedDates: s.blockedDates,
     maxOrdersPerDay: s.maxOrdersPerDay, dateLabel: s.dateLabel,
     shippingOptions: s.shippingOptions, freeShippingOver: s.freeShippingOver,
@@ -322,6 +324,7 @@ async function createOrder(event) {
   if (!contact.address) throw bad('請填收件地址');
   const method = b.payment;
   const pub = publicSettings(settings, isAdminOf(settings, user));
+  if (pub.pauseOrders) throw bad('目前暫停接單，敬請期待 ♡');
   if (!pub.payments[method]) throw bad('這個付款方式目前不能用');
   await takeDateSlot(b.date, settings);
   const orderNo = await nextOrderNo();
@@ -624,7 +627,7 @@ export async function handler(event) {
       }
       if (method === 'PUT' && path === '/admin/settings') {
         const b = parseBody(event);
-        const keys = ['leadDays', 'maxDays', 'maxOrdersPerDay', 'closedWeekdays', 'blockedDates', 'dateLabel', 'shippingOptions', 'freeShippingOver', 'payments', 'bank', 'transferDays', 'canele', 'notice', 'testMode'];
+        const keys = ['leadDays', 'maxDays', 'maxOrdersPerDay', 'closedWeekdays', 'blockedDates', 'dateLabel', 'shippingOptions', 'freeShippingOver', 'payments', 'bank', 'transferDays', 'canele', 'notice', 'testMode', 'pauseOrders'];
         const next = { ...settings, ...pick(b, keys), pk: 'SETTINGS', sk: 'main' };
         if (b.rotateInvite) next.adminInvite = randAlnum(10);
         if (Array.isArray(b.removeAdmins)) next.admins = (next.admins || []).filter((a) => !b.removeAdmins.includes(a.sub));

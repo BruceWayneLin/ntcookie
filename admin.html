@@ -237,6 +237,8 @@
         <div id="s-ship">${s.shippingOptions.map((o, i) => `<div class="grid2" data-i="${i}"><label class="field"><span>配送方式</span><input class="sl" value="${esc(o.label)}"></label><label class="field"><span>運費</span><input class="sf" type="number" value="${o.fee}"></label></div>`).join('')}</div>
         <label class="field"><span>滿多少免運（0＝不免運）</span><input id="s-free" type="number" min="0" value="${s.freeShippingOver}"></label></section>
       <section class="panel"><h2>付款方式</h2>
+        <label class="tg red" style="display:flex;margin-bottom:6px"><b>暫停接單</b>${s.pauseOrders ? '<span class="flag">開著：客人只能看，不能下單</span>' : '<span class="flag ok">關閉：客人可以下單</span>'}<span class="sp"></span><input type="checkbox" id="s-pause" ${s.pauseOrders ? 'checked' : ''}></label>
+        <p class="note" style="margin:0 0 12px">開著時客人的購物車只會顯示「線上訂購即將開放」。管理員不受影響，可以照常測試下單。</p>
         <label class="tg red" style="display:flex;margin-bottom:6px"><b>測試模式</b>${s.testMode ? '<span class="flag">開著：只有管理員能線上結帳</span>' : '<span class="flag ok">關閉：客人可以線上付款</span>'}<span class="sp"></span><input type="checkbox" id="s-test" ${s.testMode ? 'checked' : ''}></label>
         <p class="note" style="margin:0 0 12px">測試模式開著時，客人結帳會改成「用 LINE 傳訂單給店家」。金流和匯款帳號都準備好之後再關掉。</p>
         <label class="tg" style="display:flex;margin-bottom:8px">LINE Pay ${ready.linepay ? `<span class="flag ok">已串接（${ready.linepayEnv === 'production' ? '正式' : '測試'}）</span>` : '<span class="flag">尚未申請／串接</span>'}<span class="sp"></span><input type="checkbox" id="s-p-lp" ${s.payments.linepay ? 'checked' : ''}></label>
@@ -275,6 +277,7 @@
       canele: { ...c, assortedPrice: +$('#s-aprice').value, singleMinBoxes: +$('#s-smin').value, modes: c.modes.map((m, i) => ({ ...m, minBoxes: +app.querySelector(`.s-mode[data-i="${i}"]`).value })) },
       notice: $('#s-notice').value.trim(),
       testMode: $('#s-test').checked,
+      pauseOrders: $('#s-pause').checked,
     });
     $('#s-copyinv').onclick = async () => { try { await navigator.clipboard.writeText(liffInvite || inviteUrl); NTC.toast('已複製'); } catch (e) { prompt('邀請連結', liffInvite || inviteUrl); } };
     $('#s-rotate').onclick = () => { if (confirm('換新連結後，舊的邀請連結就失效（已經是管理員的人不受影響）。')) put({ rotateInvite: true }, '已換新連結'); };
