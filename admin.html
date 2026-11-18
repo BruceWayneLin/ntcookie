@@ -9,7 +9,7 @@
 <link rel="icon" href="assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css?v=1118c">
+<link rel="stylesheet" href="css/app.css?v=1118d">
 <style>
   :root { --page: 760px; }
   .tabs { position: sticky; top: 63px; z-index: 20; display: flex; gap: 6px; max-width: var(--page); margin: 0 auto; padding: 8px 14px; background: rgba(248, 237, 231, .96); }
@@ -60,12 +60,14 @@
 <nav class="tabs" id="tabs" hidden><button data-t="orders" class="on">訂單</button><button data-t="products">商品</button><button data-t="settings">設定</button></nav>
 <div class="shopbar" id="shopbar" hidden></div>
 <main class="wrap" id="app"><div class="spinner"></div></main>
-<script src="js/config.js?v=1118c"></script>
-<script src="js/app.js?v=1118c"></script>
+<p class="note" id="ver" style="text-align:center;margin:0 0 24px;color:var(--muted)"></p>
+<script src="js/config.js?v=1118d"></script>
+<script src="js/app.js?v=1118d"></script>
 <script>
 (async function () {
   const { $, esc, money, asset } = NTC;
   const app = $('#app');
+  $('#ver').textContent = '版本 ' + (NTC_CONFIG.version || '');
   const q = new URLSearchParams(location.search);
   const PAY = { linepay: 'LINE Pay', ecpay: '綠界', transfer: '轉帳' };
   let tab = 'orders'; let statuses = {}; let orders = []; let filter = 'open'; let sortBy = 'created';
