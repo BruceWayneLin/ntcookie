@@ -36,7 +36,7 @@ if ! aws lambda get-function --region $REGION --function-name $FN >/dev/null 2>&
     --memory-size 256 --timeout 20 --environment "Variables={TABLE=$TABLE}" >/dev/null
   aws lambda wait function-active-v2 --region $REGION --function-name $FN
   aws lambda create-function-url-config --region $REGION --function-name $FN --auth-type NONE \
-    --cors '{"AllowOrigins":["https://brucewaynelin.github.io","http://localhost:8765","http://127.0.0.1:8765","http://192.168.50.50:8765"],"AllowMethods":["GET","POST","PUT","PATCH","DELETE"],"AllowHeaders":["content-type","authorization","x-dev-user","x-dev-key"],"MaxAge":3600}' >/dev/null
+    --cors '{"AllowOrigins":["https://brucewaynelin.github.io","http://localhost:8765","http://127.0.0.1:8765","http://192.168.50.50:8765"],"AllowMethods":["GET","POST","PUT","PATCH","DELETE"],"AllowHeaders":["content-type","authorization","x-dev-user","x-dev-key","x-ntc-diag"],"MaxAge":3600}' >/dev/null
   aws lambda add-permission --region $REGION --function-name $FN --statement-id public-url --action lambda:InvokeFunctionUrl --principal '*' --function-url-auth-type NONE >/dev/null
   ( [ -d node_modules ] || npm install --silent ) && node add-url-permission.mjs $FN
   echo "function $FN created"

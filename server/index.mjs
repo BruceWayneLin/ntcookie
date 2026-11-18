@@ -179,6 +179,18 @@ async function getUser(event) {
   const hit = tokenCache.get(tok);
   if (hit && hit.exp * 1000 > Date.now()) return hit.user;
   if (!env.LINE_LOGIN_CHANNEL_ID) return null;
+  if (tok.startsWith('lat.')) { // LINE access token (used when LINE's browser gives the page no ID token): ask LINE who this is
+    const at = tok.slice(4);
+    const v = await fetch('https://api.line.me/oauth2/v2.1/verify?access_token=' + encodeURIComponent(at));
+    const vj = v.ok ? await v.json() : null;
+    if (!vj || String(vj.client_id) !== String(env.LINE_LOGIN_CHANNEL_ID) || !(vj.expires_in > 0)) throw new HttpError(401, 'LINE 登入已過期，請重新開啟頁面');
+    const p = await fetch('https://api.line.me/v2/profile', { headers: { authorization: 'Bearer ' + at } });
+    if (!p.ok) throw new HttpError(401, 'LINE 登入已過期，請重新開啟頁面');
+    const pj = await p.json();
+    const user = { sub: pj.userId, name: pj.displayName || '', picture: pj.pictureUrl || '' };
+    tokenCache.set(tok, { exp: Math.floor(Date.now() / 1000) + Math.min(vj.expires_in, 3600), user });
+    return user;
+  }
   const r = await fetch('https://api.line.me/oauth2/v2.1/verify', {
     method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({ id_token: tok, client_id: env.LINE_LOGIN_CHANNEL_ID }),
@@ -561,7 +573,8 @@ export async function handler(event) {
   try {
     const h = event.headers || {}; const ua = h['user-agent'] || '';
     console.log(JSON.stringify({ m: event.requestContext?.http?.method, p: (event.rawPath || '').replace(/NT\d+/, 'NT…').replace(/\/img\/.+/, '/img/…'), s: res.statusCode,
-      auth: h['x-dev-key'] ? 'dev' : /^Bearer adm\./i.test(h.authorization || '') ? 'pass' : h.authorization ? 'line' : 'none',
+      auth: h['x-dev-key'] ? 'dev' : /^Bearer adm\./i.test(h.authorization || '') ? 'pass' : /^Bearer lat\./i.test(h.authorization || '') ? 'line-at' : h.authorization ? 'line' : 'none',
+      diag: h['x-ntc-diag'] ? String(h['x-ntc-diag']).slice(0, 60) : undefined,
       via: / Line\//.test(ua) ? 'LINE' : /iPhone|iPad/.test(ua) ? 'iOS' : /Android/.test(ua) ? 'Android' : /Mozilla/.test(ua) ? 'desktop' : 'other' }));
   } catch (e) { /* logging must never break a request */ }
   return res;

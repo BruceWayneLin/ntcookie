@@ -1,6 +1,7 @@
 /* N.T Cookie × N.T Canelé — shared shop code: LINE login (LIFF), API, cart, sheets, calendar */
 (function () {
   const CFG = window.NTC_CONFIG || {};
+  const NTC_CONFIG_LIFF = () => !!CFG.liffId;
   const NTC = (window.NTC = {});
   const $ = (s, el = document) => el.querySelector(s);
   NTC.$ = $;
@@ -57,14 +58,20 @@
   NTC.idToken = async () => {
     const l = await NTC.liff(); if (!l || !l.isLoggedIn()) return null;
     const t = l.getIDToken(); const d = l.getDecodedIDToken();
-    if (!t || !d || d.exp * 1000 < Date.now() + 60e3) { try { l.logout(); } catch (e) { /* ignore */ } return null; }
-    return t;
+    if (t && d && d.exp * 1000 > Date.now() + 60e3) return t;
+    const at = l.getAccessToken(); // LINE's own browser sometimes gives no ID token: the access token still identifies the user
+    if (at) return 'lat.' + at;
+    try { l.logout(); } catch (e) { /* ignore */ }
+    return null;
   };
+  // tiny, token-free note sent with API calls so login problems show up in the server log
+  NTC.diag = () => { const l = window.liff; if (!l || !l.isLoggedIn) return 'noliff'; try { return `in=${l.isInClient() ? 1 : 0};li=${l.isLoggedIn() ? 1 : 0};id=${l.getIDToken() ? 1 : 0};at=${l.getAccessToken() ? 1 : 0};ua=${/ Line\//i.test(navigator.userAgent) ? 'line' : 'other'}`; } catch (e) { return 'err'; } };
   NTC.loggedIn = async () => (NTC.isDev() ? true : !!(await NTC.idToken()));
   NTC.lineProfile = async () => {
     if (NTC.isDev()) { const [sub, name] = sess.get('ntc-devuser').split('|'); return { sub, name: name || '測試', picture: '' }; }
     const l = await NTC.liff(); if (!l || !l.isLoggedIn()) return null;
-    const t = l.getDecodedIDToken(); return t ? { sub: t.sub, name: t.name, picture: t.picture } : null;
+    const t = l.getDecodedIDToken(); if (t) return { sub: t.sub, name: t.name, picture: t.picture };
+    try { const p = await l.getProfile(); return { sub: p.userId, name: p.displayName, picture: p.pictureUrl || '' }; } catch (e) { return null; }
   };
   NTC.login = async () => {
     const l = await NTC.liff();
@@ -85,6 +92,7 @@
   NTC.api = async (path, { method = 'GET', body, asLine = false } = {}) => {
     const h = {};
     if (body !== undefined) h['content-type'] = 'application/json';
+    if (NTC_CONFIG_LIFF()) h['x-ntc-diag'] = NTC.diag();
     const adm = NTC.adminToken();
     if (NTC.isDev()) { h['x-dev-key'] = sess.get('ntc-devkey'); h['x-dev-user'] = encodeURIComponent(sess.get('ntc-devuser')); }
     else if (adm && NTC.preferAdmin && !asLine) h.authorization = 'Bearer ' + adm;
