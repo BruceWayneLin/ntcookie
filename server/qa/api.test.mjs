@@ -236,6 +236,33 @@ section('concurrency');
 const many = await Promise.all(Array.from({ length: 12 }, () => order({ date: ymd(30) })));
 ok('12 simultaneous orders → 12 different order numbers', many.every((x) => x.status === 200) && new Set(many.map((x) => x.json.orderNo)).size === 12, many.map((x) => x.json?.orderNo || x.status));
 
+section('店家密碼登入');
+const bearer = (t) => ({ authorization: 'Bearer ' + t });
+r = await call('/admin/login', { method: 'POST', body: { pass: 'whatever' } }); ok('login before a passcode exists → 403', r.status === 403, r.status);
+r = await putSettings({ newAdminPass: '123' }); ok('too-short passcode rejected', r.status === 400, r.status);
+r = await putSettings({ newAdminPass: 'qa-pass-2468' });
+ok('passcode set: reply carries a session, never the hash or signing secret', r.status === 200 && /^adm\./.test(r.json.token) && r.json.settings.hasAdminPass === true && !/adminPass"|sessionSecret/.test(r.text), r.text.slice(0, 120));
+r = await call('/admin/login', { method: 'POST', body: { pass: 'wrong-pass' } }); ok('wrong passcode → 403', r.status === 403, r.status);
+r = await call('/admin/login', { method: 'POST', body: { pass: { $ne: 1 } } }); ok('non-text passcode → 403', r.status === 403, r.status);
+r = await call('/admin/login', { method: 'POST', body: { pass: 'qa-pass-2468' } }); const T = r.json?.token; ok('right passcode → session', r.status === 200 && /^adm\./.test(T || ''), r.status);
+r = await call('/admin/orders', { headers: bearer(T) }); ok('session opens the admin', r.status === 200, r.status);
+r = await call('/admin/orders', { headers: bearer(T.slice(0, -4) + 'AAAA') }); ok('tampered session → 401', r.status === 401, r.status);
+const forged = 'adm.' + Buffer.from(JSON.stringify({ v: 2, exp: Date.now() + 9e9 })).toString('base64url') + '.' + T.split('.')[2];
+r = await call('/admin/orders', { headers: bearer(forged) }); ok('forged session (edited expiry) → 401', r.status === 401, r.status);
+r = await call('/me', { headers: bearer(T) }); ok('/me for a passcode session: admin, no member data', r.json?.isAdmin === true && r.json.orders.length === 0 && r.json.contact === null, r.json);
+r = await call('/admin/settings', { headers: bearer(T) }); ok('settings page data has no hash / secret', r.status === 200 && r.json.settings.hasAdminPass && !/adminPass"|sessionSecret/.test(r.text), r.status);
+await putSettings({ pauseOrders: true });
+r = await call('/catalog', { headers: bearer(T) }); ok('closed shop: passcode session still sees it open (to test)', r.json.settings.pauseOrders === false, r.json.settings.pauseOrders);
+r = await call('/orders', { method: 'POST', headers: bearer(T), body: { items: [{ type: 'product', productId: 'meringue-butter', qty: 1 }], date: ymd(10), contact, payment: 'transfer' } });
+const OP = r.json; g = await call('/admin/orders', { headers: bearer(T) });
+ok('passcode session can test-order while closed; the order is not tied to any LINE member', r.status === 200 && g.json.orders.find((o) => o.orderNo === OP.orderNo) && !g.json.orders.find((o) => o.orderNo === OP.orderNo).user, r.status);
+await putSettings({ pauseOrders: false });
+await call('/admin/claim', { method: 'POST', headers: bearer(T), body: { invite: INVITE } }); r = await call('/admin/settings', { user: ADMIN });
+ok('a passcode session opening an invite link adds no fake admin', !r.json.settings.admins.some((a) => a.sub === 'shop-admin'), r.json.settings.admins);
+r = await putSettings({ newAdminPass: 'qa-pass-1357' }); g = await call('/admin/orders', { headers: bearer(T) }); ok('changing the passcode signs out older sessions', g.status === 401, g.status);
+r = await call('/admin/login', { method: 'POST', body: { pass: 'qa-pass-2468' } }); ok('old passcode stops working', r.status === 403, r.status);
+r = await call('/admin/login', { method: 'POST', body: { pass: 'qa-pass-1357' } }); ok('new passcode works', r.status === 200, r.status);
+
 section('admin invite');
 r = await putSettings({ rotateInvite: true }); const NEWINV = r.json.settings.adminInvite;
 ok('invite rotated', NEWINV && NEWINV !== INVITE, NEWINV);
@@ -244,6 +271,11 @@ r = await call('/admin/claim', { method: 'POST', user: BOB, body: { invite: NEWI
 await putSettings({ removeAdmins: ['Uqa-bob'] }); r = await call('/admin/orders', { user: BOB }); ok('removed admin is locked out', r.status === 403, r.status);
 r = await call('/admin/settings', { method: 'PUT', user: ADMIN, body: { admins: [{ sub: 'Uhacker', name: 'x' }], adminInvite: 'AAAA' } });
 ok('admins / invite cannot be overwritten through settings', !r.json.settings.admins.some((a) => a.sub === 'Uhacker') && r.json.settings.adminInvite === NEWINV, r.json.settings.admins);
+
+section('登入鎖定（放最後：這個 IP 接下來 15 分鐘會被鎖）');
+const tries = []; for (let i = 0; i < 8; i++) tries.push((await call('/admin/login', { method: 'POST', body: { pass: 'guess-' + i } })).status);
+r = await call('/admin/login', { method: 'POST', body: { pass: 'guess-9' } }); g = await call('/admin/login', { method: 'POST', body: { pass: 'qa-pass-1357' } });
+ok('8 wrong guesses → locked for 15 minutes, even with the right passcode', tries.every((x) => x === 403) && r.status === 429 && g.status === 429, [tries, r.status, g.status]);
 
 console.log(`\n${pass} passed, ${fail} failed`); if (fail) { console.log('FAILED:\n - ' + fails.join('\n - ')); }
 console.log('INVITE_NOW=' + NEWINV);

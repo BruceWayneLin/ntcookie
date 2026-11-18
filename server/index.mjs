@@ -112,7 +112,7 @@ async function getSettings() {
 const linepayReady = () => !!(env.LINEPAY_CHANNEL_ID && env.LINEPAY_CHANNEL_SECRET);
 const ecpayReady = () => !!(env.ECPAY_MERCHANT_ID && env.ECPAY_HASH_KEY && env.ECPAY_HASH_IV);
 
-const isAdminOf = (s, u) => !!(u && (s.admins || []).some((a) => a.sub === u.sub));
+const isAdminOf = (s, u) => !!(u && (u.shopAdmin || (s.admins || []).some((a) => a.sub === u.sub)));
 function publicSettings(s, admin = false) {
   const bankReady = !!(s.bank?.account);
   const open = !s.testMode || admin; // while testing, only admins can pay online
@@ -137,6 +137,29 @@ const pick = (o, keys) => Object.fromEntries(keys.filter((k) => o[k] !== undefin
 const listProducts = async () => (await queryAll({ KeyConditionExpression: 'pk = :p', ExpressionAttributeValues: { ':p': 'PRODUCT' } }))
   .map((p) => pick(p, PRODUCT_FIELDS)).sort((a, b) => (a.sort ?? 999) - (b.sort ?? 999) || a.id.localeCompare(b.id));
 
+// ---------------------------------------------------------------- 店家密碼登入（不靠 LINE 也進得了後台）
+// 密碼只存雜湊；登入成功發一張簽章過的通行證（60 天），改密碼後舊通行證全部失效。
+const hashPass = (pass, salt = rand(12)) => `${salt}:${crypto.scryptSync(String(pass), salt, 32).toString('base64url')}`;
+function checkPass(pass, stored) {
+  if (!stored || typeof pass !== 'string') return false;
+  const [salt, h] = stored.split(':'); const a = Buffer.from(h || '', 'base64url'); const b = crypto.scryptSync(pass, salt, 32);
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
+const sessionSig = (body, s) => crypto.createHmac('sha256', s.sessionSecret).update(body).digest('base64url');
+function signSession(s) {
+  const body = Buffer.from(JSON.stringify({ v: s.passVersion || 1, exp: Date.now() + 60 * 864e5 })).toString('base64url');
+  return `adm.${body}.${sessionSig(body, s)}`;
+}
+function readSession(tok, s) {
+  const [, body, sig] = String(tok).split('.');
+  if (!body || !sig || !s.sessionSecret || !s.adminPass) return false;
+  const good = sessionSig(body, s);
+  if (sig.length !== good.length || !crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(good))) return false;
+  try { const p = JSON.parse(Buffer.from(body, 'base64url').toString()); return p.exp > Date.now() && p.v === (s.passVersion || 1); } catch { return false; }
+}
+const SHOP_ADMIN = { sub: 'shop-admin', name: '店家', picture: '', shopAdmin: true };
+const adminView = (s) => ({ ...s, pk: undefined, sk: undefined, adminPass: undefined, sessionSecret: undefined, hasAdminPass: !!s.adminPass });
+
 // ---------------------------------------------------------------- auth (LIFF ID token)
 const tokenCache = new Map();
 async function getUser(event) {
@@ -148,6 +171,10 @@ async function getUser(event) {
   const m = /^Bearer\s+(.+)$/i.exec(h.authorization || '');
   if (!m) return null;
   const tok = m[1];
+  if (tok.startsWith('adm.')) {
+    if (readSession(tok, await getSettings())) return SHOP_ADMIN;
+    throw new HttpError(401, '登入已過期，請重新輸入店家密碼');
+  }
   const hit = tokenCache.get(tok);
   if (hit && hit.exp * 1000 > Date.now()) return hit.user;
   if (!env.LINE_LOGIN_CHANNEL_ID) return null;
@@ -165,7 +192,7 @@ async function requireUser(event) { const u = await getUser(event); if (!u) thro
 async function requireAdmin(event) {
   const u = await requireUser(event);
   const s = await getSettings();
-  if (!(s.admins || []).some((a) => a.sub === u.sub)) throw new HttpError(403, '這個 LINE 帳號不是管理員');
+  if (!isAdminOf(s, u)) throw new HttpError(403, '這個 LINE 帳號不是管理員');
   return { user: u, settings: s };
 }
 
@@ -295,7 +322,7 @@ async function loadOrder(no, event, token) {
   if (token && token === o.token) return o;
   const u = await getUser(event).catch(() => null);
   if (u && o.user?.sub === u.sub) return o;
-  if (u) { const s = await getSettings(); if ((s.admins || []).some((a) => a.sub === u.sub)) return o; }
+  if (u && isAdminOf(await getSettings(), u)) return o;
   throw new HttpError(403, '沒有權限看這筆訂單');
 }
 
@@ -342,7 +369,8 @@ function orderSummaryText(o) {
 
 async function createOrder(event) {
   const b = parseBody(event);
-  const user = await getUser(event).catch(() => null);
+  const viewer = await getUser(event).catch(() => null);
+  const user = viewer && !viewer.shopAdmin ? viewer : null; // the LINE member this order belongs to (none for guests / 店家密碼)
   const [settings, products] = await Promise.all([getSettings(), listProducts()]);
   const priced = priceOrder(b.items, products, settings);
   await checkDate(b.date, settings);
@@ -351,7 +379,7 @@ async function createOrder(event) {
   if (!/^[0-9+\-() ]{8,20}$/.test(contact.phone)) throw bad('請填正確的手機號碼');
   if (!contact.address) throw bad('請填收件地址');
   const method = b.payment;
-  const pub = publicSettings(settings, isAdminOf(settings, user));
+  const pub = publicSettings(settings, isAdminOf(settings, viewer));
   if (pub.pauseOrders) throw bad('目前暫停接單，敬請期待 ♡');
   if (!pub.payments[method]) throw bad('這個付款方式目前不能用');
   await takeDateSlot(b.date, settings);
@@ -527,6 +555,16 @@ async function getImage(id) {
 
 // ---------------------------------------------------------------- router
 export async function handler(event) {
+  const res = await route(event);
+  try {
+    const h = event.headers || {}; const ua = h['user-agent'] || '';
+    console.log(JSON.stringify({ m: event.requestContext?.http?.method, p: (event.rawPath || '').replace(/NT\d+/, 'NT…').replace(/\/img\/.+/, '/img/…'), s: res.statusCode,
+      auth: h['x-dev-key'] ? 'dev' : /^Bearer adm\./i.test(h.authorization || '') ? 'pass' : h.authorization ? 'line' : 'none',
+      via: / Line\//.test(ua) ? 'LINE' : /iPhone|iPad/.test(ua) ? 'iOS' : /Android/.test(ua) ? 'Android' : /Mozilla/.test(ua) ? 'desktop' : 'other' }));
+  } catch (e) { /* logging must never break a request */ }
+  return res;
+}
+async function route(event) {
   const method = event.requestContext?.http?.method || 'GET';
   const path = (event.rawPath || '/').replace(/\/+$/, '') || '/';
   const seg = path.split('/').filter(Boolean);
@@ -571,6 +609,7 @@ export async function handler(event) {
     }
     if (method === 'GET' && path === '/me') {
       const u = await requireUser(event);
+      if (u.shopAdmin) return json(200, { user: u, contact: null, orders: [], isAdmin: true });
       const [contact, orders, settings] = await Promise.all([
         get('USER', u.sub),
         queryAll({ IndexName: 'gsi1', KeyConditionExpression: 'gsi1pk = :p', ExpressionAttributeValues: { ':p': `USER#${u.sub}` }, ScanIndexForward: false }),
@@ -580,7 +619,7 @@ export async function handler(event) {
         user: u,
         contact: contact ? pick(contact, ['name', 'phone', 'address']) : null,
         orders: orders.slice(0, 50).map((o) => publicOrder(o)),
-        isAdmin: (settings.admins || []).some((a) => a.sub === u.sub),
+        isAdmin: isAdminOf(settings, u),
       });
     }
     if (seg[0] === 'pay') {
@@ -598,11 +637,26 @@ export async function handler(event) {
         const b = parseBody(event);
         const s = await getSettings();
         if (!b.invite || b.invite !== s.adminInvite) throw new HttpError(403, '邀請碼不正確或已失效');
-        if (!(s.admins || []).some((a) => a.sub === u.sub)) {
+        if (!u.shopAdmin && !(s.admins || []).some((a) => a.sub === u.sub)) { // a passcode session is already admin: nothing to add
           const admins = [...(s.admins || []), { sub: u.sub, name: u.name, picture: u.picture, addedAt: new Date().toISOString() }];
           await put({ ...s, pk: 'SETTINGS', sk: 'main', admins });
         }
         return json(200, { ok: true });
+      }
+      if (method === 'POST' && path === '/admin/login') {
+        const b = parseBody(event);
+        const s = await getSettings();
+        if (!s.adminPass) throw new HttpError(403, '還沒設定店家密碼');
+        const ip = event.requestContext?.http?.sourceIp || 'unknown';
+        const rec = (await get('LOGINFAIL', ip)) || { count: 0, until: 0 };
+        if (rec.until > Date.now()) throw new HttpError(429, '嘗試太多次，請 15 分鐘後再試');
+        if (!checkPass(b.pass, s.adminPass)) {
+          const count = (rec.count || 0) + 1;
+          await put({ pk: 'LOGINFAIL', sk: ip, count: count >= 8 ? 0 : count, until: count >= 8 ? Date.now() + 15 * 60e3 : 0 });
+          throw new HttpError(403, '密碼不正確');
+        }
+        if (rec.count) await del('LOGINFAIL', ip);
+        return json(200, { token: signSession(s) });
       }
       const { settings } = await requireAdmin(event);
       if (method === 'GET' && path === '/admin/orders') {
@@ -651,7 +705,7 @@ export async function handler(event) {
       if (method === 'DELETE' && seg[1] === 'products' && seg[2]) { await del('PRODUCT', seg[2]); return json(200, { ok: true }); }
       if (method === 'POST' && path === '/admin/images') return json(200, { url: await putImage(parseBody(event)) });
       if (method === 'GET' && path === '/admin/settings') {
-        return json(200, { settings: { ...settings, pk: undefined, sk: undefined }, ready: { linepay: linepayReady(), ecpay: ecpayReady(), linepayEnv: env.LINEPAY_ENV || 'sandbox', ecpayEnv: env.ECPAY_ENV || 'stage', messaging: !!env.LINE_MESSAGING_TOKEN } });
+        return json(200, { settings: adminView(settings), ready: { linepay: linepayReady(), ecpay: ecpayReady(), linepayEnv: env.LINEPAY_ENV || 'sandbox', ecpayEnv: env.ECPAY_ENV || 'stage', messaging: !!env.LINE_MESSAGING_TOKEN } });
       }
       if (method === 'PUT' && path === '/admin/settings') {
         const b = parseBody(event);
@@ -666,10 +720,18 @@ export async function handler(event) {
             ambient: { label: str(a.label, 30) || DEFAULT_SETTINGS.shipping.ambient.label, fee: Math.max(0, int(a.fee)) },
           };
         }
+        let token;
+        if (b.newAdminPass !== undefined) { // set / change the 店家密碼: every older session stops working
+          const np = String(b.newAdminPass);
+          if (np.length < 6 || np.length > 40) throw bad('店家密碼要 6 個字以上');
+          next.adminPass = hashPass(np); next.passVersion = (settings.passVersion || 1) + 1;
+          if (!next.sessionSecret) next.sessionSecret = rand(32);
+          token = signSession(next);
+        }
         if (b.rotateInvite) next.adminInvite = randAlnum(10);
         if (Array.isArray(b.removeAdmins)) next.admins = (next.admins || []).filter((a) => !b.removeAdmins.includes(a.sub));
         await put(next);
-        return json(200, { settings: { ...next, pk: undefined, sk: undefined } });
+        return json(200, { settings: adminView(next), token });
       }
     }
     if (method === 'GET' && path === '/') return json(200, { ok: true, service: 'ntcookie-api' });
