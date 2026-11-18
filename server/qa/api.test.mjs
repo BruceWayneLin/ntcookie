@@ -280,6 +280,18 @@ r = await call(`/admin/orders/${OP.orderNo}`, { method: 'DELETE', headers: beare
 ok('the shop can delete its own test order', r.status === 200 && g.status === 404, [r.status, g.status]);
 await call('/admin/claim', { method: 'POST', headers: bearer(T), body: { invite: INVITE } }); r = await call('/admin/settings', { user: ADMIN });
 ok('a passcode session opening an invite link adds no fake admin', !r.json.settings.admins.some((a) => a.sub === 'shop-admin'), r.json.settings.admins);
+section('綁定 LINE 帳號（店家密碼 → 自動認得）');
+const DAVE = 'Uqa-dave|Dave';
+r = await call('/admin/orders', { user: DAVE }); ok('a LINE user is not admin by default', r.status === 403, r.status);
+r = await call('/admin/bind-line', { method: 'POST', user: DAVE, body: { adminToken: 'adm.fake.sig' } }); ok('binding needs a real passcode session', r.status === 403, r.status);
+r = await call('/admin/bind-line', { method: 'POST', body: { adminToken: T } }); ok('binding needs a LINE identity', r.status === 401, r.status);
+r = await call('/admin/bind-line', { method: 'POST', headers: bearer(T), body: { adminToken: T } }); ok('a passcode session alone cannot bind itself', r.status === 400, r.status);
+r = await call('/admin/bind-line', { method: 'POST', user: DAVE, body: { adminToken: T } }); ok('LINE user + passcode session → bound', r.status === 200 && r.json.name === 'Dave', r.json);
+r = await call('/admin/orders', { user: DAVE }); ok('from now on that LINE account opens the admin without the passcode', r.status === 200, r.status);
+await call('/admin/bind-line', { method: 'POST', user: DAVE, body: { adminToken: T } }); r = await call('/admin/settings', { user: ADMIN });
+ok('binding twice adds one admin only', r.json.settings.admins.filter((a) => a.sub === 'Uqa-dave').length === 1, r.json.settings.admins);
+await putSettings({ removeAdmins: ['Uqa-dave'] }); r = await call('/admin/orders', { user: DAVE }); ok('removing the admin unbinds it', r.status === 403, r.status);
+
 r = await putSettings({ newAdminPass: 'qa-pass-1357' }); g = await call('/admin/orders', { headers: bearer(T) }); ok('changing the passcode signs out older sessions', g.status === 401, g.status);
 r = await call('/admin/login', { method: 'POST', body: { pass: 'qa-pass-2468' } }); ok('old passcode stops working', r.status === 403, r.status);
 r = await call('/admin/login', { method: 'POST', body: { pass: 'qa-pass-1357' } }); ok('new passcode works', r.status === 200, r.status);

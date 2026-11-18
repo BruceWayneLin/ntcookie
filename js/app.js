@@ -72,12 +72,12 @@
   // 店家密碼登入：通行證存在這支裝置，後台頁優先用它；其他頁沒有 LINE 登入時才用（讓店家關店時也能自己測試下單）
   NTC.adminToken = () => sess.get('ntc-admin') || '';
   NTC.setAdminToken = (t) => { try { t ? localStorage.setItem('ntc-admin', t) : localStorage.removeItem('ntc-admin'); } catch (e) { /* ignore */ } };
-  NTC.api = async (path, { method = 'GET', body } = {}) => {
+  NTC.api = async (path, { method = 'GET', body, asLine = false } = {}) => {
     const h = {};
     if (body !== undefined) h['content-type'] = 'application/json';
     const adm = NTC.adminToken();
     if (NTC.isDev()) { h['x-dev-key'] = sess.get('ntc-devkey'); h['x-dev-user'] = encodeURIComponent(sess.get('ntc-devuser')); }
-    else if (adm && NTC.preferAdmin) h.authorization = 'Bearer ' + adm;
+    else if (adm && NTC.preferAdmin && !asLine) h.authorization = 'Bearer ' + adm;
     else { const t = await NTC.idToken().catch(() => null); if (t) h.authorization = 'Bearer ' + t; else if (adm) h.authorization = 'Bearer ' + adm; }
     let r;
     try { r = await fetch(API + path, { method, headers: h, body: body !== undefined ? JSON.stringify(body) : undefined }); }

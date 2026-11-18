@@ -662,6 +662,16 @@ async function route(event) {
         }
         return json(200, { ok: true });
       }
+      if (method === 'POST' && path === '/admin/bind-line') { // 綁定：已用店家密碼登入的人，把自己的 LINE 帳號加成管理員（之後在 LINE 打開後台自動認得）
+        const u = await requireUser(event);
+        if (u.shopAdmin) throw bad('請在 LINE 裡打開後台再綁定');
+        const s = await getSettings();
+        if (!readSession(parseBody(event).adminToken, s)) throw new HttpError(403, '請先用店家密碼登入');
+        if (!(s.admins || []).some((a) => a.sub === u.sub)) {
+          await put({ ...s, pk: 'SETTINGS', sk: 'main', admins: [...(s.admins || []), { sub: u.sub, name: u.name, picture: u.picture, addedAt: new Date().toISOString(), via: 'passcode' }] });
+        }
+        return json(200, { ok: true, name: u.name });
+      }
       if (method === 'POST' && path === '/admin/login') {
         const b = parseBody(event);
         const s = await getSettings();

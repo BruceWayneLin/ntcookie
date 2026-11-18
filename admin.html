@@ -9,7 +9,7 @@
 <link rel="icon" href="assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css?v=1118g">
+<link rel="stylesheet" href="css/app.css?v=1118h">
 <style>
   :root { --page: 760px; }
   .tabs { position: sticky; top: 63px; z-index: 20; display: flex; gap: 6px; max-width: var(--page); margin: 0 auto; padding: 8px 14px; background: rgba(248, 237, 231, .96); }
@@ -61,8 +61,8 @@
 <div class="shopbar" id="shopbar" hidden></div>
 <main class="wrap" id="app"><div class="spinner"></div></main>
 <p class="note" id="ver" style="text-align:center;margin:0 0 24px;color:var(--muted)"></p>
-<script src="js/config.js?v=1118g"></script>
-<script src="js/app.js?v=1118g"></script>
+<script src="js/config.js?v=1118h"></script>
+<script src="js/app.js?v=1118h"></script>
 <script>
 (async function () {
   const { $, esc, money, asset } = NTC;
@@ -99,6 +99,17 @@
   try { await loadOrders(); } catch (e) { loginScreen(e.status === 401 || e.status === 403 ? e.message : e.message + '（請再試一次）'); return; }
   $('#tabs').hidden = false;
   try { await loadSettings(); renderShopBar(); } catch (e) { /* settings tab will retry */ }
+  // logged in with the passcode inside LINE, but this LINE account isn't an admin yet → offer to bind it (one tap, then no passcode needed in LINE)
+  (async () => {
+    const me = NTC.adminToken() && !NTC.isDev() && (await NTC.lineProfile().catch(() => null));
+    if (!me || !settings || (settings.admins || []).some((a) => a.sub === me.sub)) return;
+    $('#shopbar').insertAdjacentHTML('beforeend', `<div class="box" id="bindbox" style="margin-top:8px;background:#eef8f0;border-color:#a9d3b3"><span class="t"><b style="font-size:15px">綁定這個 LINE 帳號</b>綁定「${esc(me.name)}」後，之後在 LINE 打開後台會自動認得你，不用再輸入密碼。</span><button class="btn small line" id="bindline">綁定</button></div>`);
+    $('#bindline').onclick = async () => {
+      NTC.loading(true, '綁定中…');
+      try { await NTC.api('/admin/bind-line', { method: 'POST', body: { adminToken: NTC.adminToken() }, asLine: true }); await loadSettings(); $('#bindbox').remove(); NTC.toast(`已綁定 ${me.name}`); }
+      catch (e) { NTC.toast(e.message, 3500); } finally { NTC.loading(false); }
+    };
+  })();
   $('#tabs').onclick = (e) => { const b = e.target.closest('button'); if (!b) return; tab = b.dataset.t; $('#tabs').querySelectorAll('button').forEach((x) => x.classList.toggle('on', x === b)); show(); };
   $('#reload').onclick = async () => { NTC.loading(true, '更新中…'); try { if (tab === 'orders') await loadOrders(); if (tab === 'products') products = (await NTC.api('/admin/products')).products; if (tab === 'settings') await loadSettings(); show(); } catch (e) { NTC.toast(e.message); } NTC.loading(false); };
 
