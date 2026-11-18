@@ -73,8 +73,8 @@ await api('PATCH', `/admin/orders/${w1.orderNo}`, { markPaid: true }, 'Uqa-admin
 sent.length = 0; let dr = await handler({ source: 'ntcookie.daily' });
 const dg = sent.filter((m) => m.kind === 'push'); const dt = dg[0]?.body.messages[0].text || '';
 ok('morning reminder: one message, only to the fixed admin', dg.length === 1 && dg[0].body.to === process.env.OWNER_LINE_IDS && dr.sent, [dg.length, dr]);
-ok('header <<--- 兩週後 … 客人要收到的訂單：2 筆 --->>, numbered, paid/unpaid', /<<--- 兩週後 .* 客人要收到的訂單：2 筆 --->>/.test(dt) && dt.includes(w1.orderNo) && dt.includes(w2.orderNo) && /已付款 ✓/.test(dt) && /⚠️ 還沒付款/.test(dt), dt);
-ok('an order that came in too late for its 2-week mark is caught under 新進來 with its date', /<<--- 新進來、兩週內就要收到的訂單：1 筆 --->>/.test(dt) && dt.includes(late.orderNo) && /📅/.test(dt), dt);
+ok('header <<--- 兩週後 … 客人要收到包裹：2 件 --->>, numbered, paid/unpaid', /<<--- 兩週後 .* 客人要收到包裹：2 件 --->>/.test(dt) && dt.includes(w1.orderNo) && dt.includes(w2.orderNo) && /已付款 ✓/.test(dt) && /⚠️ 還沒付款/.test(dt), dt);
+ok('an order that came in too late for its 2-week mark is caught under 新進來 with its date', /<<--- 新進來、兩週內客人就要收到包裹：1 件 --->>/.test(dt) && dt.includes(late.orderNo) && /📅/.test(dt), dt);
 ok('leaves out orders more than 2 weeks away and shop test orders', !dt.includes(far.orderNo) && !dt.includes(tst.orderNo), dt);
 sent.length = 0; dr = await handler({ source: 'ntcookie.daily' });
 ok('next morning: already-reminded orders are not repeated → nothing sent', !dr.sent && sent.length === 0, [dr, sent.length]);

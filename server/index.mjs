@@ -632,7 +632,7 @@ async function getImage(id) {
   return { statusCode: 200, headers: { 'content-type': it.type, 'cache-control': 'public, max-age=31536000, immutable' }, body: it.data, isBase64Encoded: true };
 }
 
-// ---------------------------------------------------------------- 每天早上 9 點：提醒「兩週後客人要收到」的訂單（只傳給最大管理員）
+// ---------------------------------------------------------------- 每天早上 9 點：提醒「兩週後客人要收到包裹」（只傳給最大管理員）
 // 每張訂單只提醒一次：到貨日前剛好 14 天的那天早上；如果下單時已經不到 14 天（例如剛好 14 天前下單），就在下單隔天早上補提醒。
 // 沒有要提醒的訂單就不傳（省推播額度）。
 const DIGEST_DAYS = 14;
@@ -650,8 +650,8 @@ async function dailyDigest() {
     return [`${n[i] || `(${i + 1})`} ${o.orderNo}　${o.contact?.name || ''}${withDate ? `　📅 ${twDay(o.date)}` : ''}`, `　${o.lines.map((l) => `${l.name}×${l.qty}`).join('、').slice(0, 90)}`, `　$${o.total}｜${paid}`, ''];
   };
   const lines = ['🔔 出貨提醒', ''];
-  if (onTime.length) { lines.push(`<<--- 兩週後 ${twDay(target)} 客人要收到的訂單：${onTime.length} 筆 --->>`, ''); onTime.forEach((o, i) => lines.push(...item(o, i, false))); }
-  if (late.length) { lines.push(`<<--- 新進來、兩週內就要收到的訂單：${late.length} 筆 --->>`, ''); late.forEach((o, i) => lines.push(...item(o, i, true))); }
+  if (onTime.length) { lines.push(`<<--- 兩週後 ${twDay(target)} 客人要收到包裹：${onTime.length} 件 --->>`, ''); onTime.forEach((o, i) => lines.push(...item(o, i, false))); }
+  if (late.length) { lines.push(`<<--- 新進來、兩週內客人就要收到包裹：${late.length} 件 --->>`, ''); late.forEach((o, i) => lines.push(...item(o, i, true))); }
   lines.push(`後台：${ADMIN_URL}`);
   await Promise.all([...OWNER_IDS].map((id) => pushTo(id, lines.join('\n'))));
   const at = new Date().toISOString();
