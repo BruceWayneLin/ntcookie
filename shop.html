@@ -9,14 +9,14 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="css/app.css?v=1120d">
-<link rel="stylesheet" href="css/storefront.css?v=1120d">
+<link rel="stylesheet" href="css/app.css?v=1120g">
+<link rel="stylesheet" href="css/storefront.css?v=1120g">
 <title>線上商店｜N.T Cookie × N.T Canelé</title>
 <meta name="description" content="N.T Cookie × N.T Canelé 線上商店：可麗露禮盒、馬林糖一口酥，線上下單、LINE Pay 付款。">
 </head>
 <body class="storefront">
 <header class="store-header">
-  <a class="store-back" id="back" href="index.html" aria-label="返回上一頁"><span aria-hidden="true"></span></a>
+  <a class="store-back" id="back" href="index.html" aria-label="回首頁"><span aria-hidden="true"></span>首頁</a>
   <p class="store-brand" lang="en">N.T Cookie</p>
   <a class="store-orders" href="orders.html">我的訂單</a>
 </header>
@@ -35,26 +35,26 @@
   <ul class="store-collections" id="collections" aria-label="甜點分類">
     <li data-collection="cookie">
       <a href="cookies.html?g=character">
-        <img src="assets/shop/01-shaped-cookies.webp" width="467" height="249" alt="">
-        <h2>造型餅乾</h2><p>卡通與收涎造型</p>
+        <img src="assets/v2/03-homepage/category-character-cookies.webp" width="464" height="234" alt="">
+        <h2 class="sr-only">卡通・收涎 造型餅乾</h2>
       </a>
     </li>
     <li data-collection="cookie">
       <a href="cookies.html?g=birthday">
-        <img src="assets/shop/02-birthday-cookies.webp" width="466" height="249" alt="">
-        <h2>生日・慶生</h2><p>慶生主題餅乾</p>
+        <img src="assets/v2/03-homepage/category-birthday-cookies.webp" width="462" height="234" alt="">
+        <h2 class="sr-only">慶生 造型餅乾</h2>
       </a>
     </li>
     <li data-collection="gift">
       <a href="meringue.html">
-        <img src="assets/shop/03-gift-sweets.webp" width="467" height="251" alt="">
-        <h2>送禮小點</h2><p>馬林糖一口酥</p>
+        <img src="assets/v2/03-homepage/category-meringue-cookies.webp" width="464" height="246" alt="">
+        <h2 class="sr-only">馬林糖一口酥・送禮小點</h2>
       </a>
     </li>
     <li data-collection="canele">
       <a href="canele.html">
-        <img src="assets/shop/04-canele.webp" width="466" height="251" alt="">
-        <h2 lang="fr">N.T Canelé</h2><p>法式可麗露</p>
+        <img src="assets/v2/03-homepage/category-canele.webp" width="462" height="246" alt="">
+        <h2 class="sr-only">N.T Canelé 可麗露專區</h2>
       </a>
     </li>
   </ul>
@@ -64,6 +64,7 @@
     <div><h2>想訂製專屬造型？</h2><p>提供日期、數量與參考圖，我們為你報價。</p></div>
     <span class="store-custom-link">聊聊客製需求</span>
   </a>
+  <a class="nt-back" id="back2" href="index.html"><i aria-hidden="true"></i>返回上一頁</a>
 </main>
 <footer class="store-footer" aria-label="購物資訊">
   <button type="button" id="show-shopping-info" aria-haspopup="dialog" hidden>購物須知</button>
@@ -79,11 +80,11 @@
   <form method="dialog"><button type="submit" autofocus>關閉</button></form>
 </dialog>
 <script src="js/config.js?v=1120b"></script>
-<script src="js/app.js?v=1120d"></script>
-<script src="js/shop.js?v=1120d"></script>
+<script src="js/app.js?v=1120g"></script>
+<script src="js/shop.js?v=1120g"></script>
 <script>
-  const back = NTC.$('#back');
-  back.addEventListener('click', (event) => {
+  // top-left 「首頁」 always goes to the main menu; 返回上一頁 at the bottom goes back to wherever the customer came from
+  NTC.$('#back2').addEventListener('click', (event) => {
     if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
     event.preventDefault();
     NTC.back();
@@ -114,20 +115,11 @@
   NTC.mountCartBar();
   NTC.$('.cartbar .go').textContent = '去結帳';
 
-  // 購物須知: the shop's real rules, read from the admin settings (falls back to the two general lines above)
+  // 購物須知: written from the shop's settings; the owner can rewrite, hide or add notes in the admin (設定 → 購物須知)
   NTC.catalog().then((c) => {
-    const S = c.settings, m = NTC.money, e = NTC.esc;
-    const tiers = (t, unit, from1 = 1) => { const a = [...t].sort((x, y) => x.upTo - y.upTo); return a.map((x, i) => { const lo = i ? a[i - 1].upTo + 1 : from1; return (i === a.length - 1 && i > 0 && x.upTo >= 99 ? `${lo} ${unit}以上` : lo >= x.upTo ? `${x.upTo} ${unit}` : `${lo}～${x.upTo} ${unit}`) + ` ${m(x.fee)}`; }).join('、'); };
-    const pay = [S.payments.transfer && '銀行轉帳', S.payments.linepay && 'LINE Pay', S.payments.ecpay && '信用卡／ATM／超商'].filter(Boolean);
-    const rows = [
-      ['到貨日', `每一份都是接單後手工製作，最早可選 <b>${NTC.fmtDate(NTC.dateRules(S).min)}</b> 到貨。${e(S.dateNote || '')}`],
-      ['造型餅乾', `${S.cookie.minPieces} 片起訂，可跨系列搭配。${e(S.cookie.shipping.label)}：${tiers(S.cookie.shipping.tiers, '片', S.cookie.minPieces)}。`],
-      ['可麗露', `每盒 6 顆。${e(S.shipping.frozen.label)}：${tiers(S.shipping.frozen.tiers, '盒')}；一件最多 ${S.shipping.frozen.maxPerParcel} 盒，會與常溫商品分開寄。`],
-      ['馬林糖', `${e(S.shipping.ambient.label)} ${m(S.shipping.ambient.fee)}；和造型餅乾一起訂會同一箱寄。`],
-      ['付款', pay.length ? `${pay.join('、')}。確認收到款項後開始製作。` : '下單後會用 LINE 跟您確認付款方式。'],
-      ['客製造型', '系列裡沒有的圖案，請到「聊聊客製需求」留言並附參考照片，我們報價後再製作。'],
-    ];
-    NTC.$('#shopping-body').innerHTML = `<dl class="store-rules">${rows.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl>`;
+    const e = NTC.esc; const rows = NTC.shopNotes(c.settings).filter((r) => !r.hidden && (r.title || r.text));
+    NTC.$('#shopping-body').innerHTML = `<dl class="store-rules">${rows.map((r) => `<dt>${e(r.title)}</dt><dd>${e(r.text).replace(/\n/g, '<br>')}</dd>`).join('')}</dl>`;
+    if (location.hash === '#notes' && typeof info.showModal === 'function') info.showModal(); // the admin's 「看客人看到的樣子」
   }).catch(() => {});
 </script>
 </body>

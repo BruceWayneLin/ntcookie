@@ -158,8 +158,12 @@
     if (pieces && s.cookie) { // 造型餅乾：依片數級距；馬林糖跟餅乾同一箱（運費取較高的）
       const cs = s.cookie.shipping; const tiers = [...(cs.tiers || [])].sort((a, b) => a.upTo - b.upTo);
       const fee = (tiers.find((t) => pieces <= t.upTo) || tiers[tiers.length - 1] || { fee: 0 }).fee;
-      parts.push(jars ? { kind: 'cookie', label: `${cs.label}（含馬林糖）`, units: pieces, parcels: 1, fee: Math.max(fee, sh.ambient.fee || 0) } : { kind: 'cookie', label: cs.label, units: pieces, parcels: 1, fee });
-    } else if (jars) parts.push({ kind: 'ambient', label: sh.ambient.label, units: jars, parcels: 1, fee: sh.ambient.fee || 0 });
+      // cookies + meringue share one (large) box: the top cookie tier
+      parts.push(jars ? { kind: 'cookie', label: `${cs.label}（含馬林糖）`, units: pieces, parcels: 1, fee: Math.max(fee, ...tiers.map((t) => t.fee)) } : { kind: 'cookie', label: cs.label, units: pieces, parcels: 1, fee });
+    } else if (jars) { // meringue alone: by the number of jars
+      const at = [...(sh.ambient.tiers && sh.ambient.tiers.length ? sh.ambient.tiers : [{ upTo: 999, fee: sh.ambient.fee || 0 }])].sort((a, b) => a.upTo - b.upTo);
+      parts.push({ kind: 'ambient', label: sh.ambient.label, units: jars, parcels: 1, fee: (at.find((t) => jars <= t.upTo) || at[at.length - 1]).fee });
+    }
     if (s.freeShippingOver > 0 && subtotal >= s.freeShippingOver) parts.forEach((p) => { p.fee = 0; });
     return { fee: parts.reduce((a, p) => a + p.fee, 0), parts, label: parts.map((p) => p.label + (p.parcels > 1 ? `（${p.parcels} 件）` : '')).join('＋') };
   };
@@ -281,6 +285,26 @@
     return { min, max, why, ok: (ymd) => !!ymd && !why(ymd) };
   };
   NTC.fmtDate = (ymd) => { if (!ymd) return ''; const d = new Date(ymd + 'T00:00:00Z'); return `${d.getUTCMonth() + 1}月${d.getUTCDate()}日（${'日一二三四五六'[d.getUTCDay()]}）`; };
+  // ---------------- 購物須知 (shop page + admin). Each note is written from the shop's settings, so it always matches the rules;
+  // in the admin the owner can rewrite a note (shopNotes.over), hide it (off) or add her own (extra). Plain text only.
+  NTC.shopNotes = (S) => {
+    const m = NTC.money;
+    const tiers = (t, unit, from1 = 1) => { const a = [...t].sort((x, y) => x.upTo - y.upTo); if (a.length === 1) return `一律 ${m(a[0].fee)}`;
+      return a.map((x, i) => { const lo = i ? a[i - 1].upTo + 1 : from1; return (i === a.length - 1 && x.upTo >= 99 ? `${lo} ${unit}以上` : lo >= x.upTo ? `${x.upTo} ${unit}` : `${lo}～${x.upTo} ${unit}`) + ` ${m(x.fee)}`; }).join('、'); };
+    const amb = S.shipping.ambient.tiers && S.shipping.ambient.tiers.length ? S.shipping.ambient.tiers : [{ upTo: 999, fee: S.shipping.ambient.fee || 0 }];
+    const pay = [S.payments.transfer && '銀行轉帳', S.payments.linepay && 'LINE Pay', S.payments.ecpay && '信用卡／ATM／超商'].filter(Boolean);
+    const auto = [
+      ['date', '到貨日', `每一份都是接單後手工製作，最早可選 ${NTC.fmtDate(NTC.dateRules(S).min)} 到貨。${S.dateNote || ''}`],
+      ['cookie', '造型餅乾', `${S.cookie.minPieces} 片起訂，可跨系列搭配。${S.cookie.shipping.label}：${tiers(S.cookie.shipping.tiers, '片', S.cookie.minPieces)}。`],
+      ['canele', '可麗露', `每盒 6 顆。${S.shipping.frozen.label}：${tiers(S.shipping.frozen.tiers, '盒')}；一件最多 ${S.shipping.frozen.maxPerParcel} 盒，會與常溫商品分開寄。`],
+      ['meringue', '馬林糖一口酥', `${S.shipping.ambient.label}：${tiers(amb, '罐')}。和造型餅乾一起訂會裝同一箱，運費 ${m(Math.max(...S.cookie.shipping.tiers.map((t) => t.fee)))}。`],
+      ['pay', '付款', pay.length ? `${pay.join('、')}。確認收到款項後開始製作。` : '下單後會用 LINE 跟您確認付款方式。'],
+      ['custom', '客製造型', '系列裡沒有的圖案，請到「聊聊客製需求」留言並附參考照片，我們報價後再製作。'],
+    ];
+    const n = S.shopNotes || {}; const over = n.over || {}; const off = n.off || [];
+    return [...auto.map(([key, title, text]) => ({ key, title, auto: text, text: over[key] || text, custom: !!over[key], hidden: off.includes(key) })),
+      ...(n.extra || []).map((x, i) => ({ key: 'x' + i, title: x.title, text: x.text, extra: true }))];
+  };
   NTC.calendar = (el, { settings, fullDates, value, onChange }) => {
     const rules = NTC.dateRules(settings, fullDates);
     let sel = rules.ok(value) ? value : '';

@@ -9,7 +9,7 @@
 <link rel="icon" href="assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css?v=1120d">
+<link rel="stylesheet" href="css/app.css?v=1120g">
 <style>
   :root { --page: 760px; }
   .tabs { position: sticky; top: 63px; z-index: 20; display: flex; gap: 6px; max-width: var(--page); margin: 0 auto; padding: 8px 14px; background: rgba(248, 237, 231, .96); }
@@ -77,6 +77,8 @@
   .acc-h small { flex: 1; min-width: 0; font: 500 12.5px/1.35 var(--sans); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: right; }
   .acc.open .acc-h { margin-bottom: 12px; }
   .acc.open .acc-h small { visibility: hidden; }
+  .sn { padding: 10px 0 12px; border-top: 1px dashed var(--line, #ead9cf); } .sn:first-child { border-top: 0; padding-top: 0; }
+  .sn .sn-auto { margin: 0 0 8px; padding: 8px 10px; border-radius: 10px; background: #fbf3ee; line-height: 1.6; } .sn .field { margin-bottom: 6px; } .sn textarea { min-height: 58px; } .sn.sn-x { border-top-style: solid; }
   .savebar { position: fixed; left: 50%; bottom: 0; transform: translateX(-50%); z-index: 45; width: min(100vw, var(--page)); display: flex; align-items: center; gap: 10px;
     padding: 10px 14px calc(10px + env(safe-area-inset-bottom, 0px)); background: #fff8f0; border-top: 1px solid #e7cdb6; box-shadow: 0 -4px 14px rgba(120, 70, 40, .14); }
   .savebar span { flex: 1; font: 700 14px/1.3 var(--sans); color: #9a4f08; }
@@ -93,7 +95,7 @@
 <main class="wrap" id="app"><div class="spinner"></div></main>
 <p class="note" id="ver" style="text-align:center;margin:0 0 24px;color:var(--muted)"></p>
 <script src="js/config.js?v=1120b"></script>
-<script src="js/app.js?v=1120d"></script>
+<script src="js/app.js?v=1120g"></script>
 <script>
 (async function () {
   const { $, esc, money, asset } = NTC;
@@ -104,6 +106,7 @@
   let canDeleteReal = false; // only the fixed top admin may delete customer orders
   let tab = 'orders'; let statuses = {}; let orders = []; let filter = 'open'; let sortBy = 'created';
   let products = []; let settings = null; let ready = {}; let inqs = null; let inqStatuses = {}; let inqFilter = 'open'; let inqP = null; let dirty = false; let prodCat = 'canele'; const openAcc = new Set();
+  const NOTE_TOPICS = [['date', '到貨日'], ['cookie', '造型餅乾'], ['canele', '可麗露'], ['meringue', '馬林糖一口酥'], ['pay', '付款'], ['custom', '客製造型']]; // 購物須知：自動寫好的六則（同 js/app.js NTC.shopNotes）
 
   // ---------- who are you?  The LINE account decides: admins go straight in, everyone else is stopped here.
   NTC.preferAdmin = true;
@@ -522,6 +525,9 @@
   // ================= 設定 =================
   function renderSettings() {
     const s = settings; const b = s.bank || {}; const c = s.canele;
+    const ambT = s.shipping.ambient.tiers && s.shipping.ambient.tiers.length ? s.shipping.ambient.tiers : [{ upTo: 999, fee: s.shipping.ambient.fee || 0 }];
+    const sn = { over: {}, off: [], extra: [], ...(s.shopNotes || {}) };
+    const snExtraRow = (x) => `<div class="sn sn-x"><label class="field"><span>標題</span><input class="snt" maxlength="20" placeholder="例如：保存方式" value="${esc(x.title || '')}"></label><label class="field"><span>內容</span><textarea class="snx" maxlength="400" rows="2">${esc(x.text || '')}</textarea></label><button type="button" class="btn ghost small sn-del">刪除這一則</button></div>`;
     const inviteUrl = new URL(`admin.html?invite=${s.adminInvite}`, location.href).href;
     const liffInvite = NTC_CONFIG.liffId ? `https://liff.line.me/${NTC_CONFIG.liffId}/admin.html?invite=${s.adminInvite}` : '';
     app.innerHTML = `
@@ -540,7 +546,10 @@
         <p style="font-weight:700;margin:0 0 6px;font-size:13px;color:var(--ink2)">❄️ 可麗露・冷凍宅配（依每件包裹的盒數）</p>
         <div id="s-tiers">${s.shipping.frozen.tiers.map((t, i) => `<div class="grid2" data-i="${i}"><label class="field"><span>${i === 0 ? '1' : s.shipping.frozen.tiers[i - 1].upTo + 1} 盒 ～ 幾盒</span><input class="tu" type="number" min="1" value="${t.upTo}"></label><label class="field"><span>運費</span><input class="tf" type="number" min="0" value="${t.fee}"></label></div>`).join('')}</div>
         <label class="field"><span>一件包裹最多裝幾盒（超過會自動拆成多件、分別計運費）</span><input id="s-maxbox" type="number" min="1" value="${s.shipping.frozen.maxPerParcel}"></label>
-        <label class="field"><span>馬林糖一口酥・常溫宅配運費（每張訂單）</span><input id="s-amb" type="number" min="0" value="${s.shipping.ambient.fee}"></label>
+        <p style="font-weight:700;margin:6px 0 6px;font-size:13px;color:var(--ink2)">🍬 馬林糖一口酥・常溫宅配（依整張訂單的罐數）</p>
+        <div id="s-atiers">${ambT.map((t, i) => `<div class="grid2" data-i="${i}"><label class="field"><span>${i === 0 ? '1' : ambT[i - 1].upTo + 1} 罐 ～ 幾罐</span><input class="tu" type="number" min="1" value="${t.upTo}"></label><label class="field"><span>運費</span><input class="tf" type="number" min="0" value="${t.fee}"></label></div>`).join('')}</div>
+        <div class="row" style="gap:8px;margin-bottom:6px"><button class="btn ghost small" id="s-atadd" type="button">＋ 加一級</button><button class="btn ghost small" id="s-atrm" type="button">－ 刪最後一級</button></div>
+        <p class="note" style="margin:0 0 12px">最後一級的罐數填 999＝「幾罐以上」都是這個運費。馬林糖和造型餅乾一起訂時會裝同一箱，運費算「造型餅乾運費」的最高一級。</p>
         <label class="field"><span>滿多少免運（0＝不免運）</span><input id="s-free" type="number" min="0" value="${s.freeShippingOver}"></label></section>
       <section class="panel"><h2>付款方式</h2>
         <label class="tg red" style="display:flex;margin-bottom:6px"><b>暫停接單</b>${s.pauseOrders ? '<span class="flag">開著：客人只能看，不能下單</span>' : '<span class="flag ok">關閉：客人可以下單</span>'}<span class="sp"></span><input type="checkbox" id="s-pause" ${s.pauseOrders ? 'checked' : ''}></label>
@@ -562,8 +571,17 @@
         <p style="font-weight:700;margin:0 0 6px;font-size:13px;color:var(--ink2)">🍪 運費（依整張訂單的片數）</p>
         <div id="s-ctiers">${s.cookie.shipping.tiers.map((t, i) => `<div class="grid2" data-i="${i}"><label class="field"><span>${i === 0 ? '1' : s.cookie.shipping.tiers[i - 1].upTo + 1} 片 ～ 幾片</span><input class="tu" type="number" min="1" value="${t.upTo}"></label><label class="field"><span>運費</span><input class="tf" type="number" min="0" value="${t.fee}"></label></div>`).join('')}</div>
         <div class="row" style="gap:8px;margin-bottom:6px"><button class="btn ghost small" id="s-ctadd" type="button">＋ 加一級</button><button class="btn ghost small" id="s-ctrm" type="button">－ 刪最後一級</button></div>
-        <p class="note" style="margin:0">最後一級的片數填大一點（例如 999）＝「幾片以上」都是這個運費。同一張訂單有馬林糖時，會跟餅乾裝同一箱寄（運費取兩者較高的）。</p></section>
+        <p class="note" style="margin:0">最後一級的片數填大一點（例如 999）＝「幾片以上」都是這個運費。同一張訂單有馬林糖一口酥時，會跟餅乾裝同一箱寄，運費一律算這裡的最高一級。</p></section>
       <section class="panel"><h2>公告</h2><label class="field"><span>顯示在購物車最上面（選填）</span><textarea id="s-notice" maxlength="300" placeholder="例如：12/24–12/26 聖誕檔期已滿">${esc(s.notice)}</textarea></label></section>
+      <section class="panel"><h2>購物須知</h2>
+        <p class="note" style="margin:0 0 12px">客人在「線上商店」最下面點「購物須知」會看到這些說明。每一則平常會<b>照你的設定自動寫好</b>（運費、起訂量改了，這裡會跟著變）。想換成自己的話，寫在格子裡就會改用你寫的；清空格子就回到自動。<a href="shop.html#notes" target="_blank" rel="noopener" style="white-space:nowrap">看客人看到的樣子 ›</a></p>
+        <div id="sn-list">${NOTE_TOPICS.map(([k, t]) => `<div class="sn" data-k="${k}">
+          <label class="tg" style="display:flex;margin-bottom:4px"><b>${t}</b><span class="sp"></span><span class="note" style="margin:0 6px 0 0">顯示</span><input type="checkbox" class="sn-show" data-k="${k}" ${sn.off.includes(k) ? '' : 'checked'}></label>
+          <p class="note sn-auto" data-k="${k}">自動寫好的內容載入中…</p>
+          <label class="field"><span>改用我自己寫的（留空＝用上面自動寫好的）</span><textarea class="sn-over" data-k="${k}" maxlength="400" rows="2">${esc(sn.over[k] || '')}</textarea></label></div>`).join('')}</div>
+        <p style="font-weight:700;margin:16px 0 6px;font-size:13px;color:var(--ink2)">自己加的說明（例如：保存方式、取貨地點）</p>
+        <div id="sn-extra">${sn.extra.map(snExtraRow).join('')}</div>
+        <button class="btn ghost small" id="sn-add" type="button">＋ 新增一則</button></section>
       <button class="btn block" id="s-save" style="margin-bottom:14px">儲存設定</button>
       <section class="panel"><h2>這支裝置</h2><p class="note" style="margin:0 0 10px">登出後，下次打開後台要再用 LINE 登入。</p><button class="btn ghost small block" id="s-logout">登出這支裝置</button></section>
       <section class="panel"><h2>管理員</h2>
@@ -589,7 +607,7 @@
       leadDays: +$('#s-lead').value, maxDays: +$('#s-max').value, maxOrdersPerDay: +$('#s-perday').value, closedWeekdays: week, blockedDates: blocked,
       dateLabel: $('#s-datelabel').value.trim() || '希望到貨日期',
       shipping: { frozen: { label: s.shipping.frozen.label, maxPerParcel: +$('#s-maxbox').value, tiers: [...app.querySelectorAll('#s-tiers [data-i]')].map((r) => ({ upTo: +r.querySelector('.tu').value, fee: +r.querySelector('.tf').value })) },
-        ambient: { label: s.shipping.ambient.label, fee: +$('#s-amb').value } },
+        ambient: { label: s.shipping.ambient.label, tiers: [...app.querySelectorAll('#s-atiers [data-i]')].map((r) => ({ upTo: +r.querySelector('.tu').value, fee: +r.querySelector('.tf').value })) } },
       dateNote: $('#s-datenote').value.trim(),
       freeShippingOver: +$('#s-free').value,
       payments: { linepay: $('#s-p-lp').checked, ecpay: $('#s-p-ec').checked, transfer: $('#s-p-tr').checked },
@@ -598,12 +616,27 @@
       cookie: { ...s.cookie, minPieces: +$('#s-cmin').value, shipping: { label: $('#s-clabel').value.trim(), tiers: [...app.querySelectorAll('#s-ctiers [data-i]')].map((r) => ({ upTo: +r.querySelector('.tu').value, fee: +r.querySelector('.tf').value })) } },
       canele: { ...c, assortedPrice: +$('#s-aprice').value, singleMinBoxes: +$('#s-smin').value, modes: c.modes.map((m, i) => ({ ...m, minBoxes: +app.querySelector(`.s-mode[data-i="${i}"]`).value })) },
       notice: $('#s-notice').value.trim(),
+      shopNotes: { over: Object.fromEntries([...app.querySelectorAll('.sn-over')].map((t) => [t.dataset.k, t.value.trim()]).filter(([, v]) => v)),
+        off: [...app.querySelectorAll('.sn-show')].filter((c) => !c.checked).map((c) => c.dataset.k),
+        extra: [...app.querySelectorAll('#sn-extra .sn-x')].map((r) => ({ title: r.querySelector('.snt').value.trim(), text: r.querySelector('.snx').value.trim() })).filter((x) => x.title || x.text) },
       testMode: $('#s-test').checked,
       pauseOrders: $('#s-pause').checked,
     });
     $('#s-ctadd').onclick = () => { const box = $('#s-ctiers'); const n = box.children.length; const last = box.lastElementChild; const from = last ? +last.querySelector('.tu').value + 1 : 1;
       box.insertAdjacentHTML('beforeend', `<div class="grid2" data-i="${n}"><label class="field"><span>${from} 片 ～ 幾片</span><input class="tu" type="number" min="1" value="${from + 5}"></label><label class="field"><span>運費</span><input class="tf" type="number" min="0" value="${last ? last.querySelector('.tf').value : 0}"></label></div>`); };
     $('#s-ctrm').onclick = () => { const box = $('#s-ctiers'); if (box.children.length > 1) box.lastElementChild.remove(); else NTC.toast('至少要留一級'); };
+    // 購物須知: the text that is written automatically comes from what customers really get (/catalog), so it always matches the saved settings
+    NTC.api('/catalog').then((c) => { NTC.shopNotes(c.settings).forEach((r) => { const el = app.querySelector(`.sn-auto[data-k="${r.key}"]`); if (el) el.textContent = `自動寫好的：${r.auto}`; }); })
+      .catch(() => app.querySelectorAll('.sn-auto').forEach((el) => (el.textContent = '（自動寫好的內容暫時讀不到，不影響儲存）')));
+    $('#sn-add').onclick = () => { const box = $('#sn-extra'); if (box.children.length >= 10) return NTC.toast('最多 10 則'); box.insertAdjacentHTML('beforeend', snExtraRow({})); box.lastElementChild.querySelector('.snt').focus(); setDirty(true); };
+    $('#sn-extra').onclick = (e) => { const d = e.target.closest('.sn-del'); if (d) { d.closest('.sn-x').remove(); setDirty(true); } };
+    // tier rows: when an upper limit changes, the next row's 「從幾個起」 label follows
+    [['#s-tiers', '盒'], ['#s-ctiers', '片'], ['#s-atiers', '罐']].forEach(([q, u]) => { const box = $(q); if (!box) return;
+      const relabel = () => [...box.children].forEach((r, i, all) => { const sp = r.querySelector('label span'); if (sp) sp.textContent = `${i === 0 ? 1 : (+all[i - 1].querySelector('.tu').value || 0) + 1} ${u} ～ 幾${u}`; });
+      box.addEventListener('input', relabel); new MutationObserver(relabel).observe(box, { childList: true }); });
+    $('#s-atadd').onclick = () => { const box = $('#s-atiers'); const last = box.lastElementChild; const from = last ? +last.querySelector('.tu').value + 1 : 1;
+      box.insertAdjacentHTML('beforeend', `<div class="grid2" data-i="${box.children.length}"><label class="field"><span>${from} 罐 ～ 幾罐</span><input class="tu" type="number" min="1" value="999"></label><label class="field"><span>運費</span><input class="tf" type="number" min="0" value="${last ? last.querySelector('.tf').value : 0}"></label></div>`); };
+    $('#s-atrm').onclick = () => { const box = $('#s-atiers'); if (box.children.length > 1) box.lastElementChild.remove(); else NTC.toast('至少要留一級'); };
     $('#s-logout').onclick = async () => { if (confirm('登出這支裝置的後台？')) { NTC.setAdminToken(''); await NTC.logout(); location.replace('index.html'); } };
     NTC.api('/admin/requests').then(({ requests }) => {
       const box = $('#s-reqs'); if (!box || !requests.length) return;
@@ -627,11 +660,13 @@
     const s = settings; const pays = [s.payments.transfer && '銀行轉帳', s.payments.linepay && 'LINE Pay', s.payments.ecpay && '信用卡／ATM／超商'].filter(Boolean);
     const sum = {
       接單日期: `最早今天＋${s.leadDays} 天${(s.closedWeekdays || []).length ? '・公休週' + [...s.closedWeekdays].sort().map((d) => '日一二三四五六'[d]).join('') : ''}${(s.blockedDates || []).length ? `・${s.blockedDates.length} 天不接單` : ''}`,
-      運費: `冷凍 ${money(s.shipping.frozen.tiers[0].fee)} 起・常溫 ${money(s.shipping.ambient.fee)}${s.freeShippingOver ? `・滿 ${money(s.freeShippingOver)} 免運` : ''}`,
+      運費: `冷凍 ${money(s.shipping.frozen.tiers[0].fee)} 起・馬林糖 ${money((s.shipping.ambient.tiers || [{ fee: s.shipping.ambient.fee }])[0].fee)} 起${s.freeShippingOver ? `・滿 ${money(s.freeShippingOver)} 免運` : ''}`,
       付款方式: (pays.join('、') || '還沒開任何付款方式') + (s.testMode ? '・測試模式開著' : ''),
       可麗露禮盒規則: `綜合禮盒 ${money(s.canele.assortedPrice)}／盒`,
       造型餅乾規則: `${s.cookie.minPieces} 片起訂・運費 ${money(s.cookie.shipping.tiers[0].fee)} 起`,
       公告: s.notice ? s.notice.slice(0, 18) : '沒有公告',
+      購物須知: (() => { const n = s.shopNotes || {}; const a = Object.keys(n.over || {}).length; const x = (n.extra || []).length; const h = (n.off || []).length;
+        return [a && `${a} 則自己寫`, x && `${x} 則自己加`, h && `${h} 則隱藏`].filter(Boolean).join('・') || '全部自動寫好'; })(),
       這支裝置: '登出',
       管理員: `${(s.admins || []).length} 位`,
     };
@@ -648,7 +683,7 @@
     setDirty(false);
     const mark = (e) => { if (!e.target.closest('#s-addphone, #s-addlabel, #s-addday')) setDirty(true); }; // typing a new admin phone / date to add isn't a setting yet
     app.oninput = mark; app.onchange = mark;
-    ['#s-week', '#s-blocked', '#s-addbtn', '#s-ctadd', '#s-ctrm'].forEach((q) => { const el = $(q); if (el) el.addEventListener('click', () => setDirty(true)); });
+    ['#s-week', '#s-blocked', '#s-addbtn', '#s-ctadd', '#s-ctrm', '#s-atadd', '#s-atrm'].forEach((q) => { const el = $(q); if (el) el.addEventListener('click', () => setDirty(true)); });
   }
 
   show();

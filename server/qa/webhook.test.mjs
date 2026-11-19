@@ -28,7 +28,7 @@ let r = await hook([msg('hi', CAROL)], 'wrong-secret'); ok('bad signature → 40
 r = await hook([]); ok('LINE "Verify" (empty events) → 200', r.statusCode === 200, r.statusCode);
 sent.length = 0; await hook([msg(`您好，我想詢問訂單 ${o.orderNo.toLowerCase()}`, CAROL)]);
 const reply1 = sent.find((m) => m.kind === 'reply')?.body.messages[0].text || '';
-ok('owner asks with the order number → full status reply (status, payment, date, total)', reply1.includes(o.orderNo) && /待付款/.test(reply1) && /請匯款 \$930/.test(reply1) && /合計：\$930/.test(reply1), reply1);
+ok('owner asks with the order number → full status reply (status, payment, date, total)', reply1.includes(o.orderNo) && /待付款/.test(reply1) && /請匯款 \$910/.test(reply1) && /合計：\$910/.test(reply1), reply1);
 sent.length = 0; await hook([msg(o.orderNo, DAN)]);
 const reply2 = sent.find((m) => m.kind === 'reply')?.body.messages[0].text || '';
 ok('someone else asking about that number → status only, no amount/date/name', /待付款/.test(reply2) && !/\$930|卡蘿|台北/.test(reply2), reply2);
@@ -49,7 +49,7 @@ ok('follow / sticker events are ignored', sent.length === 0, sent);
 
 sent.length = 0; await api('POST', `/orders/${o.orderNo}/transfer`, { t: o.token, last5: '13579' });
 const tr = sent.find((m) => m.kind === 'push' && /回報已轉帳/.test(m.body.messages[0].text))?.body.messages[0].text || '';
-ok('customer reports transfer → admins get a LINE push with the customer name (+ LINE name), phone, amount, digits, order link', /卡蘿（LINE：Carol）/.test(tr) && /0912345678/.test(tr) && /\$930/.test(tr) && /13579/.test(tr) && tr.includes(`admin.html?order=${o.orderNo}`), tr);
+ok('customer reports transfer → admins get a LINE push with the customer name (+ LINE name), phone, amount, digits, order link', /卡蘿（LINE：Carol）/.test(tr) && /0912345678/.test(tr) && /\$910/.test(tr) && /13579/.test(tr) && tr.includes(`admin.html?order=${o.orderNo}`), tr);
 sent.length = 0; await api('PATCH', `/admin/orders/${o.orderNo}`, { markPaid: true }, 'Uqa-admin|QA');
 ok('shop confirms payment → customer gets 已付款 push', sent.some((m) => m.kind === 'push' && m.body.to === CAROL && /付款成功/.test(m.body.messages[0].text)), sent.map((m) => [m.body.to.slice(0, 5), m.body.messages[0].text]));
 sent.length = 0; await api('PATCH', `/admin/orders/${o.orderNo}`, { status: 'shipped', adminMessage: '黑貓 1234-5678' }, 'Uqa-admin|QA');

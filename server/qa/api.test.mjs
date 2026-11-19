@@ -28,7 +28,7 @@ const contact = { name: '測試 王小明', phone: '0912-345-678', address: '台
 const order = (over = {}, user) => call('/orders', { method: 'POST', user, body: { items: [{ type: 'product', productId: 'meringue-butter', qty: 1 }], date: ymd(10), shippingId: 'home', contact, note: '', payment: 'transfer', ...over } });
 const putSettings = (b) => call('/admin/settings', { method: 'PUT', user: ADMIN, body: b });
 const BASE = { leadDays: 5, maxDays: 60, maxOrdersPerDay: 0, closedWeekdays: [], blockedDates: [], freeShippingOver: 0, pauseOrders: false, testMode: false, transferDays: 2, notice: '',
-  dateNote: 'QA', shipping: { frozen: { label: '黑貓冷凍宅配', tiers: [{ upTo: 1, fee: 175 }, { upTo: 4, fee: 250 }, { upTo: 9, fee: 290 }], maxPerParcel: 9 }, ambient: { label: '黑貓常溫宅配', fee: 150 } }, payments: { linepay: true, ecpay: true, transfer: true }, bank: { name: 'QA銀行', code: '999', account: '111122223333', holder: 'QA' },
+  dateNote: 'QA', shipping: { frozen: { label: '黑貓冷凍宅配', tiers: [{ upTo: 1, fee: 175 }, { upTo: 4, fee: 250 }, { upTo: 9, fee: 290 }], maxPerParcel: 9 }, ambient: { label: '黑貓常溫宅配', tiers: [{ upTo: 3, fee: 130 }, { upTo: 999, fee: 170 }] } }, payments: { linepay: true, ecpay: true, transfer: true }, bank: { name: 'QA銀行', code: '999', account: '111122223333', holder: 'QA' },
   canele: { assortedPrice: 800, singleMinBoxes: 1, modes: [{ id: '3x2', flavors: 3, each: 2, minBoxes: 3 }, { id: '6x1', flavors: 6, each: 1, minBoxes: 6 }] } };
 
 section('auth & admin bootstrap');
@@ -87,28 +87,43 @@ r = await order({ date: ymd(60) }); ok('date = today+max accepted', r.status ===
 
 section('pricing (server decides the money)');
 r = await order({ items: [{ type: 'product', productId: 'meringue-butter', qty: 2, price: 1, subtotal: 1 }, { type: 'product', productId: 'canele-original', qty: 1 }, { type: 'canele-assorted', mode: '3x2', flavors: A3, qty: 3 }], total: 1 });
-ok('total = 390×2 + 750 + 800×3 + 冷凍 4 盒 250 + 常溫 150 = 4330 (client prices ignored)', r.json?.total === 4330, r.json);
+ok('total = 390×2 + 750 + 800×3 + 冷凍 4 盒 250 + 常溫 2 罐 130 = 4310 (client prices ignored)', r.json?.total === 4310, r.json);
 const O1 = r.json;
 ok('order number format', /^NT\d{6}\d{3,}$/.test(O1.orderNo) && O1.token.length >= 20, O1.orderNo);
 await putSettings({ freeShippingOver: 2000 });
-r = await order({ items: [{ type: 'product', productId: 'meringue-butter', qty: 5 }] }); ok('subtotal 1950 < 2000 → shipping 150', r.json?.total === 2100, r.json?.total);
+r = await order({ items: [{ type: 'product', productId: 'meringue-butter', qty: 5 }] }); ok('subtotal 1950 < 2000 → shipping is charged (5 罐 → 170)', r.json?.total === 2120, r.json?.total);
 r = await order({ items: [{ type: 'product', productId: 'meringue-butter', qty: 6 }] }); ok('subtotal 2340 ≥ 2000 → free shipping', r.json?.total === 2340, r.json?.total);
 await putSettings({ freeShippingOver: 0 });
-r = await order({ shippingId: 'teleport', shipping: { fee: 0 } }); ok('customer cannot choose or zero the shipping fee', r.json?.total === 540, r.json?.total);
+r = await order({ shippingId: 'teleport', shipping: { fee: 0 } }); ok('customer cannot choose or zero the shipping fee (390 + 1 罐 130)', r.json?.total === 520, r.json?.total);
 section('可麗露冷凍運費（1 盒 175／2–4 盒 250／5–9 盒 290／一件最多 9 盒）');
 for (const [n, fee] of [[1, 175], [2, 250], [4, 250], [5, 290], [9, 290], [10, 465], [13, 540], [18, 580], [19, 755]]) {
   r = await order({ items: [{ type: 'product', productId: 'canele-original', qty: n }] }); ok(`${n} 盒 → 運費 ${fee}`, r.json?.total === 750 * n + fee, [n, r.json?.total - 750 * n]);
 }
 r = await order({ items: [{ type: 'canele-assorted', mode: '3x2', flavors: ['canele-original', 'canele-matcha', 'canele-thai-tea'], qty: 3 }, { type: 'product', productId: 'canele-matcha', qty: 2 }] });
 ok('綜合 3 盒 + 單一 2 盒 = 5 盒 → 290', r.json?.total === 2400 + 1580 + 290, r.json?.total);
-r = await order({ items: [{ type: 'product', productId: 'meringue-butter', qty: 3 }] }); ok('馬林糖 only → 常溫 150 (flat)', r.json?.total === 1170 + 150, r.json?.total);
+r = await order({ items: [{ type: 'product', productId: 'meringue-butter', qty: 3 }] }); ok('馬林糖 3 罐 → 小箱 130', r.json?.total === 1170 + 130, r.json?.total);
+r = await order({ items: [{ type: 'product', productId: 'meringue-butter', qty: 4 }] }); ok('馬林糖 4 罐 → 超過一個尺寸，170', r.json?.total === 1560 + 170, r.json?.total);
 await putSettings({ freeShippingOver: 3000 });
 r = await order({ items: [{ type: 'product', productId: 'canele-original', qty: 4 }, { type: 'product', productId: 'meringue-butter', qty: 1 }] }); ok('free-shipping threshold zeroes both parcels', r.json?.total === 3390, r.json?.total);
 await putSettings({ freeShippingOver: 0 });
 r = await putSettings({ shipping: { frozen: { tiers: [] }, ambient: { fee: 100 } } }); ok('admin cannot save shipping with no tiers', r.status === 400, r.status);
-r = await putSettings({ shipping: { frozen: { tiers: [{ upTo: 9, fee: 300 }, { upTo: 3, fee: '200' }], maxPerParcel: 0 }, ambient: { fee: -5 } } });
-ok('shipping settings are cleaned up (sorted, numbers, sane limits)', JSON.stringify(r.json.settings.shipping.frozen.tiers) === '[{"upTo":3,"fee":200},{"upTo":9,"fee":300}]' && r.json.settings.shipping.frozen.maxPerParcel === 9 && r.json.settings.shipping.ambient.fee === 0, r.json.settings?.shipping);
+r = await putSettings({ shipping: { frozen: { tiers: [{ upTo: 9, fee: 300 }, { upTo: 3, fee: '200' }], maxPerParcel: 0 }, ambient: { tiers: [{ upTo: 999, fee: 170 }, { upTo: '2', fee: -5 }, { upTo: 0, fee: 9 }] } } });
+ok('shipping settings are cleaned up (sorted, numbers, sane limits)', JSON.stringify(r.json.settings.shipping.frozen.tiers) === '[{"upTo":3,"fee":200},{"upTo":9,"fee":300}]' && r.json.settings.shipping.frozen.maxPerParcel === 9 && JSON.stringify(r.json.settings.shipping.ambient.tiers) === '[{"upTo":2,"fee":0},{"upTo":999,"fee":170}]', r.json.settings?.shipping);
+r = await putSettings({ shipping: { frozen: BASE.shipping.frozen, ambient: { fee: 99 } } });
+ok('an admin page from before the jar tiers (sends one flat fee) does not wipe the tiers', JSON.stringify(r.json.settings.shipping.ambient.tiers) === '[{"upTo":2,"fee":0},{"upTo":999,"fee":170}]', r.json.settings?.shipping?.ambient);
 await putSettings({ shipping: BASE.shipping });
+r = await call('/catalog'); ok('customers get the jar tiers (and a flat fee for old cached pages)', JSON.stringify(r.json.settings.shipping.ambient.tiers) === '[{"upTo":3,"fee":130},{"upTo":999,"fee":170}]' && r.json.settings.shipping.ambient.fee === 130, r.json.settings?.shipping?.ambient);
+
+section('購物須知 (the owner can rewrite it in the admin)');
+ok('starts automatic (nothing customised)', JSON.stringify(r.json.settings.shopNotes) === '{"over":{},"off":[],"extra":[]}', r.json.settings.shopNotes);
+r = await putSettings({ shopNotes: { over: { meringue: ' 小箱 130、大箱 170 \r\n第二行 ', hacker: 'x', pay: '' }, off: ['custom', 'nope'], extra: [{ title: ' 保存方式 ', text: '常溫 14 天' }, { title: '', text: '' }, ...Array.from({ length: 12 }, (_, i) => ({ title: 't' + i, text: 'x'.repeat(900) }))] } });
+{ const sn = r.json?.settings?.shopNotes || {};
+  ok('cleaned up (known topics only, trimmed, line breaks kept, empty rows dropped, at most 10, 400 chars each)', JSON.stringify(sn.over) === '{"meringue":"小箱 130、大箱 170 \\n第二行"}' && JSON.stringify(sn.off) === '["custom"]' && sn.extra?.length === 10 && sn.extra[0].title === '保存方式' && sn.extra[1].text.length === 400, sn); }
+r = await call('/catalog'); ok('customers get the owner\'s wording', /^小箱 130/.test(r.json.settings.shopNotes.over.meringue) && r.json.settings.shopNotes.extra[0].text === '常溫 14 天' && r.json.settings.shopNotes.off[0] === 'custom', r.json.settings.shopNotes);
+r = await putSettings({ notice: '' }); ok('saving other settings leaves it alone', r.json.settings.shopNotes.extra.length === 10, r.json.settings.shopNotes);
+r = await putSettings({ shopNotes: {} }); ok('clearing it goes back to automatic', JSON.stringify(r.json.settings.shopNotes) === '{"over":{},"off":[],"extra":[]}', r.json.settings.shopNotes);
+
+section('pricing, continued');
 r = await order({ note: 'x'.repeat(900), contact: { ...contact, name: '名'.repeat(80) } });
 let g = await call(`/orders/${r.json.orderNo}?t=${r.json.token}`); ok('long note/name are capped', g.json.order.note.length === 500 && g.json.order.contact.name.length === 40, [g.json.order.note.length, g.json.order.contact.name.length]);
 
@@ -116,8 +131,8 @@ section('order privacy');
 g = await call(`/orders/${O1.orderNo}`); ok('no token → 403', g.status === 403, g.status);
 g = await call(`/orders/${O1.orderNo}?t=wrong`); ok('wrong token → 403', g.status === 403, g.status);
 g = await call(`/orders/NT000000999?t=${O1.token}`); ok('unknown order → 404', g.status === 404, g.status);
-g = await call(`/orders/${O1.orderNo}?t=${O1.token}`); ok('token → 200', g.status === 200 && g.json.order.total === 4330, g.status);
-ok('order records both parcels (冷凍＋常溫)', g.json.order.shipping.fee === 400 && g.json.order.shipping.parts.length === 2 && /冷凍/.test(g.json.order.shipping.label) && /常溫/.test(g.json.order.shipping.label), g.json.order.shipping);
+g = await call(`/orders/${O1.orderNo}?t=${O1.token}`); ok('token → 200', g.status === 200 && g.json.order.total === 4310, g.status);
+ok('order records both parcels (冷凍 250＋常溫 2 罐 130)', g.json.order.shipping.fee === 380 && g.json.order.shipping.parts.length === 2 && /冷凍/.test(g.json.order.shipping.label) && /常溫/.test(g.json.order.shipping.label), g.json.order.shipping);
 ok('customer view hides token/adminNote/history/user', !('token' in g.json.order) && !('adminNote' in g.json.order) && !('history' in g.json.order) && !('user' in g.json.order), Object.keys(g.json.order));
 ok('transfer order shows the bank account + deadline', g.json.order.bank?.account === '111122223333' && g.json.order.payment.deadline === ymd(2), [g.json.order.bank, g.json.order.payment]);
 r = await order({}, ALICE); const OA = r.json;
@@ -204,11 +219,11 @@ await call('/admin/products/canele-matcha', { method: 'PUT', user: ADMIN, body: 
 await bad('assorted box with a sold-out flavour rejected', { items: [{ type: 'canele-assorted', mode: '3x2', flavors: A3, qty: 3 }] }, /無法訂購/);
 await call('/admin/products/canele-matcha', { method: 'PUT', user: ADMIN, body: { ...P['canele-matcha'], soldOut: false } });
 await call('/admin/products/meringue-cocoa', { method: 'PUT', user: ADMIN, body: { ...P['meringue-cocoa'], active: true, soldOut: false, price: 480 } });
-r = await order({ items: [{ type: 'product', productId: 'meringue-cocoa', qty: 1 }] }); ok('price change applies to new orders (480+150)', r.json?.total === 630, r.json?.total);
+r = await order({ items: [{ type: 'product', productId: 'meringue-cocoa', qty: 1 }] }); ok('price change applies to new orders (480+130)', r.json?.total === 610, r.json?.total);
 await call('/admin/products/meringue-cocoa', { method: 'PUT', user: ADMIN, body: P['meringue-cocoa'] });
 for (const [n, b] of [['no name', { category: 'meringue', name: '', price: 100 }], ['price 0', { category: 'meringue', name: 'x', price: 0 }], ['bad category', { category: 'cake', name: 'x', price: 100 }]]) { r = await call('/admin/products/qa-new', { method: 'PUT', user: ADMIN, body: b }); ok(`new product: ${n} rejected`, r.status === 400, r.status); }
 r = await call('/admin/products/qa-new', { method: 'PUT', user: ADMIN, body: { category: 'meringue', name: 'QA 新口味', price: 333, unit: '罐', active: true, sort: 99 } }); ok('new product saved', r.json?.product.id === 'qa-new', r.text);
-r = await order({ items: [{ type: 'product', productId: 'qa-new', qty: 2 }] }); ok('new product can be ordered (333×2+150)', r.json?.total === 816, r.json?.total);
+r = await order({ items: [{ type: 'product', productId: 'qa-new', qty: 2 }] }); ok('new product can be ordered (333×2+130)', r.json?.total === 796, r.json?.total);
 r = await call('/admin/products/qa-new', { method: 'DELETE', user: ADMIN }); r = await call('/catalog'); ok('deleted product is gone', r.json.products.length === 13 && !r.json.products.some((p) => p.id === 'qa-new'), r.json.products.length);
 const png = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
 r = await call('/admin/images', { method: 'POST', user: BOB, body: { dataUrl: png } }); ok('non-admin cannot upload photos', r.status === 403, r.status);
@@ -254,7 +269,7 @@ section('造型餅乾（系列・單片・最少片數・運費級距・填字�
   ok('optional text, when given, is kept', r.status === 200 && r.json?.lines?.find((l) => l.productId === 'cookie-anpanman-stroller')?.text === 'MY HOME 520', r.json?.lines);
   await bad('a cup with a painted name (茶杯酷洛米) needs the name', { items: [CK('anpanman', 5), { type: 'product', productId: 'cookie-sanrio-kuromi-teacup', qty: 1 }] }, /無法訂購|請填寫名字/);
   r = await order2({ items: [CK('anpanman', 6), { type: 'product', productId: 'meringue-butter', qty: 1 }] }, ALICE);
-  ok('cookies + meringue ship in one box: one fee = max(130, 150)', r.status === 200 && r.json?.shipping?.parts.length === 1 && r.json?.shipping?.fee === 150 && /含馬林糖/.test(r.json?.shipping?.label), r.json?.shipping);
+  ok('cookies + meringue ship in one (large) box: always the top cookie tier, 170', r.status === 200 && r.json?.shipping?.parts.length === 1 && r.json?.shipping?.fee === 170 && /含馬林糖/.test(r.json?.shipping?.label), r.json?.shipping);
   r = await order2({ items: [CK('anpanman', 6), { type: 'product', productId: 'canele-original', qty: 1 }] }, ALICE);
   ok('cookies + canelé: frozen and cookie parcels charged separately', r.status === 200 && r.json?.shipping?.fee === 175 + 130 && r.json?.shipping?.parts.map((x) => x.kind).join() === 'frozen,cookie', r.json?.shipping);
   r = await putSettings({ cookie: { minPieces: 1, shipping: { label: 'X', tiers: [{ upTo: 9, fee: 120 }, { upTo: 999, fee: 180 }] }, series: SER.map((x) => ({ ...x, active: true })) } });

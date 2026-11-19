@@ -93,7 +93,8 @@ const DEFAULT_SETTINGS = {
   // 運費：可麗露只能冷凍宅配，依「每件包裹的盒數」計費，一件最多 maxPerParcel 盒，超過就拆成多件；馬林糖走常溫
   shipping: {
     frozen: { label: '黑貓冷凍宅配', tiers: [{ upTo: 1, fee: 175 }, { upTo: 4, fee: 250 }, { upTo: 9, fee: 290 }], maxPerParcel: 9 },
-    ambient: { label: '黑貓常溫宅配', fee: 150 },
+    // 馬林糖一口酥（常溫）：依整張訂單的罐數分級（店主 11-19：罐數不多 $130，超過一個尺寸 $170）。幾罐換級由店主在後台設定。
+    ambient: { label: '黑貓常溫宅配', tiers: [{ upTo: 3, fee: 130 }, { upTo: 999, fee: 170 }] },
   },
   freeShippingOver: 0, // 0 = 不免運
   payments: { linepay: true, ecpay: true, transfer: true },
@@ -114,6 +115,8 @@ const DEFAULT_SETTINGS = {
     series: [], // { id, name, lines: [說明], photo, groups: ['character'|'birthday'], active, sort }
   },
   notice: '',
+  // 購物須知（商店頁）：每一則平常照上面的設定自動寫好；店主可以改寫（over）、隱藏（off）、自己加（extra）
+  shopNotes: { over: {}, off: [], extra: [] },
   pauseOrders: true, // 暫停接單：客人只能看、不能下單（管理員照樣能測）
   testMode: true, // 測試模式：只有管理員能線上結帳；客人看到「用 LINE 傳訂單給店家」
   admins: [],
@@ -152,14 +155,14 @@ function publicSettings(s, admin = false, products = null) {
     pauseOrders: !!(s.pauseOrders && !admin),
     leadDays: s.leadDays, maxDays: s.maxDays, closedWeekdays: s.closedWeekdays, blockedDates: s.blockedDates,
     maxOrdersPerDay: s.maxOrdersPerDay, dateLabel: s.dateLabel, dateNote: s.dateNote || '',
-    shipping: s.shipping, freeShippingOver: s.freeShippingOver,
+    shipping: { ...s.shipping, ambient: { label: s.shipping.ambient.label, tiers: ambientTiers(s), fee: ambientTiers(s)[0].fee } }, freeShippingOver: s.freeShippingOver, // fee: for pages still cached from before the tiers
     shippingOptions: [], // older cached pages still read this
     payments: {
       linepay: !!(open && s.payments?.linepay && linepayReady()),
       ecpay: !!(open && s.payments?.ecpay && ecpayReady()),
       transfer: !!(open && s.payments?.transfer && bankReady),
     },
-    canele: s.canele, notice: s.notice, today: twDate(),
+    canele: s.canele, notice: s.notice, shopNotes: cleanNotes(s.shopNotes), today: twDate(),
     cookie: { minPieces: s.cookie.minPieces, shipping: s.cookie.shipping, series: products ? visibleSeries(s, products, admin) : [] },
     preview: admin ? { closed: !!s.pauseOrders, testMode: !!s.testMode } : undefined, // 店家登入時：客人實際看到的狀態
   };
@@ -251,7 +254,20 @@ async function requireAdmin(event) {
   return { user: u, settings: s };
 }
 
+// ---------------------------------------------------------------- 購物須知
+const NOTE_KEYS = ['date', 'cookie', 'canele', 'meringue', 'pay', 'custom'];
+const multiline = (v, max) => String(v ?? '').replace(/\r\n?/g, '\n').trim().slice(0, max); // like str(), but keeps the line breaks
+const cleanNotes = (n) => ({
+  over: Object.fromEntries(NOTE_KEYS.map((k) => [k, multiline(n?.over?.[k], 400)]).filter(([, v]) => v)),
+  off: NOTE_KEYS.filter((k) => Array.isArray(n?.off) && n.off.includes(k)),
+  extra: (Array.isArray(n?.extra) ? n.extra : []).map((x) => ({ title: str(x?.title, 20), text: multiline(x?.text, 400) })).filter((x) => x.title || x.text).slice(0, 10),
+});
+
 // ---------------------------------------------------------------- pricing
+const cleanTiers = (t) => [...(Array.isArray(t) ? t : [])].map((x) => ({ upTo: int(x.upTo), fee: Math.max(0, int(x.fee)) })).filter((x) => x.upTo > 0).sort((a, b) => a.upTo - b.upTo);
+const tierFee = (tiers, n) => (tiers.find((t) => n <= t.upTo) || tiers[tiers.length - 1] || { fee: 0 }).fee;
+// 馬林糖運費級距；很舊的設定只有單一 fee 時當成一級
+const ambientTiers = (s) => { const a = s.shipping?.ambient || {}; const t = cleanTiers(a.tiers); return t.length ? t : [{ upTo: 999, fee: int(a.fee) }]; };
 const TEMP = { canele: 'frozen', meringue: 'ambient', cookie: 'cookie' };
 // keep in sync with NTC.shipping in js/app.js
 function calcShipping(lines, subtotal, settings) {
@@ -271,8 +287,9 @@ function calcShipping(lines, subtotal, settings) {
     const cs = settings.cookie?.shipping || DEFAULT_SETTINGS.cookie.shipping;
     const tiers = [...(cs.tiers || [])].map((t) => ({ upTo: int(t.upTo), fee: int(t.fee) })).filter((t) => t.upTo > 0).sort((a, b) => a.upTo - b.upTo);
     const fee = (tiers.find((t) => pieces <= t.upTo) || tiers[tiers.length - 1] || { fee: 0 }).fee;
-    parts.push(jars ? { kind: 'cookie', label: `${cs.label}（含馬林糖）`, units: pieces, parcels: 1, fee: Math.max(fee, int(sh.ambient.fee)) } : { kind: 'cookie', label: cs.label, units: pieces, parcels: 1, fee });
-  } else if (jars) parts.push({ kind: 'ambient', label: sh.ambient.label, units: jars, parcels: 1, fee: int(sh.ambient.fee) });
+    // 餅乾＋馬林糖裝同一箱：一定是大尺寸，運費＝餅乾運費的最高一級（店主：「跟餅乾一起訂，那一定是 170」）
+    parts.push(jars ? { kind: 'cookie', label: `${cs.label}（含馬林糖）`, units: pieces, parcels: 1, fee: Math.max(fee, ...tiers.map((t) => t.fee)) } : { kind: 'cookie', label: cs.label, units: pieces, parcels: 1, fee });
+  } else if (jars) parts.push({ kind: 'ambient', label: sh.ambient.label, units: jars, parcels: 1, fee: tierFee(ambientTiers(settings), jars) });
   const freeOver = int(settings.freeShippingOver);
   if (freeOver > 0 && subtotal >= freeOver) parts.forEach((p) => { p.fee = 0; });
   return { label: parts.map((p) => p.label + (p.parcels > 1 ? `（${p.parcels} 件）` : '')).join('＋'), fee: parts.reduce((a, p) => a + p.fee, 0), parts };
@@ -1041,15 +1058,17 @@ async function route(event) {
       }
       if (method === 'PUT' && path === '/admin/settings') {
         const b = parseBody(event);
-        const keys = ['leadDays', 'maxDays', 'maxOrdersPerDay', 'closedWeekdays', 'blockedDates', 'dateLabel', 'dateNote', 'shipping', 'freeShippingOver', 'payments', 'bank', 'transferDays', 'canele', 'notice', 'testMode', 'pauseOrders', 'cookie'];
+        const keys = ['leadDays', 'maxDays', 'maxOrdersPerDay', 'closedWeekdays', 'blockedDates', 'dateLabel', 'dateNote', 'shipping', 'freeShippingOver', 'payments', 'bank', 'transferDays', 'canele', 'notice', 'shopNotes', 'testMode', 'pauseOrders', 'cookie'];
         const next = { ...settings, ...pick(b, keys), pk: 'SETTINGS', sk: 'main' };
+        if (b.shopNotes !== undefined) next.shopNotes = cleanNotes(b.shopNotes);
         if (b.shipping) {
           const f = b.shipping.frozen || {}; const a = b.shipping.ambient || {};
           const tiers = (Array.isArray(f.tiers) ? f.tiers : []).map((t) => ({ upTo: int(t.upTo), fee: Math.max(0, int(t.fee)) })).filter((t) => t.upTo > 0).sort((x, y) => x.upTo - y.upTo);
           if (!tiers.length) throw bad('冷凍運費至少要有一個級距');
           next.shipping = {
             frozen: { label: str(f.label, 30) || DEFAULT_SETTINGS.shipping.frozen.label, tiers, maxPerParcel: Math.max(1, int(f.maxPerParcel) || tiers[tiers.length - 1].upTo) },
-            ambient: { label: str(a.label, 30) || DEFAULT_SETTINGS.shipping.ambient.label, fee: Math.max(0, int(a.fee)) },
+            // 馬林糖：級距。還開著舊版後台的人只會送單一 fee：那不是他改的，維持現有級距
+            ambient: { label: str(a.label, 30) || DEFAULT_SETTINGS.shipping.ambient.label, tiers: cleanTiers(a.tiers).length ? cleanTiers(a.tiers) : ambientTiers(settings) },
           };
         }
         if (b.cookie) {
