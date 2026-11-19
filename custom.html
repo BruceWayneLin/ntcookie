@@ -10,18 +10,21 @@
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css?v=1119c">
+<link rel="preload" as="image" href="assets/cookies/ui/header.webp" type="image/webp">
+<link rel="stylesheet" href="css/app.css?v=1119d">
 </head>
-<body class="ck-body">
-<header class="ck-top">
-  <button class="circle-btn" id="back" aria-label="返回"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
-  <div class="ck-brand">N.T Cookie <i>×</i> N.T Canelé</div>
-  <a class="circle-btn" href="cart.html" aria-label="購物車"><svg viewBox="0 0 24 24"><path d="M3 4h2.2l2.1 10.2a1.6 1.6 0 0 0 1.6 1.3h8.6a1.6 1.6 0 0 0 1.6-1.2L21 8H6.2"/><circle cx="9.5" cy="19.5" r="1.4"/><circle cx="17" cy="19.5" r="1.4"/></svg><span class="badge" data-cart-count></span></a>
-</header>
+<body class="ckd-body">
+<div class="ckd" style="padding-bottom:0">
+  <header class="ckd-head">
+    <button class="ckd-hot" id="back" aria-label="返回" style="left:0;top:0;width:calc(130*var(--u));height:max(calc(96*var(--u)),48px)"></button>
+    <a class="ckd-cart" href="cart.html" aria-label="購物車"><svg viewBox="0 0 48 44"><path d="M3 5h7l6 24h22l5-17H13"/><circle cx="19" cy="37" r="3.3"/><circle cx="35" cy="37" r="3.3"/></svg><span class="badge" data-cart-count></span></a>
+    <h1 class="ckd-pill" style="--n:6">客製造型餅乾</h1>
+  </header>
+</div>
 <main class="ck" id="app"><div class="spinner"></div></main>
-<script src="js/config.js?v=1119c"></script>
-<script src="js/app.js?v=1119c"></script>
-<script src="js/shop.js?v=1119c"></script>
+<script src="js/config.js?v=1119d"></script>
+<script src="js/app.js?v=1119d"></script>
+<script src="js/shop.js?v=1119d"></script>
 <script>
 (function () {
   const { $, esc } = NTC;
@@ -41,7 +44,7 @@
   }
 
   async function start() {
-    const head = '<h1 class="ck-title"><span>客製造型餅乾</span></h1><div class="ck-pill">留言・上傳照片・報價</div>';
+    const head = '';
     if (!(await NTC.loggedIn())) {
       app.innerHTML = `${head}<section class="ck-empty"><p>先用 LINE 登入</p><p class="sub">客製的細節和報價會在 LINE 跟您討論，<br>所以要先用 LINE 登入（只會拿到您的 LINE 名稱）。</p>
         <button class="btn line block" id="login">用 LINE 登入</button></section>`;
@@ -101,7 +104,7 @@
 
   function done(r, posted) {
     window.scrollTo(0, 0);
-    app.innerHTML = `<h1 class="ck-title"><span>已收到 ♡</span></h1><div class="ck-pill">詢問編號 ${esc(r.no)}</div>
+    app.innerHTML = `<h2 class="ck-title" style="font-size:26px;margin-top:14px"><span>已收到 ♡</span></h2><div class="ck-pill">詢問編號 ${esc(r.no)}</div>
       <section class="ck-empty"><p>謝謝您！</p><p class="sub">${posted ? '這筆詢問已經傳到 LINE 聊天室。' : ''}店家看過圖案後，<br>會在 <b>LINE 聊天室</b> 跟您討論細節並報價。</p>
         ${posted ? '' : `<a class="btn line block" href="${NTC.chatUrl(r.summary)}">到 LINE 聊天室（帶入這筆詢問）</a>`}
         <a class="btn ghost block" href="cookies.html?g=character" style="margin-top:10px">逛逛可直接下單的造型餅乾</a></section>`;
