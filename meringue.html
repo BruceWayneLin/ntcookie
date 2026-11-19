@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>馬林糖一口酥｜N.T Cookie × N.T Canelé</title>
-<meta name="description" content="馬林糖一口酥・送禮小點｜法式手工・酥脆輕盈・甜而不膩。原味奶油、小山園抹茶、頂級可可、天然紫薯、香濃起司。">
+<meta name="description" content="馬林糖一口酥｜雙重酥脆・香濃不膩。每款馬林糖搭配專屬的香酥餅乾底。原味奶油、小山園抹茶、頂級可可、天然紫薯、香濃起司。">
 <meta name="theme-color" content="#f5e6de">
 <meta property="og:title" content="馬林糖一口酥｜N.T Cookie × N.T Canelé">
 <meta property="og:image" content="https://brucewaynelin.github.io/ntcookie/assets/v2/02-meringue/banner.png">
@@ -13,6 +13,41 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/app.css?v=1120d">
+<style>
+  .meringue-copy {
+    margin: clamp(10px, 3.5vw, 22px) calc(22 * var(--u)) 0;
+    padding: clamp(10px, 3vw, 18px) 10px clamp(13px, 3.5vw, 22px);
+    border: 1.5px solid #fffaf5;
+    border-radius: clamp(14px, 5vw, 30px);
+    background: linear-gradient(145deg, #fcf0e7, #f9e9dd);
+    color: #3b2216;
+    text-align: center;
+  }
+  .meringue-copy-ornament {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    max-width: 82%;
+    margin: 0 auto 4px;
+    color: #a56831;
+    font: 500 clamp(17px, 4.6vw, 24px)/1 var(--serif);
+  }
+  .meringue-copy-ornament::before, .meringue-copy-ornament::after {
+    content: "";
+    flex: 1;
+    border-top: 1px solid #c69365;
+  }
+  .meringue-copy h2 {
+    margin: 0;
+    font: 900 clamp(18px, 5.4vw, 29px)/1.35 var(--serif);
+    letter-spacing: .045em;
+  }
+  .meringue-copy p {
+    margin: 5px 0 0;
+    font: 500 clamp(14px, 3.6vw, 19px)/1.55 var(--sans);
+  }
+</style>
 </head>
 <body>
 <main class="dz dz-941">
@@ -27,11 +62,14 @@
   </div>
   <!-- design 548–1496: the flavour cards (live from the shop's product list) -->
   <div class="seg grid-rows" id="grid" style="height:calc(948 * var(--u));background-image:url(assets/v2/page-meringue-mid.webp)"></div>
-  <!-- design 1496–1672: footer line -->
-  <div class="seg" style="height:calc(176 * var(--u));background-image:url(assets/v2/page-meringue-bottom.webp)"></div>
+  <section class="meringue-copy" aria-labelledby="meringue-copy-title">
+    <span class="meringue-copy-ornament" aria-hidden="true">♡</span>
+    <h2 id="meringue-copy-title">雙重酥脆・香濃不膩</h2>
+    <p>每款馬林糖搭配專屬的香酥餅乾底，<br>一口咬下，兩種酥脆。</p>
+  </section>
 </main>
 <button type="button" class="nt-back" onclick="window.NTC && NTC.back ? NTC.back() : history.back()"><i aria-hidden="true"></i>返回上一頁</button>
-<script src="js/config.js?v=1120b"></script>
+<script src="js/config.js?v=1120f"></script>
 <script src="js/app.js?v=1120d"></script>
 <script src="js/shop.js?v=1120d"></script>
 <script>
