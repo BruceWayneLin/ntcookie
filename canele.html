@@ -12,7 +12,7 @@
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css?v=1119l">
+<link rel="stylesheet" href="css/app.css?v=1119n">
 </head>
 <body>
 <div class="float-tools">
@@ -28,14 +28,15 @@
   <!-- design 311–828: the flavour cards (live) -->
   <div class="seg grid-rows" id="grid" style="height:calc(517 * var(--u));background-image:url(assets/v2/page-canele-mid.webp)"></div>
   <!-- design 828–1312: 訂購方式 (tap ① or ② to order) -->
-  <div class="seg" style="height:calc(484 * var(--u));background-image:url(assets/v2/page-canele-bottom.webp?v=1119l)">
+  <div class="seg" style="height:calc(484 * var(--u));background-image:url(assets/v2/page-canele-bottom.webp?v=1119n)">
     <button class="hot" id="single" aria-label="單一口味禮盒：選口味" style="left:calc(218*var(--u));top:calc(23*var(--u));width:calc(435*var(--u));height:calc(253*var(--u));border-radius:calc(26*var(--u))"></button>
     <button class="hot" id="mixed" aria-label="綜合口味禮盒：組合口味" style="left:calc(659*var(--u));top:calc(23*var(--u));width:calc(505*var(--u));height:calc(253*var(--u));border-radius:calc(26*var(--u))"></button>
   </div>
 </main>
-<script src="js/config.js?v=1119l"></script>
-<script src="js/app.js?v=1119l"></script>
-<script src="js/shop.js?v=1119l"></script>
+<button type="button" class="nt-back" onclick="window.NTC && NTC.back ? NTC.back() : history.back()"><i aria-hidden="true"></i>返回上一頁</button>
+<script src="js/config.js?v=1119n"></script>
+<script src="js/app.js?v=1119n"></script>
+<script src="js/shop.js?v=1119n"></script>
 <script>
   NTC.$('#cartbtn').insertAdjacentHTML('afterbegin', NTC.CART_SVG);
   NTC.$('#back').onclick = NTC.back;

@@ -321,6 +321,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
 .ph-item button { position: absolute; top: 4px; right: 4px; width: 26px; height: 26px; border: 0; border-radius: 50%; background: rgba(40, 20, 12, .7); color: #fff; font-size: 13px; cursor: pointer; }
 
 /* ---------------------------------------------------------------- 造型餅乾 v2：照設計稿（1024 px 寬）＋美術切圖 */
+:root { --btnw: min(calc(100vw - 40px), 360px); --btnh: calc(var(--btnw) * 92 / 620); } /* one size for 加入購物車 / 前往購物車結帳 / 返回上一頁, every page */
 .ckd-body { background: linear-gradient(180deg, #fdeee8 0, #fbe7df 40%, #f8e0d6 100%); }
 .ckd { --u: calc(min(100vw, var(--page)) / 1024); position: relative; width: min(100vw, var(--page)); margin: 0 auto; padding-bottom: calc(190 * var(--u)); overflow: hidden; }
 .ckd-has-bar .ckd { padding-bottom: calc(330 * var(--u) + env(safe-area-inset-bottom, 0px)); }
@@ -373,8 +374,11 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
 .ckd-cta { display: block; margin: calc(18 * var(--u)) calc(70 * var(--u)) 0; padding: calc(24 * var(--u)); border-radius: 999px; text-align: center; text-decoration: none;
   background: linear-gradient(180deg, #e9888a, #c9565f); color: #fff; font: 900 max(15px, calc(34 * var(--u)))/1.2 var(--serif); letter-spacing: .08em; box-shadow: 0 calc(8 * var(--u)) calc(20 * var(--u)) rgba(185, 70, 80, .28), inset 0 0 0 calc(4 * var(--u)) rgba(255, 255, 255, .55); }
 .ckd-cta.ghost { background: #fff6f3; color: #3b2318; box-shadow: 0 calc(4 * var(--u)) calc(12 * var(--u)) rgba(150, 90, 70, .14), inset 0 0 0 calc(3 * var(--u)) #f3cfc6; }
-.ckd-back { display: block; margin: calc(26 * var(--u)) auto 0; padding: 0; border: 0; background: none; cursor: pointer; width: calc(394 * var(--u)); }
-.ckd-back img { width: 100%; }
+.ckd-back, .nt-back { display: flex; align-items: center; justify-content: center; gap: 12px; width: var(--btnw); height: var(--btnh); margin: calc(30 * var(--u)) auto 0; padding: 0; border: 0; border-radius: 999px; cursor: pointer;
+  background: linear-gradient(180deg, #fff8f5, #f8dbd4); color: #2b1712; font: 900 clamp(16px, 4.6vw, 19px)/1 var(--serif); letter-spacing: .14em;
+  box-shadow: 0 4px 12px rgba(170, 100, 80, .2), inset 0 0 0 3px #fffaf8, inset 0 0 0 4px #f1c9c0; }
+.ckd-back i, .nt-back i { width: 10px; height: 10px; border: solid #2b1712; border-width: 0 0 3px 3px; transform: rotate(45deg); margin-right: 2px; }
+.ckd-back:active, .nt-back:active { filter: brightness(.97); transform: scale(.99); }
 .ckd-corner { position: absolute; bottom: 0; width: calc(196 * var(--u)); pointer-events: none; z-index: 0; }
 .ckd-corner.l { left: 0; } .ckd-corner.r { right: 0; }
 .ckd-bar { position: fixed; left: 50%; bottom: 0; transform: translateX(-50%); z-index: 40; width: min(100vw, var(--page)); --u: calc(min(100vw, var(--page)) / 1024);
@@ -384,11 +388,11 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
 .ckd-chip b { color: #d23a22; }
 .ckd-chip.go { color: #b44a52; }
 .ckd-chip.muted { color: var(--muted); font-weight: 500; }
-.ckd-add { width: calc(620 * var(--u)); min-width: 250px; padding: 0; border: 0; background: none; cursor: pointer; filter: drop-shadow(0 calc(6 * var(--u)) calc(10 * var(--u)) rgba(185, 70, 80, .25)); }
+.ckd-add { width: var(--btnw); padding: 0; border: 0; background: none; cursor: pointer; filter: drop-shadow(0 calc(6 * var(--u)) calc(10 * var(--u)) rgba(185, 70, 80, .25)); }
 .ckd-add img { width: 100%; display: block; }
 .ckd-add.off { opacity: .55; filter: grayscale(.25); }
 .ckd-chip a { color: #b44a52; font-weight: 800; text-decoration: none; }
-.ckd-go { display: flex; align-items: center; justify-content: center; gap: clamp(6px, 2vw, 10px); width: auto; min-width: min(calc(620 * var(--u)), calc(100vw - 32px)); max-width: calc(100vw - 24px); box-sizing: border-box; overflow: hidden; height: calc(92 * var(--u)); min-height: 50px; padding: 0 max(16px, calc(30 * var(--u))); border-radius: 999px; text-decoration: none; white-space: nowrap;
+.ckd-go { display: flex; align-items: center; justify-content: center; gap: clamp(6px, 2vw, 10px); width: var(--btnw); box-sizing: border-box; overflow: hidden; height: var(--btnh); padding: 0 clamp(12px, 4vw, 20px); border-radius: 999px; text-decoration: none; white-space: nowrap;
   background: linear-gradient(180deg, #9a5739, #6e3a24); color: #fff; box-shadow: 0 calc(8 * var(--u)) calc(18 * var(--u)) rgba(110, 58, 36, .35), inset 0 0 0 calc(4 * var(--u)) rgba(255, 255, 255, .45); }
 .ckd-go svg { flex: none; width: clamp(20px, 5.6vw, 26px); height: clamp(18px, 5.2vw, 24px); fill: none; stroke: #fff; stroke-width: 3.6; stroke-linecap: round; stroke-linejoin: round; }
 .ckd-go span { font: 900 clamp(14px, 4.3vw, 19px)/1 var(--serif); letter-spacing: .04em; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
@@ -410,3 +414,6 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
 .ckd-acc.open .chev { transform: rotate(180deg); }
 .ckd-acc-body { padding: calc(4 * var(--u)) 0 calc(22 * var(--u)); }
 .ckd-acc-body .ckd-grid { padding: 0 calc(10 * var(--u)); }
+
+.nt-back { margin: 22px auto 30px; }
+.has-cartbar .nt-back { margin-bottom: 18px; }

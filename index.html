@@ -16,7 +16,7 @@
 <link rel="icon" href="assets/favicon.png">
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 <link rel="preload" as="image" href="assets/v2/page-home.webp" type="image/webp">
-<link rel="stylesheet" href="css/app.css?v=1119l">
+<link rel="stylesheet" href="css/app.css?v=1119n">
 <style>
   /* The page IS the design (S__10682424, 941 px wide): the design sits underneath as the background
      and each tappable area is laid on top at its crop-coordinates.csv position. */
@@ -30,6 +30,9 @@
   }
   .home::before { content: ""; display: block; padding-top: calc(1441 / 941 * 100%); }
   .home .hot { left: calc(var(--x) / 941 * 100%); top: calc(var(--y) / 1441 * 100%); width: calc(var(--w) / 941 * 100%); height: calc(var(--h) / 1441 * 100%); border-radius: calc(24 / 941 * min(100vw, var(--page))); }
+  .my-orders { display: block; width: calc(min(100vw, var(--page)) * 936 / 946); margin: calc(min(100vw, var(--page)) * 8 / 946) auto 0; border-radius: 999px; -webkit-tap-highlight-color: transparent; }
+  .my-orders img { display: block; width: 100%; height: auto; }
+  .my-orders:active { filter: brightness(.96); transform: scale(.99); }
   .dock {
     position: fixed; left: 0; right: 0; bottom: 0; z-index: 10;
     padding-bottom: env(safe-area-inset-bottom, 0px);
@@ -54,6 +57,8 @@
     <a class="hot" data-link="canele"    href="#" style="--x:476;--y:569;--w:462;--h:246"><span class="sr-only">N.T Canelé 可麗露專區</span></a>
   </nav>
 </main>
+<!-- 我的訂單 (designer slice 16): order progress / payment lookup — LINE members see their orders, others look up by number + phone -->
+<a class="my-orders" data-link="orders" href="#"><img src="assets/v2/03-homepage/my-orders.webp" width="936" height="175" alt="我的訂單：訂單進度・付款查詢"></a>
 
 <div class="dock">
   <div class="dock-inner">
@@ -68,8 +73,8 @@
   </div>
 </div>
 
-<script src="js/config.js?v=1119l"></script>
-<script src="js/app.js?v=1119l"></script>
+<script src="js/config.js?v=1119n"></script>
+<script src="js/app.js?v=1119n"></script>
 <script>
   /* ================= 連結設定 =================
      'line'          → 開啟 LINE 官方帳號聊天室
@@ -84,6 +89,7 @@
     reservations: 'reserve.html',                           // 預約／訂購：先選日期 → 購物車 → 留言 → 出單
     store:        'shop.html',                              // 線上商店
     portfolio:    'https://www.instagram.com/nt.cookie/',   // 作品集 → IG
+    orders:       'orders.html',                            // 我的訂單：訂單進度・付款查詢
   };
   /* ============================================ */
   document.querySelectorAll('[data-link]').forEach((a) => {

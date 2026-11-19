@@ -11,7 +11,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
 <link rel="preload" as="image" href="assets/cookies/ui/header.webp" type="image/webp">
-<link rel="stylesheet" href="css/app.css?v=1119l">
+<link rel="stylesheet" href="css/app.css?v=1119n">
 </head>
 <body class="ckd-body">
 <div class="ckd" style="padding-bottom:0">
@@ -22,9 +22,9 @@
   </header>
 </div>
 <main class="ck" id="app"><div class="spinner"></div></main>
-<script src="js/config.js?v=1119l"></script>
-<script src="js/app.js?v=1119l"></script>
-<script src="js/shop.js?v=1119l"></script>
+<script src="js/config.js?v=1119n"></script>
+<script src="js/app.js?v=1119n"></script>
+<script src="js/shop.js?v=1119n"></script>
 <script>
 (function () {
   const { $, esc } = NTC;
@@ -71,7 +71,7 @@
           <label class="field"><span>手機</span><input id="phone" type="tel" inputmode="tel" maxlength="20" value="${esc(c.phone || '')}" autocomplete="tel"></label></div>
         <p class="note" style="margin:0">我們會用 LINE 回覆您（LINE：${esc(me?.user?.name || '')}）。</p></section>
       <button class="btn block" id="send" style="margin-top:6px">送出客製詢問</button>
-      <button type="button" class="ck-back" id="back2">‹ 返回上一頁</button>`;
+      <button type="button" class="nt-back" id="back2"><i aria-hidden="true"></i>返回上一頁</button>`;
     $('#back2').onclick = NTC.back;
     app.querySelectorAll('#purpose .chip').forEach((b) => (b.onclick = () => { purpose = b.dataset.p; app.querySelectorAll('#purpose .chip').forEach((x) => x.classList.toggle('on', x === b)); }));
     const paintThumbs = () => {

@@ -13,7 +13,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
 <link rel="preload" as="image" href="assets/cookies/ui/header.webp" type="image/webp">
-<link rel="stylesheet" href="css/app.css?v=1119l">
+<link rel="stylesheet" href="css/app.css?v=1119n">
 </head>
 <body class="ckd-body">
 <main class="ckd" id="page">
@@ -28,9 +28,9 @@
   <img class="ckd-corner r" src="assets/cookies/ui/corner-right.webp" alt="">
 </main>
 <div class="ckd-bar" id="bar" hidden></div>
-<script src="js/config.js?v=1119l"></script>
-<script src="js/app.js?v=1119l"></script>
-<script src="js/shop.js?v=1119l"></script>
+<script src="js/config.js?v=1119n"></script>
+<script src="js/app.js?v=1119n"></script>
+<script src="js/shop.js?v=1119n"></script>
 <script>
 (function () {
   const { $, esc, money, asset } = NTC;
@@ -45,7 +45,7 @@
   const banner = (se, extra = '') => `
       ${se.photo ? `<div class="ph"><img src="${esc(asset(se.photo))}" alt=""></div>` : ''}
       <div class="tx"><h2 style="--n:${[...se.name].length}"><i class="sp l"></i>${esc(se.name)}<i class="sp r"></i></h2><div class="hr"><span>♡</span></div>${(se.lines || []).map((l) => `<p>${esc(l)}</p>`).join('')}${extra}</div>`;
-  const backBtn = '<button type="button" class="ckd-back" id="back2" aria-label="返回上一頁"><img src="assets/cookies/ui/back.webp" alt="返回上一頁"></button>';
+  const backBtn = '<button type="button" class="ckd-back" id="back2"><i aria-hidden="true"></i>返回上一頁</button>';
   const rules = () => {
     const c = cat.settings.cookie; const t = [...c.shipping.tiers].sort((a, b) => a.upTo - b.upTo);
     const from = (i) => (i ? t[i - 1].upTo + 1 : Math.max(1, c.minPieces || 1));
