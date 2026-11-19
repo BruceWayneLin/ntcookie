@@ -9,10 +9,10 @@ const D = 'assets/cookies/anpanman/';
 const ANPANMAN = { id: 'anpanman', name: '麵包超人系列', lines: ['可單片選購・自由搭配', '生日・收涎・派對・送禮'], photo: `${D}hero.webp`, groups: ['character', 'birthday'], active: false, sort: 10 };
 const AP = [
   ['anpanman', '麵包超人', 250], ['baikinman', '細菌人', 220], ['shokupanman', '吐司超人', 200], ['currypanman', '咖哩包超人', 200], ['uncle-jam', '果 Jam 叔叔', 280], ['melonpanna', '蜜瓜包妹妹', 280],
-  ['dokinchan', '紅精靈', 250], ['bib', '麵包兜兜', 250], ['stroller', '麵包推車', 280], ['bottle', '麵包奶瓶', 250], ['onesie', '麵包屁衣', 250], ['overalls', '吊帶短褲', 250],
+  ['dokinchan', '紅精靈', 250], ['bib', '麵包兜兜', 250], ['stroller', '麵包推車', 280, '推車上的字', 12, true], ['bottle', '麵包奶瓶', 250], ['onesie', '麵包屁衣', 250], ['overalls', '吊帶短褲', 250],
   ['rattle', '麵包搖鈴', 220], ['pacifier', '細菌人奶嘴', 250], ['anpanman-full', '麵包超人（全身）', 320], ['baikinman-full', '細菌人（全身）', 280],
   ['name-plaque', '寶寶名字', 250, '寶寶名字＋日期', 16],
-].map(([slug, name, price, textLabel, textMax], i) => ({ id: `cookie-anpanman-${slug}`, series: 'anpanman', name, price, photo: `${D}${slug}.webp`, sort: 10 + i, ...(textLabel ? { textLabel, textMax } : {}) }));
+].map(([slug, name, price, textLabel, textMax, textOptional], i) => ({ id: `cookie-anpanman-${slug}`, series: 'anpanman', name, price, photo: `${D}${slug}.webp`, sort: 10 + i, ...(textLabel ? { textLabel, textMax } : {}), ...(textOptional ? { textOptional } : {}) }));
 const more = JSON.parse(fs.readFileSync(new URL('./cookie-series.json', import.meta.url), 'utf8'));
 const SERIES = [ANPANMAN, ...more.series]; const PIECES = [...AP, ...more.products];
 

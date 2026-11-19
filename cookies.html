@@ -13,7 +13,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
 <link rel="preload" as="image" href="assets/cookies/ui/header.webp" type="image/webp">
-<link rel="stylesheet" href="css/app.css?v=1119f">
+<link rel="stylesheet" href="css/app.css?v=1119h">
 </head>
 <body class="ckd-body">
 <main class="ckd" id="page">
@@ -28,9 +28,9 @@
   <img class="ckd-corner r" src="assets/cookies/ui/corner-right.webp" alt="">
 </main>
 <div class="ckd-bar" id="bar" hidden></div>
-<script src="js/config.js?v=1119f"></script>
-<script src="js/app.js?v=1119f"></script>
-<script src="js/shop.js?v=1119f"></script>
+<script src="js/config.js?v=1119h"></script>
+<script src="js/app.js?v=1119h"></script>
+<script src="js/shop.js?v=1119h"></script>
 <script>
 (function () {
   const { $, esc, money, asset } = NTC;
@@ -85,7 +85,7 @@
       <div class="ckd-grid">${ps.map((p, i) => {
         const col = tail && i >= n - tail ? (tail === 1 ? 'grid-column:3 / span 2' : `grid-column:${i === n - 2 ? 2 : 4} / span 2`) : '';
         return `<div class="ckd-card${p.soldOut ? ' so' : ''}" data-id="${esc(p.id)}" style="${col}">
-          <div class="ph">${p.photo ? `<img src="${esc(asset(p.photo))}" alt="" loading="lazy">` : ''}${p.textLabel ? `<span class="tl">需填${esc(p.textLabel)}</span>` : ''}${p.soldOut ? '<span class="sob">售完</span>' : ''}</div>
+          <div class="ph">${p.photo ? `<img src="${esc(asset(p.photo))}" alt="" loading="lazy">` : ''}${p.textLabel ? `<span class="tl">${p.textOptional ? '可改' : '需填'}${esc(p.textLabel)}</span>` : ''}${p.soldOut ? '<span class="sob">售完</span>' : ''}</div>
           <div class="nm" style="--n:${[...p.name].length}">${esc(p.name)}</div><div class="pr">${money(p.price)}</div><div class="st"></div></div>`;
       }).join('') || '<p class="ckd-note">這個系列還沒有餅乾，敬請期待</p>'}</div>
       ${rules()}<a class="ckd-custom" href="custom.html">系列裡沒有想要的圖案？<b>客製詢問 ›</b></a>${backBtn}`;
@@ -131,17 +131,18 @@
       NTC.toast(ck < min ? `已加入 ${n} 片，再選 ${min - ck} 片就能結帳（${min} 片起訂）` : `已加入 ${n} 片到購物車 ♡`, 3200);
     };
     if (!needText.length) return done();
-    const { el, close } = NTC.sheet(`<h2>填寫餅乾上的字</h2><p class="sub">我們會照您填的內容手繪在餅乾上。每片要不同的字，請分次加入購物車。</p>
-      ${needText.map((p) => `<label class="field"><span>${esc(p.name)} × ${pick[p.id]}：${esc(p.textLabel)}（最多 ${p.textMax || 12} 字）</span>
-        <input data-id="${esc(p.id)}" maxlength="${p.textMax || 12}" placeholder="例：林羽澄 115.03.23" autocomplete="off"></label>`).join('')}
+    const allNames = needText.every((p) => /名字/.test(p.textLabel));
+    const { el, close } = NTC.sheet(`<h2>${allNames ? '填寫寶寶名字' : '填寫餅乾上的字'}</h2><p class="sub">我們會照您填的內容手繪在餅乾上。每片要不同的字，請分次加入購物車。</p>
+      ${needText.map((p) => `<label class="field"><span>${esc(p.name)} × ${pick[p.id]}：${esc(p.textLabel)}${p.textOptional ? '（選填，不填就照圖上的字）' : ''}（最多 ${p.textMax || 12} 字）</span>
+        <input data-id="${esc(p.id)}" data-opt="${p.textOptional ? 1 : ''}" maxlength="${p.textMax || 12}" placeholder="${/日期/.test(p.textLabel) && !/名字/.test(p.textLabel) ? '例：115.03.23' : /名字/.test(p.textLabel) ? (/日期/.test(p.textLabel) ? '例：林羽澄 115.03.23' : '例：林羽澄') : '例：4 months'}" autocomplete="off"></label>`).join('')}
       <button class="btn block" id="ok">加入購物車</button>`);
     el.querySelector('input').focus();
     el.querySelector('#ok').onclick = () => {
       const texts = {};
       for (const i of el.querySelectorAll('input')) {
         const v = i.value.trim().replace(/\s+/g, ' ');
-        if (!v) { NTC.toast('請填寫餅乾上的字'); i.focus(); return; }
-        texts[i.dataset.id] = v;
+        if (!v && !i.dataset.opt) { NTC.toast('請填寫餅乾上的字'); i.focus(); return; }
+        if (v) texts[i.dataset.id] = v;
       }
       close(); done(texts);
     };

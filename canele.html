@@ -12,7 +12,7 @@
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css?v=1119f">
+<link rel="stylesheet" href="css/app.css?v=1119h">
 </head>
 <body>
 <div class="float-tools">
@@ -25,17 +25,17 @@
 <main class="dz dz-1199">
   <h1 class="sr-only">N.T Canelé 豪宅裡の可麗露・六入可麗露禮盒</h1>
   <div class="seg" style="height:calc(311 * var(--u));background-image:url(assets/v2/page-canele-top.webp)"></div>
-  <!-- design 311–828: the flavour cards (live) -->
-  <div class="seg grid-rows" id="grid" style="height:calc(517 * var(--u));background-image:url(assets/v2/page-canele-mid.webp)"></div>
+  <!-- the flavour cards (live), 2 per row: the background keeps the designer strip at the top and continues in the same peach -->
+  <div class="seg grid-rows" id="grid" style="height:calc(2100 * var(--u));background:rgb(244,229,221) url(assets/v2/page-canele-mid.webp) 0 0 / 100% auto no-repeat"></div>
   <!-- design 828–1312: 訂購方式 (tap ① or ② to order) -->
-  <div class="seg" style="height:calc(484 * var(--u));background-image:url(assets/v2/page-canele-bottom.webp?v=1119f)">
+  <div class="seg" style="height:calc(484 * var(--u));background-image:url(assets/v2/page-canele-bottom.webp?v=1119h)">
     <button class="hot" id="single" aria-label="單一口味禮盒：選口味" style="left:calc(218*var(--u));top:calc(23*var(--u));width:calc(435*var(--u));height:calc(253*var(--u));border-radius:calc(26*var(--u))"></button>
     <button class="hot" id="mixed" aria-label="綜合口味禮盒：組合口味" style="left:calc(659*var(--u));top:calc(23*var(--u));width:calc(505*var(--u));height:calc(253*var(--u));border-radius:calc(26*var(--u))"></button>
   </div>
 </main>
-<script src="js/config.js?v=1119f"></script>
-<script src="js/app.js?v=1119f"></script>
-<script src="js/shop.js?v=1119f"></script>
+<script src="js/config.js?v=1119h"></script>
+<script src="js/app.js?v=1119h"></script>
+<script src="js/shop.js?v=1119h"></script>
 <script>
   NTC.$('#cartbtn').insertAdjacentHTML('afterbegin', NTC.CART_SVG);
   NTC.$('#back').onclick = NTC.back;

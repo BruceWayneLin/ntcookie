@@ -143,7 +143,7 @@ function publicSettings(s, admin = false) {
   };
 }
 
-const PRODUCT_FIELDS = ['id', 'category', 'name', 'price', 'unit', 'photo', 'card', 'cardName', 'cardPrice', 'cardKind', 'icon', 'desc', 'active', 'soldOut', 'sort', 'series', 'textLabel', 'textMax'];
+const PRODUCT_FIELDS = ['id', 'category', 'name', 'price', 'unit', 'photo', 'card', 'cardName', 'cardPrice', 'cardKind', 'icon', 'desc', 'active', 'soldOut', 'sort', 'series', 'textLabel', 'textMax', 'textOptional'];
 const pick = (o, keys) => Object.fromEntries(keys.filter((k) => o[k] !== undefined).map((k) => [k, o[k]]));
 const listProducts = async () => (await queryAll({ KeyConditionExpression: 'pk = :p', ExpressionAttributeValues: { ':p': 'PRODUCT' } }))
   .map((p) => pick(p, PRODUCT_FIELDS)).sort((a, b) => (a.sort ?? 999) - (b.sort ?? 999) || a.id.localeCompare(b.id));
@@ -273,7 +273,7 @@ function priceOrder(reqItems, products, settings, { admin = false } = {}) {
         let text = '';
         if (p.textLabel) {
           text = String(it.text ?? '').trim().replace(/\s+/g, ' ');
-          if (!text) throw bad(`「${p.name}」請填寫${p.textLabel}`);
+          if (!text && !p.textOptional) throw bad(`「${p.name}」請填寫${p.textLabel}`);
           if ([...text].length > int(p.textMax, 12)) throw bad(`「${p.name}」的${p.textLabel}最多 ${int(p.textMax, 12)} 個字`);
         }
         lines.push({ type: 'product', productId: p.id, name: p.name, detail: se.name + (text ? `｜${p.textLabel}：${text}` : ''), text: text || undefined, unit: p.unit || '片', price: int(p.price), qty, temp: 'cookie' });
@@ -1001,8 +1001,9 @@ async function route(event) {
         if (p.category === 'cookie') {
           if (!(settings.cookie?.series || []).some((x) => x.id === p.series)) throw bad('請選擇這片餅乾屬於哪個系列');
           p.textLabel = str(p.textLabel, 30) || undefined; p.textMax = p.textLabel ? Math.min(40, Math.max(1, int(p.textMax, 12))) : undefined;
+          p.textOptional = p.textLabel ? !!p.textOptional : undefined; // 選填：客人可以不填（不填就照圖上的字）
           p.unit = str(p.unit, 4) || '片';
-        } else { delete p.series; delete p.textLabel; delete p.textMax; }
+        } else { delete p.series; delete p.textLabel; delete p.textMax; delete p.textOptional; }
         p.name = str(p.name, 40); if (!p.name) throw bad('請填商品名稱');
         p.price = int(p.price); if (!(p.price > 0)) throw bad('請填價格');
         p.active = !!p.active; p.soldOut = !!p.soldOut; p.sort = int(p.sort, 999);

@@ -239,6 +239,11 @@ section('造型餅乾（系列・單片・最少片數・運費級距・填字�
   r = await order2({ items: [CK('anpanman', 5), CK('name-plaque', 2, { text: '  林羽澄   115.03.23 ' })] }, ALICE);
   const pl = r.json?.lines?.find((l) => l.productId === 'cookie-anpanman-name-plaque');
   ok('name plaque keeps the text (tidied) on the order line', r.status === 200 && pl?.text === '林羽澄 115.03.23' && /寶寶名字＋日期：林羽澄 115\.03\.23/.test(pl.detail) && /麵包超人系列/.test(pl.detail), pl);
+  r = await order2({ items: [CK('anpanman', 5), CK('stroller', 1)] }, ALICE);
+  ok('optional text (麵包推車) can be left empty — no text on the order line', r.status === 200 && !r.json?.lines?.find((l) => l.productId === 'cookie-anpanman-stroller')?.text, r.json?.lines);
+  r = await order2({ items: [CK('anpanman', 5), CK('stroller', 1, { text: 'MY HOME 520' })] }, ALICE);
+  ok('optional text, when given, is kept', r.status === 200 && r.json?.lines?.find((l) => l.productId === 'cookie-anpanman-stroller')?.text === 'MY HOME 520', r.json?.lines);
+  await bad('a cup with a painted name (茶杯酷洛米) needs the name', { items: [CK('anpanman', 5), { type: 'product', productId: 'cookie-sanrio-kuromi-teacup', qty: 1 }] }, /無法訂購|請填寫名字/);
   r = await order2({ items: [CK('anpanman', 6), { type: 'product', productId: 'meringue-butter', qty: 1 }] }, ALICE);
   ok('cookies + meringue ship in one box: one fee = max(130, 150)', r.status === 200 && r.json?.shipping?.parts.length === 1 && r.json?.shipping?.fee === 150 && /含馬林糖/.test(r.json?.shipping?.label), r.json?.shipping);
   r = await order2({ items: [CK('anpanman', 6), { type: 'product', productId: 'canele-original', qty: 1 }] }, ALICE);

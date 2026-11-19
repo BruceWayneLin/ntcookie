@@ -158,8 +158,8 @@
         const p = cat.byId[it.productId]; const se = (s.cookie?.series || []).find((x) => x.id === p.series);
         lines.push({
           idx, it, ok: !p.soldOut && !!se, temp: 'cookie', photo: p.photo || '', price: p.price, unit: p.unit || '片', min: 1,
-          name: p.name, detail: (se ? se.name : '') + (p.textLabel ? `｜${p.textLabel}：${it.text || '（未填）'}` : ''),
-          error: !se ? '這個系列目前沒有開放訂購，請移除' : p.soldOut ? '這片目前售完，請移除' : p.textLabel && !it.text ? `請移除後重新加入，並填寫${p.textLabel}` : '',
+          name: p.name, detail: (se ? se.name : '') + (p.textLabel && (it.text || !p.textOptional) ? `｜${p.textLabel}：${it.text || '（未填）'}` : ''),
+          error: !se ? '這個系列目前沒有開放訂購，請移除' : p.soldOut ? '這片目前售完，請移除' : p.textLabel && !p.textOptional && !it.text ? `請移除後重新加入，並填寫${p.textLabel}` : '',
         });
       } else if (it.type === 'product') {
         const p = cat.byId[it.productId];

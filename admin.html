@@ -9,7 +9,7 @@
 <link rel="icon" href="assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css?v=1119f">
+<link rel="stylesheet" href="css/app.css?v=1119h">
 <style>
   :root { --page: 760px; }
   .tabs { position: sticky; top: 63px; z-index: 20; display: flex; gap: 6px; max-width: var(--page); margin: 0 auto; padding: 8px 14px; background: rgba(248, 237, 231, .96); }
@@ -61,8 +61,8 @@
 <div class="shopbar" id="shopbar" hidden></div>
 <main class="wrap" id="app"><div class="spinner"></div></main>
 <p class="note" id="ver" style="text-align:center;margin:0 0 24px;color:var(--muted)"></p>
-<script src="js/config.js?v=1119f"></script>
-<script src="js/app.js?v=1119f"></script>
+<script src="js/config.js?v=1119h"></script>
+<script src="js/app.js?v=1119h"></script>
 <script>
 (async function () {
   const { $, esc, money, asset } = NTC;
@@ -323,7 +323,7 @@
   const CATS = { canele: 'N.T Canelé 可麗露（單一口味禮盒價格）', meringue: '馬林糖一口酥' };
   const GROUP_NAMES = { character: '卡通・收涎', birthday: '慶生' };
   const prodRow = (p) => `<div class="prod" data-id="${esc(p.id)}">
-        <img src="${esc(asset(p.photo || p.card))}" alt=""><div class="i"><b>${esc(p.name)}</b><span>${money(p.price)} / ${esc(p.unit || '')}${p.textLabel ? `・填字：${esc(p.textLabel)}` : ''}</span></div>
+        <img src="${esc(asset(p.photo || p.card))}" alt=""><div class="i"><b>${esc(p.name)}</b><span>${money(p.price)} / ${esc(p.unit || '')}${p.textLabel ? `・${p.textOptional ? '可選填' : '要填'}：${esc(p.textLabel)}` : ''}</span></div>
         <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
           <label class="tg">上架<input type="checkbox" data-k="active" ${p.active ? 'checked' : ''}></label>
           <label class="tg red">售完<input type="checkbox" data-k="soldOut" ${p.soldOut ? 'checked' : ''}></label></div>
@@ -426,7 +426,8 @@
       <div class="grid2"><label class="field"><span>${p.category === 'canele' ? '單一口味禮盒價格（每盒 6 顆）' : p.category === 'cookie' ? '每片價格' : '價格'}</span><input id="e-price" type="number" inputmode="numeric" value="${esc(p.price || '')}"></label>
         <label class="field"><span>單位</span><input id="e-unit" value="${esc(p.unit || '')}" maxlength="4"></label></div>
       ${p.category === 'cookie' ? `<div class="grid2"><label class="field"><span>客人要填的字（不用填就空白）</span><input id="e-tl" value="${esc(p.textLabel || '')}" maxlength="30" placeholder="例如：寶寶名字＋日期"></label>
-        <label class="field"><span>最多幾個字</span><input id="e-tm" type="number" min="1" max="40" value="${esc(p.textMax || 12)}"></label></div>`
+        <label class="field"><span>最多幾個字</span><input id="e-tm" type="number" min="1" max="40" value="${esc(p.textMax || 12)}"></label></div>
+        <label class="tg" style="display:flex;margin:-4px 0 12px">客人可以不填（選填，不填就照圖上的字）<span class="sp"></span><input type="checkbox" id="e-topt" ${p.textOptional ? 'checked' : ''}></label>`
     : `<label class="field"><span>說明（選填，顯示在加入購物車的視窗）</span><textarea id="e-desc" maxlength="300">${esc(p.desc || '')}</textarea></label>`}
       <label class="field"><span>排序（數字小的排前面）</span><input id="e-sort" type="number" value="${esc(p.sort ?? 100)}"></label>
       <div class="row" style="gap:16px;margin-bottom:14px"><label class="tg">上架<input type="checkbox" id="e-active" ${p.active ? 'checked' : ''}></label><label class="tg red">售完<input type="checkbox" id="e-sold" ${p.soldOut ? 'checked' : ''}></label></div>
@@ -444,7 +445,7 @@
       const ser = el.querySelector('#e-series')?.value;
       const id = p.id || (p.category === 'cookie' ? `cookie-${ser}-${Date.now().toString(36)}` : `${p.category}-${Date.now().toString(36)}`);
       const body = { ...p, id, name, price: +el.querySelector('#e-price').value, unit: el.querySelector('#e-unit').value.trim(), desc: el.querySelector('#e-desc')?.value.trim() ?? p.desc,
-        ...(p.category === 'cookie' ? { series: ser, textLabel: el.querySelector('#e-tl').value.trim(), textMax: +el.querySelector('#e-tm').value } : {}),
+        ...(p.category === 'cookie' ? { series: ser, textLabel: el.querySelector('#e-tl').value.trim(), textMax: +el.querySelector('#e-tm').value, textOptional: el.querySelector('#e-topt').checked } : {}),
         sort: +el.querySelector('#e-sort').value, active: el.querySelector('#e-active').checked, soldOut: el.querySelector('#e-sold').checked, photo };
       if (photo !== p.photo) body.card = null; // a new photo replaces the designed card
       delete body.isNew;

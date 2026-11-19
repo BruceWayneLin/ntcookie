@@ -197,7 +197,7 @@
    "price": 250,
    "photo": "assets/cookies/toystory/sheriff-badge.webp",
    "sort": 17,
-   "textLabel": "名字＋日期",
+   "textLabel": "寶寶名字＋日期",
    "textMax": 16
   },
   {
@@ -206,7 +206,10 @@
    "name": "四個月寶寶帽",
    "price": 250,
    "photo": "assets/cookies/toystory/baby-hat.webp",
-   "sort": 18
+   "sort": 18,
+   "textLabel": "月份文字",
+   "textMax": 10,
+   "textOptional": true
   },
   {
    "id": "cookie-toystory-ribbon-badge",
@@ -241,7 +244,7 @@
    "price": 250,
    "photo": "assets/cookies/toystory/name-plaque.webp",
    "sort": 22,
-   "textLabel": "名字",
+   "textLabel": "寶寶名字",
    "textMax": 8
   },
   {
@@ -419,7 +422,7 @@
    "price": 250,
    "photo": "assets/cookies/pokemon/pokeball-name.webp",
    "sort": 30,
-   "textLabel": "名字＋日期",
+   "textLabel": "寶寶名字＋日期",
    "textMax": 16
   },
   {
@@ -504,7 +507,9 @@
    "name": "茶杯酷洛米",
    "price": 250,
    "photo": "assets/cookies/sanrio/kuromi-teacup.webp",
-   "sort": 15
+   "sort": 15,
+   "textLabel": "名字",
+   "textMax": 6
   },
   {
    "id": "cookie-sanrio-kuromi-friend",
@@ -545,7 +550,7 @@
    "price": 250,
    "photo": "assets/cookies/penguin/name-plaque.webp",
    "sort": 13,
-   "textLabel": "名字",
+   "textLabel": "寶寶名字",
    "textMax": 8
   },
   {
@@ -572,7 +577,10 @@
    "name": "四個月圍兜",
    "price": 250,
    "photo": "assets/cookies/penguin/bib.webp",
-   "sort": 16
+   "sort": 16,
+   "textLabel": "月份文字",
+   "textMax": 10,
+   "textOptional": true
   },
   {
    "id": "cookie-penguin-stroller",
@@ -589,7 +597,7 @@
    "price": 250,
    "photo": "assets/cookies/space/name-planet.webp",
    "sort": 10,
-   "textLabel": "名字＋日期",
+   "textLabel": "寶寶名字＋日期",
    "textMax": 16
   },
   {

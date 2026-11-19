@@ -9,7 +9,7 @@
 <link rel="icon" href="assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css?v=1119f">
+<link rel="stylesheet" href="css/app.css?v=1119h">
 </head>
 <body>
 <header class="topbar">
@@ -19,9 +19,9 @@
 </header>
 <main class="wrap" id="app"><div class="spinner"></div></main>
 
-<script src="js/config.js?v=1119f"></script>
-<script src="js/app.js?v=1119f"></script>
-<script src="js/shop.js?v=1119f"></script>
+<script src="js/config.js?v=1119h"></script>
+<script src="js/app.js?v=1119h"></script>
+<script src="js/shop.js?v=1119h"></script>
 <script>
 (async function () {
   const { $, esc, money, asset } = NTC;
@@ -121,7 +121,7 @@
 
       <section class="panel"><h2><span class="n">4</span>備註（留言給店家）</h2>
         <p class="note" style="margin:-4px 0 8px">有什麼想跟店家說的都可以寫在這裡，店家會在訂單上看到。</p>
-        <label class="field" style="margin:0"><span class="sr-only">備註</span><textarea id="f-note" maxlength="500" placeholder="例如：送禮用、想放卡片、希望收件時段、其他需求…">${esc(form.note)}</textarea></label>
+        <label class="field" style="margin:0"><span class="sr-only">備註</span><textarea id="f-note" maxlength="500" placeholder="${pc.lines.some((l) => l.temp === 'cookie') ? '例如：皮卡丘上想加名字「小美」、送禮用、希望收件時段…' : '例如：送禮用、想放卡片、希望收件時段、其他需求…'}">${esc(form.note)}</textarea></label>
       </section>
 
       <section class="panel"><h2><span class="n">5</span>付款方式</h2>

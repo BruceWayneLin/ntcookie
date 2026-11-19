@@ -10,11 +10,11 @@
       rows: { 3: { h: 454, kind: 'small', slots: [[18, 304], [326, 298], [626, 300]] }, 2: { h: 471, kind: 'wide', slots: [[18, 450], [474, 453]] }, 1: { h: 471, kind: 'wide', slots: [[245, 450]] } },
       split(n) { if (n <= 2) return [n]; const r = []; let left = n; while (left > 4) { r.push(3); left -= 3; } if (left === 4) r.push(2, 2); else r.push(left); return r; },
     },
-    canele: {
-      top: 2, gap: 4, bottom: 4,
-      rowH: (i) => (i === 0 ? 259 : 248),
-      slots: [[32, 288], [325, 274], [604, 275], [882, 285]],
-      split(n) { const r = []; for (let i = 0; i < n; i += 4) r.push(Math.min(4, n - i)); return r; },
+    canele: { // 2 per row (SK 11-19: bigger cards, scroll down) — the designer's cards are 274–288 × 259, scaled up
+      top: 16, gap: 22, bottom: 18,
+      rowH: () => 500,
+      slots: [[44, 545], [610, 545]],
+      split(n) { const r = []; for (let i = 0; i < n; i += 2) r.push(Math.min(2, n - i)); return r; },
     },
   };
 
@@ -29,8 +29,8 @@
     const inner = bakedOk(p, kind)
       ? `<img class="baked" src="${esc(asset(p.card))}" alt="" loading="lazy">`
       : cat === 'canele'
-        ? `<div class="dyn"><div class="ph" style="height:${U(h - 59)}"><img src="${esc(asset(p.photo))}" alt="" loading="lazy"></div>
-             <div class="nm" style="top:${U(h - 52)};height:${U(44)};font-size:${U(30)}">${p.icon ? `<img src="${esc(asset(p.icon))}" alt="">` : ''}${esc(p.name)}</div></div>`
+        ? `<div class="dyn"><div class="ph" style="height:${U(h - Math.round(h * 59 / 259))}"><img src="${esc(asset(p.photo))}" alt="" loading="lazy"></div>
+             <div class="nm" style="top:${U(h - Math.round(h * 52 / 259))};height:${U(Math.round(h * 44 / 259))};font-size:${U(Math.round(h * 30 / 259))}">${p.icon ? `<img src="${esc(asset(p.icon))}" alt="">` : ''}${esc(p.name)}</div></div>`
         : `<div class="dyn"><div class="ph" style="height:${U(kind === 'small' ? 298 : 313)}"><img src="${esc(asset(p.photo))}" alt="" loading="lazy"></div>
              <div class="nm" style="top:${U(kind === 'small' ? 318 : 334)};height:${U(48)};font-size:${U(kind === 'small' ? 33 : 36)}">${esc(p.name)}${p.icon ? `<img src="${esc(asset(p.icon))}" alt="">` : ''}</div>
              <div class="pr" style="top:${U(kind === 'small' ? 378 : 394)};height:${U(54)};font-size:${U(38)}">${money(p.price)}<small>/ ${esc(p.unit || '罐')}</small><i></i></div></div>`;
@@ -47,7 +47,8 @@
       const shape = cat === 'meringue' ? L.rows[n] : { h: L.rowH(r), slots: L.slots };
       const h = shape.h;
       for (let k = 0; k < n; k++, i++) {
-        const [x, w] = shape.slots[k];
+        let [x, w] = shape.slots[k];
+        if (cat === 'canele' && n === 1) x = Math.round((1199 - w) / 2);
         html += cardHtml(products[i], cat, w, h, shape.kind).replace('style="', `style="left:${U(x)};top:${U(y)};`);
       }
       y += h + (r < rows.length - 1 ? L.gap : 0);
