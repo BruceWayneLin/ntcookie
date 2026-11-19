@@ -5,16 +5,31 @@
   // Stale-page guard: LINE's browser can keep an old copy of a page for ~10 minutes after an update.
   // Every page load asks the server for the current version (a ~300-byte file); if this copy is older, reload it once
   // under a fresh URL. The reload is remembered per page + version, so it can never loop.
+  // A copy that may have come from that cache is kept invisible until the check is done (the `vchk` class set by the
+  // little script in each page's <head>), so customers never see the old page flash first.
+  // Links inside the site always ask for the newest copy (a `_v` in the URL the browser has not cached), so moving
+  // between pages never shows an old one.
+  const show = () => document.documentElement.classList.remove('vchk');
+  let latestV = (CFG.version || '').replace(/\s+/g, '');
   (function () {
     fetch('js/config.js?t=' + Date.now(), { cache: 'no-store' }).then((r) => (r.ok ? r.text() : '')).then((t) => {
       const latest = (/version:\s*'([^']+)'/.exec(t) || [])[1];
-      if (!latest || latest === CFG.version) return;
+      if (!latest || latest === CFG.version) return show();
+      latestV = latest.replace(/\s+/g, '');
       const key = latest + '|' + location.pathname;
-      try { if (sessionStorage.getItem('ntc-vreload') === key) return; sessionStorage.setItem('ntc-vreload', key); } catch (e) { return; }
-      const u = new URL(location.href); u.searchParams.set('_v', latest.replace(/\s+/g, ''));
+      try { if (sessionStorage.getItem('ntc-vreload') === key) return show(); sessionStorage.setItem('ntc-vreload', key); } catch (e) { return show(); }
+      const u = new URL(location.href); u.searchParams.set('_v', latestV);
       location.replace(u.toString());
-    }).catch(() => {});
+    }).catch(show);
   })();
+  document.addEventListener('click', (e) => {
+    const a = e.target.closest && e.target.closest('a[href]');
+    if (!a || e.defaultPrevented || e.button || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || (a.target && a.target !== '_self') || a.hasAttribute('download')) return;
+    const raw = a.getAttribute('href') || ''; if (!raw || raw[0] === '#') return;
+    let u; try { u = new URL(raw, location.href); } catch (x) { return; }
+    if (u.origin !== location.origin || !/\.html$/.test(u.pathname) || !latestV) return;
+    u.searchParams.set('_v', latestV); a.href = u.toString(); // the browser then follows the updated link as usual
+  });
   const NTC_CONFIG_LIFF = () => !!CFG.liffId;
   const NTC = (window.NTC = {});
   const $ = (s, el = document) => el.querySelector(s);

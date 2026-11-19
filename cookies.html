@@ -2,6 +2,8 @@
 <html lang="zh-Hant-TW">
 <head>
 <meta charset="utf-8">
+<script>/* stale-page guard, part 1 (see js/app.js) */try{(function(d){var n=performance.getEntriesByType&&performance.getEntriesByType('navigation')[0];if(n&&n.transferSize>0)return;d.className+=' vchk';setTimeout(function(){d.classList.remove('vchk')},2500)})(document.documentElement)}catch(e){}</script>
+<style>.vchk body{visibility:hidden}</style>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>造型餅乾｜N.T Cookie × N.T Canelé</title>
 <meta name="description" content="N.T Cookie 手作糖霜造型餅乾：可單片選購、自由搭配。生日・收涎・派對・送禮。">
@@ -13,8 +15,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
 <link rel="preload" as="image" href="assets/cookies/ui/header.webp" type="image/webp">
-<link rel="stylesheet" href="css/app.css?v=1120g">
-<link rel="stylesheet" href="css/cookie-selection.css?v=1120b">
+<link rel="stylesheet" href="css/app.css?v=1120h">
+<link rel="stylesheet" href="css/cookie-selection.css?v=1120h">
 </head>
 <body class="ckd-body">
 <main class="ckd" id="page">
@@ -30,14 +32,14 @@
 </main>
 <div class="ckd-bar" id="bar" hidden></div>
 <p class="sr-only" id="cookie-selection-status" role="status"></p>
-<script src="js/config.js?v=1120b"></script>
-<script src="js/app.js?v=1120g"></script>
-<script src="js/shop.js?v=1120g"></script>
+<script src="js/config.js?v=1120h"></script>
+<script src="js/app.js?v=1120h"></script>
+<script src="js/shop.js?v=1120h"></script>
 <script>
 (function () {
   const { $, esc, money, asset } = NTC;
   const q = new URLSearchParams(location.search);
-  const GROUPS = { character: '卡通・收涎造型餅乾', birthday: '慶生造型餅乾' };
+  const GROUPS = { character: '卡通・收涎造型餅乾', birthday: '慶生・抓週造型餅乾' };
   const app = $('#app'); const bar = $('#bar');
   $('#back').onclick = NTC.back;
   let cat; let pick = {}; // productId -> qty chosen on this page (kept while switching series)

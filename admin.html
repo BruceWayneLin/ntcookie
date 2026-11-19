@@ -2,6 +2,8 @@
 <html lang="zh-Hant-TW">
 <head>
 <meta charset="utf-8">
+<script>/* stale-page guard, part 1 (see js/app.js) */try{(function(d){var n=performance.getEntriesByType&&performance.getEntriesByType('navigation')[0];if(n&&n.transferSize>0)return;d.className+=' vchk';setTimeout(function(){d.classList.remove('vchk')},2500)})(document.documentElement)}catch(e){}</script>
+<style>.vchk body{visibility:hidden}</style>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>店家後台｜N.T Cookie × N.T Canelé</title>
 <meta name="robots" content="noindex, nofollow">
@@ -9,7 +11,7 @@
 <link rel="icon" href="assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css?v=1120g">
+<link rel="stylesheet" href="css/app.css?v=1120h">
 <style>
   :root { --page: 760px; }
   .tabs { position: sticky; top: 63px; z-index: 20; display: flex; gap: 6px; max-width: var(--page); margin: 0 auto; padding: 8px 14px; background: rgba(248, 237, 231, .96); }
@@ -94,8 +96,8 @@
 <div class="shopbar" id="shopbar" hidden></div>
 <main class="wrap" id="app"><div class="spinner"></div></main>
 <p class="note" id="ver" style="text-align:center;margin:0 0 24px;color:var(--muted)"></p>
-<script src="js/config.js?v=1120b"></script>
-<script src="js/app.js?v=1120g"></script>
+<script src="js/config.js?v=1120h"></script>
+<script src="js/app.js?v=1120h"></script>
 <script>
 (async function () {
   const { $, esc, money, asset } = NTC;
@@ -370,7 +372,7 @@
 
   // ================= 商品 =================
   const CATS = { canele: 'N.T Canelé 可麗露（單一口味禮盒價格）', meringue: '馬林糖一口酥' };
-  const GROUP_NAMES = { character: '卡通・收涎', birthday: '慶生' };
+  const GROUP_NAMES = { character: '卡通・收涎', birthday: '慶生・抓週' };
   const prodRow = (p) => `<div class="prod" data-id="${esc(p.id)}">
         <img src="${esc(asset(p.photo || p.card))}" alt=""><div class="i"><b>${esc(p.name)}</b><span>${money(p.price)} / ${esc(p.unit || '')}${p.textLabel ? `・客人${p.textOptional ? '可填' : '要填'}：${esc(p.textLabel)}` : ''}</span></div>
         <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
