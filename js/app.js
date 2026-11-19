@@ -1,6 +1,19 @@
 /* N.T Cookie × N.T Canelé — shared shop code: LINE login (LIFF), API, cart, sheets, calendar */
 (function () {
   const CFG = window.NTC_CONFIG || {};
+
+  // Stale-page guard: LINE's browser can keep an old copy of a page for ~10 minutes after an update.
+  // Once per tab and version: ask the server for the current version; if this page is older, reload it once under a fresh URL.
+  (function () {
+    try { if (sessionStorage.getItem('ntc-vcheck') === CFG.version) return; sessionStorage.setItem('ntc-vcheck', CFG.version); } catch (e) { return; }
+    fetch('js/config.js?t=' + Date.now(), { cache: 'no-store' }).then((r) => (r.ok ? r.text() : '')).then((t) => {
+      const latest = (/version:\s*'([^']+)'/.exec(t) || [])[1];
+      if (!latest || latest === CFG.version) return;
+      try { if (sessionStorage.getItem('ntc-vreload') === latest) return; sessionStorage.setItem('ntc-vreload', latest); } catch (e) { return; }
+      const u = new URL(location.href); u.searchParams.set('_v', latest.replace(/\s+/g, ''));
+      location.replace(u.toString());
+    }).catch(() => {});
+  })();
   const NTC_CONFIG_LIFF = () => !!CFG.liffId;
   const NTC = (window.NTC = {});
   const $ = (s, el = document) => el.querySelector(s);

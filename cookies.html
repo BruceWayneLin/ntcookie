@@ -13,7 +13,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
 <link rel="preload" as="image" href="assets/cookies/ui/header.webp" type="image/webp">
-<link rel="stylesheet" href="css/app.css?v=1119n">
+<link rel="stylesheet" href="css/app.css?v=1119o">
 </head>
 <body class="ckd-body">
 <main class="ckd" id="page">
@@ -28,9 +28,9 @@
   <img class="ckd-corner r" src="assets/cookies/ui/corner-right.webp" alt="">
 </main>
 <div class="ckd-bar" id="bar" hidden></div>
-<script src="js/config.js?v=1119n"></script>
-<script src="js/app.js?v=1119n"></script>
-<script src="js/shop.js?v=1119n"></script>
+<script src="js/config.js?v=1119o"></script>
+<script src="js/app.js?v=1119o"></script>
+<script src="js/shop.js?v=1119o"></script>
 <script>
 (function () {
   const { $, esc, money, asset } = NTC;
@@ -141,7 +141,9 @@
     const items = NTC.cart.items(); const inCart = items.reduce((a, i) => a + i.qty, 0);
     const cartSum = inCart ? NTC.priceCart(items, cat).subtotal : 0;
     const CART = '<svg viewBox="0 0 48 44"><path d="M3 5h7l6 24h22l5-17H13"/><circle cx="19" cy="37" r="3.3"/><circle cx="35" cy="37" r="3.3"/></svg>';
-    bar.hidden = false;
+    const listPage = !!app.querySelector('.ckd-acc');
+    if (!n && !inCart && listPage) { bar.hidden = true; document.body.classList.remove('ckd-has-bar'); return; } // series list with nothing picked: no floating button over the text
+    bar.hidden = false; document.body.classList.add('ckd-has-bar');
     if (n) { // picked something on this page → add it
       bar.innerHTML = `<div class="ckd-chip">已選 <b>${n}</b> 片・${money(sum)}${inCart ? `　<a href="cart.html">購物車 ${inCart} 件 ›</a>` : ''}</div>
         <button type="button" class="ckd-add" id="add" aria-label="加入購物車"><img src="assets/cookies/ui/add.webp" alt="加入購物車"></button>`;
