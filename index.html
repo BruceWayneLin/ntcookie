@@ -15,42 +15,56 @@
 <meta property="og:image:height" content="311">
 <link rel="icon" href="assets/favicon.png">
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
-<link rel="preload" as="image" href="assets/v2/03-homepage/page-home-v2.webp" type="image/webp">
-<link rel="stylesheet" href="css/app.css?v=1119p">
+<link rel="preload" as="image" href="assets/v2/03-homepage/home-hero.webp" type="image/webp">
+<link rel="stylesheet" href="css/app.css?v=1119r">
 <style>
-  /* The page IS the designer's homepage (nt-homepage-my-orders-slices, 946 × 1655), assembled from the slices at their
-     crop-coordinates.csv positions; every tappable area is laid on top at the same coordinates. Nothing is fixed to the screen. */
-  body { background: #fbebe4; padding-bottom: env(safe-area-inset-bottom, 0px); }
-  .home { position: relative; width: min(100vw, var(--page)); margin: 0 auto; background: #fbebe4 url(assets/v2/03-homepage/page-home-v2.webp) 0 0 / 100% 100% no-repeat; }
-  .home::before { content: ""; display: block; padding-top: calc(1655 / 946 * 100%); }
-  .home .hot { left: calc(var(--x) / 946 * 100%); top: calc(var(--y) / 1655 * 100%); width: calc(var(--w) / 946 * 100%); height: calc(var(--h) / 1655 * 100%); border-radius: calc(24 / 946 * min(100vw, var(--page))); }
-  .home .hot.pill { border-radius: 999px; }
-  .home .badge { position: absolute; left: 62%; top: 4%; min-width: 19px; height: 19px; padding: 0 5px; border-radius: 999px; background: var(--red); color: #fff; font: 700 11px/19px var(--sans); text-align: center; }
-  .home .badge:empty, .home .badge[data-n="0"] { display: none; }
+  /* The designer's homepage (nt-homepage-my-orders-slices, 946 px wide) in its five sections. The page always fills the screen:
+     when the screen is taller than the design, the spare height is shared out between the sections (never stretched);
+     on a shorter screen the gaps stay at the design's own size and the page scrolls. */
+  body { background: #fbebe4; }
+  .home { --u: calc(min(100vw, var(--page)) / 946); width: min(100vw, var(--page)); margin: 0 auto; display: flex; flex-direction: column;
+    min-height: 100vh; min-height: 100dvh; padding-bottom: calc(12 * var(--u) + env(safe-area-inset-bottom, 0px)); box-sizing: border-box; }
+  .blk { position: relative; flex: none; }
+  .blk > img { display: block; width: 100%; height: auto; }
+  .gap { flex: 1 1 0; min-height: calc(var(--g) * var(--u)); }
+  .blk .hot { left: calc(var(--x) / 946 * 100%); top: calc(var(--y) / var(--h0) * 100%); width: calc(var(--w) / 946 * 100%); height: calc(var(--h) / var(--h0) * 100%); border-radius: calc(24 * var(--u)); }
+  .blk .hot.pill { border-radius: 999px; }
+  .blk .badge { position: absolute; left: 62%; top: 10%; min-width: 19px; height: 19px; padding: 0 5px; border-radius: 999px; background: var(--red); color: #fff; font: 700 11px/19px var(--sans); text-align: center; }
+  .blk .badge:empty, .blk .badge[data-n="0"] { display: none; }
 </style>
 </head>
 <body>
 <main class="home">
   <h1 class="sr-only">N.T Cookie × N.T Canelé — 客製糖霜餅乾 × 豪宅裡の可麗露</h1>
-  <p class="sr-only">造型訂製・節慶禮盒・活動甜點。嚴選頂級原物料・手作甜點：法國依思尼奶油、新鮮牧場直送蛋、馬達加斯加頂級香草莢。</p>
-  <nav aria-label="商品分類">
-    <a class="hot" data-link="character" href="#" style="--x:5;--y:320;--w:466;--h:223">  <span class="sr-only">卡通・收涎 造型餅乾</span></a>
-    <a class="hot" data-link="birthday"  href="#" style="--x:477;--y:320;--w:467;--h:223"><span class="sr-only">慶生 造型餅乾</span></a>
-    <a class="hot" data-link="meringue"  href="#" style="--x:5;--y:551;--w:466;--h:236">  <span class="sr-only">馬林糖一口酥・送禮小點</span></a>
-    <a class="hot" data-link="canele"    href="#" style="--x:477;--y:551;--w:467;--h:236"><span class="sr-only">N.T Canelé 可麗露專區</span></a>
+  <div class="blk"><img src="assets/v2/03-homepage/home-hero.webp" width="946" height="307" alt="N.T Cookie × N.T Canelé　客製糖霜餅乾 × 豪宅裡の可麗露　造型訂製・節慶禮盒・活動甜點"></div>
+  <div class="gap" style="--g:13"></div>
+  <nav class="blk" aria-label="商品分類" style="--h0:467">
+    <img src="assets/v2/03-homepage/home-cats.webp" width="946" height="467" alt="">
+    <a class="hot" data-link="character" href="#" style="--x:5;--y:0;--w:466;--h:223">  <span class="sr-only">卡通・收涎 造型餅乾</span></a>
+    <a class="hot" data-link="birthday"  href="#" style="--x:477;--y:0;--w:467;--h:223"><span class="sr-only">慶生 造型餅乾</span></a>
+    <a class="hot" data-link="meringue"  href="#" style="--x:5;--y:231;--w:466;--h:236">  <span class="sr-only">馬林糖一口酥・送禮小點</span></a>
+    <a class="hot" data-link="canele"    href="#" style="--x:477;--y:231;--w:467;--h:236"><span class="sr-only">N.T Canelé 可麗露專區</span></a>
   </nav>
-  <nav aria-label="服務">
-    <a class="hot" data-link="contact"      href="#" style="--x:5;--y:1295;--w:230;--h:173"><span class="sr-only">聯絡客服（訂製諮詢）</span></a>
-    <a class="hot" data-link="reservations" href="#" style="--x:235;--y:1295;--w:234;--h:173"><span class="sr-only">預約／訂購（檔期查詢）</span></a>
-    <a class="hot" data-link="store"        href="#" style="--x:469;--y:1295;--w:243;--h:173"><span class="sr-only">線上商店（直接下單）</span><span class="badge" data-cart-count></span></a>
-    <a class="hot" data-link="portfolio"    href="#" style="--x:712;--y:1295;--w:230;--h:173"><span class="sr-only">作品集（更多案例）</span></a>
+  <div class="gap" style="--g:8"></div>
+  <div class="blk"><img src="assets/v2/03-homepage/home-ingredients.webp" width="946" height="494" alt="HANDMADE WITH LOVE　嚴選頂級原物料・手作甜點：法國依思尼奶油（AOP產品・濃郁乳香）、新鮮牧場直送蛋（蛋香濃郁・品質安心）、馬達加斯加頂級香草莢（天然香氣・層次細緻）" loading="lazy"></div>
+  <div class="gap" style="--g:6"></div>
+  <nav class="blk" aria-label="服務" style="--h0:173">
+    <img src="assets/v2/03-homepage/home-nav.webp" width="946" height="173" alt="">
+    <a class="hot" data-link="contact"      href="#" style="--x:5;--y:0;--w:230;--h:173"><span class="sr-only">聯絡客服（訂製諮詢）</span></a>
+    <a class="hot" data-link="reservations" href="#" style="--x:235;--y:0;--w:234;--h:173"><span class="sr-only">預約／訂購（檔期查詢）</span></a>
+    <a class="hot" data-link="store"        href="#" style="--x:469;--y:0;--w:243;--h:173"><span class="sr-only">線上商店（直接下單）</span><span class="badge" data-cart-count></span></a>
+    <a class="hot" data-link="portfolio"    href="#" style="--x:712;--y:0;--w:230;--h:173"><span class="sr-only">作品集（更多案例）</span></a>
   </nav>
+  <div class="gap" style="--g:12"></div>
   <!-- 我的訂單: order progress / payment lookup — LINE members see their orders, others look up by number + phone -->
-  <a class="hot pill" data-link="orders" href="#" style="--x:5;--y:1480;--w:936;--h:175"><span class="sr-only">我的訂單：訂單進度・付款查詢</span></a>
+  <div class="blk" style="--h0:175">
+    <img src="assets/v2/03-homepage/home-orders.webp" width="946" height="175" alt="">
+    <a class="hot pill" data-link="orders" href="#" style="--x:5;--y:0;--w:936;--h:175"><span class="sr-only">我的訂單：訂單進度・付款查詢</span></a>
+  </div>
 </main>
 
-<script src="js/config.js?v=1119p"></script>
-<script src="js/app.js?v=1119p"></script>
+<script src="js/config.js?v=1119r"></script>
+<script src="js/app.js?v=1119r"></script>
 <script>
   /* ================= 連結設定 =================
      'line'          → 開啟 LINE 官方帳號聊天室

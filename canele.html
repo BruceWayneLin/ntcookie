@@ -5,47 +5,135 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>N.T Canelé 可麗露專區｜豪宅裡の可麗露</title>
 <meta name="description" content="N.T Canelé 豪宅裡の可麗露・六入可麗露禮盒。單一口味禮盒 $750 起、綜合口味禮盒 $800。">
-<meta name="theme-color" content="#f5e6de">
+<meta name="theme-color" content="#fbece4">
 <meta property="og:title" content="N.T Canelé 可麗露專區｜豪宅裡の可麗露">
 <meta property="og:image" content="https://brucewaynelin.github.io/ntcookie/assets/v2/01-canele/banner.png">
 <link rel="icon" href="assets/favicon.png">
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css?v=1119p">
+<link rel="preload" as="image" href="assets/v2/01-canele/m-header.webp" type="image/webp">
+<link rel="stylesheet" href="css/app.css?v=1119r">
 </head>
-<body>
-<div class="float-tools">
-  <button class="circle-btn" id="back" aria-label="返回"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
-  <div class="row" style="gap:10px">
-    <a class="circle-btn" href="cart.html" aria-label="購物車" id="cartbtn"><span class="badge" data-cart-count></span></a>
-    <button class="circle-btn" id="menu" aria-label="選單"><svg viewBox="0 0 24 24"><path d="M5 7h14M5 12h14M5 17h14"/></svg></button>
-  </div>
-</div>
-<main class="dz dz-1199">
-  <h1 class="sr-only">N.T Canelé 豪宅裡の可麗露・六入可麗露禮盒</h1>
-  <div class="seg" style="height:calc(311 * var(--u));background-image:url(assets/v2/page-canele-top.webp)"></div>
-  <!-- design 311–828: the flavour cards (live) -->
-  <div class="seg grid-rows" id="grid" style="height:calc(517 * var(--u));background-image:url(assets/v2/page-canele-mid.webp)"></div>
-  <!-- design 828–1312: 訂購方式 (tap ① or ② to order) -->
-  <div class="seg" style="height:calc(484 * var(--u));background-image:url(assets/v2/page-canele-bottom.webp?v=1119p)">
-    <button class="hot" id="single" aria-label="單一口味禮盒：選口味" style="left:calc(218*var(--u));top:calc(23*var(--u));width:calc(435*var(--u));height:calc(253*var(--u));border-radius:calc(26*var(--u))"></button>
-    <button class="hot" id="mixed" aria-label="綜合口味禮盒：組合口味" style="left:calc(659*var(--u));top:calc(23*var(--u));width:calc(505*var(--u));height:calc(253*var(--u));border-radius:calc(26*var(--u))"></button>
-  </div>
+<body class="cm-body">
+<!-- designer's mobile layout (nt-canele-mobile-ux-slices, 793 px wide): header art + live tabs, cards, notes and checkout bar -->
+<main class="cm" id="page">
+  <header class="cm-head">
+    <button class="cm-hot" id="back" aria-label="返回" style="left:0;top:0;width:calc(120*var(--u));height:max(calc(110*var(--u)),48px)"></button>
+    <a class="cm-cart" href="cart.html" aria-label="購物車"><svg viewBox="0 0 48 44"><path d="M3 5h7l6 24h22l5-17H13"/><circle cx="19" cy="37" r="3.3"/><circle cx="35" cy="37" r="3.3"/></svg><span class="badge" data-cart-count></span></a>
+    <h1 class="sr-only">N.T Canelé 豪宅裡の可麗露・六入可麗露禮盒（每盒 6 顆・手工製作）</h1>
+  </header>
+  <div class="cm-tabs" id="tabs" role="tablist"></div>
+  <p class="cm-strip" id="strip"></p>
+  <div class="cm-grid" id="grid"><div class="spinner"></div></div>
+  <details class="cm-notes" id="notes"><summary>訂購須知<i aria-hidden="true"></i></summary><div class="body" id="notes-body"></div></details>
+  <button type="button" class="nt-back" onclick="NTC.back()"><i aria-hidden="true"></i>返回上一頁</button>
 </main>
-<button type="button" class="nt-back" onclick="window.NTC && NTC.back ? NTC.back() : history.back()"><i aria-hidden="true"></i>返回上一頁</button>
-<script src="js/config.js?v=1119p"></script>
-<script src="js/app.js?v=1119p"></script>
-<script src="js/shop.js?v=1119p"></script>
+<div class="cm-bar" id="bar"></div>
+<script src="js/config.js?v=1119r"></script>
+<script src="js/app.js?v=1119r"></script>
+<script src="js/shop.js?v=1119r"></script>
 <script>
-  NTC.$('#cartbtn').insertAdjacentHTML('afterbegin', NTC.CART_SVG);
-  NTC.$('#back').onclick = NTC.back;
-  NTC.$('#menu').onclick = NTC.openMenu;
-  NTC.$('#single').onclick = NTC.openCanelePicker;
-  NTC.$('#mixed').onclick = () => NTC.openAssorted();
-  NTC.mountCartBar();
-  NTC.catalog().then((c) => NTC.renderGrid(NTC.$('#grid'), 'canele', c.products.filter((p) => p.category === 'canele')))
-    .catch((e) => NTC.toast(e.message, 4000));
+(function () {
+  const { $, esc, money, asset } = NTC;
+  $('#back').onclick = NTC.back;
+  const PHOTO = { original: '01-original', 'mixed-berries': '02-mixed-berries', 'honey-pistachio': '03-honey-pistachio', 'hazelnut-chocolate': '04-hazelnut-chocolate',
+    matcha: '05-matcha', 'thai-tea': '06-thai-tea', 'cinnamon-apple': '07-cinnamon-apple', 'salted-caramel': '08-salted-caramel' }; // the designer's mobile photos
+  const CART_PLUS = '<svg viewBox="0 0 32 28" aria-hidden="true"><path d="M2 3h4l4 15h14l3-10H8"/><circle cx="12" cy="23" r="2"/><circle cx="22" cy="23" r="2"/><path d="M23 1v8M19 5h8"/></svg>';
+  const CART = '<svg viewBox="0 0 48 44" aria-hidden="true"><path d="M3 5h7l6 24h22l5-17H13"/><circle cx="19" cy="37" r="3.3"/><circle cx="35" cy="37" r="3.3"/></svg>';
+  let cat, S, fl = [];
+  let mode = 'single'; let chosen = []; // chosen flavours for an assorted box
+
+  const modeOf = () => (mode === 'single' ? null : S.canele.modes.find((m) => m.id === mode));
+  const photo = (p) => { const k = PHOTO[p.id.replace(/^canele-/, '')]; return k ? `assets/v2/01-canele/m-photo-${k}.webp` : p.photo; };
+
+  function renderTabs() {
+    const tabs = [{ id: 'single', t: '單一口味' }, ...S.canele.modes.map((m) => ({ id: m.id, t: `${m.flavors} 種各 ${m.each} 顆` }))];
+    $('#tabs').innerHTML = tabs.map((x) => `<button type="button" role="tab" aria-selected="${x.id === mode}" class="${x.id === mode ? 'on' : ''}" data-m="${x.id}">${x.t}</button>`).join('');
+    $('#tabs').querySelectorAll('button').forEach((b) => (b.onclick = () => { if (mode === b.dataset.m) return; mode = b.dataset.m; chosen = []; render(); }));
+    const m = modeOf();
+    $('#strip').innerHTML = m ? `任選 ${m.flavors} 種・每種 ${m.each} 顆<span>｜</span>${money(S.canele.assortedPrice)}／盒<span>｜</span>${m.minBoxes} 盒起訂`
+      : `單一口味 6 入<span>｜</span>${S.canele.singleMinBoxes || 1} 盒起訂`;
+  }
+
+  function renderGrid() {
+    const m = modeOf();
+    $('#grid').innerHTML = fl.map((p) => {
+      const sel = chosen.includes(p.id); const full = m && !sel && chosen.length >= m.flavors;
+      const btn = p.soldOut ? '<button type="button" class="cm-btn" disabled>售完</button>'
+        : !m ? `<button type="button" class="cm-btn" data-add="${esc(p.id)}">${CART_PLUS}<span>加入購物車</span></button>`
+        : `<button type="button" class="cm-btn pick${sel ? ' on' : ''}" data-pick="${esc(p.id)}" ${full ? 'disabled' : ''}>${sel ? '✓ 已選這個口味' : '選這個口味'}</button>`;
+      return `<article class="cm-card${sel ? ' on' : ''}${p.soldOut ? ' so' : ''}">
+        <div class="ph"><img src="${esc(asset(photo(p)))}" alt="" loading="lazy"></div>
+        <h2>${p.icon ? `<img src="${esc(asset(p.icon))}" alt="">` : ''}${esc(p.name)}</h2>
+        <p class="pr">${m ? `綜合禮盒 ${money(S.canele.assortedPrice)}<small>／盒</small>` : `NT${money(p.price)}<small>／盒</small>`}</p>${btn}</article>`;
+    }).join('') || '<p class="note">目前沒有上架的口味，敬請期待</p>';
+    $('#grid').querySelectorAll('[data-add]').forEach((b) => (b.onclick = () => addSingle(fl.find((p) => p.id === b.dataset.add))));
+    $('#grid').querySelectorAll('[data-pick]').forEach((b) => (b.onclick = () => {
+      const id = b.dataset.pick; chosen = chosen.includes(id) ? chosen.filter((x) => x !== id) : [...chosen, id];
+      renderGrid(); paintBar();
+    }));
+  }
+
+  function addSingle(p) {
+    NTC.cart.add({ type: 'product', productId: p.id, qty: 1 });
+    const q = NTC.cart.qtyOf(p.id);
+    NTC.toast(`已加入「${p.name}」單一口味禮盒 1 盒${q > 1 ? `（購物車共 ${q} 盒）` : ''}`, 2600);
+  }
+
+  function chooseBoxes() { // assorted box: flavours chosen → how many boxes
+    const m = modeOf(); const names = chosen.map((id) => fl.find((p) => p.id === id)?.name).filter(Boolean);
+    const { el, close } = NTC.sheet(`<h2>綜合口味禮盒（任選 ${m.flavors} 種）</h2>
+      <p class="sub">${esc(names.join('、'))}｜每種 ${m.each} 顆・每盒 6 顆<br>手工製作，每種口味最低製作量為 6 顆，因此 ${m.minBoxes} 盒起訂。</p>
+      <div class="row" style="margin:14px 0 16px"><span style="font-weight:700">盒數</span><span class="note" style="margin-left:6px">（${m.minBoxes} 盒起訂）</span><span class="sp"></span><div class="qty"></div></div>
+      <button class="btn block add">加入購物車・<span class="tt"></span></button>`);
+    const tt = el.querySelector('.tt');
+    const st = NTC.stepper(el.querySelector('.qty'), { value: m.minBoxes, min: m.minBoxes, onChange: (v) => (tt.textContent = money(v * S.canele.assortedPrice)) });
+    tt.textContent = money(st.value * S.canele.assortedPrice);
+    el.querySelector('.add').onclick = () => {
+      NTC.cart.add({ type: 'canele-assorted', mode: m.id, flavors: [...chosen], qty: st.value });
+      close(); NTC.toast(`已加入綜合口味禮盒 ${st.value} 盒`, 2600); chosen = []; renderGrid(); paintBar();
+    };
+  }
+
+  function paintBar() {
+    const m = modeOf(); const bar = $('#bar');
+    const items = NTC.cart.items(); const n = items.reduce((a, i) => a + i.qty, 0);
+    const pc = n ? NTC.priceCart(items, cat) : null;
+    const allBoxes = items.every((i) => i.type === 'canele-assorted' || cat.byId[i.productId]?.category === 'canele');
+    if (m && chosen.length) { // building an assorted box
+      const left = m.flavors - chosen.length;
+      bar.innerHTML = `<div class="sum"><span class="ico">${CART}</span><span class="t"><small>綜合禮盒・已選</small><b>${chosen.length} / ${m.flavors} 種</b></span></div>
+        <button type="button" class="go" id="next" ${left ? 'disabled' : ''}>${left ? `再選 ${left} 種` : '選盒數 ›'}</button>`;
+      $('#next').onclick = chooseBoxes;
+      return;
+    }
+    bar.innerHTML = `<div class="sum"><span class="ico">${CART}</span><span class="t"><small>${n ? `${n} ${allBoxes ? '盒' : '件'}` : '購物車'}</small><b>${n ? `NT${money(pc.subtotal)}` : '還沒有商品'}</b></span></div>
+      <a class="go${n ? '' : ' off'}" href="${n ? 'cart.html' : '#'}">去結帳 ›</a>`;
+    if (!n) bar.querySelector('.go').onclick = (e) => { e.preventDefault(); NTC.toast(m ? `先選 ${m.flavors} 種口味` : '先點口味的「加入購物車」'); };
+  }
+
+  function renderNotes() {
+    const t = [...S.shipping.frozen.tiers].sort((a, b) => a.upTo - b.upTo);
+    const tiers = t.map((x, i) => `${i ? t[i - 1].upTo + 1 : 1}${x.upTo > (i ? t[i - 1].upTo + 1 : 1) ? `～${x.upTo}` : ''} 盒 ${money(x.fee)}`).join('、');
+    const single = fl.length ? [...new Set(fl.map((p) => p.price))].sort((a, b) => a - b).map((pr) => `${fl.filter((p) => p.price === pr).map((p) => p.name).join('、').slice(0, 24)}${fl.filter((p) => p.price === pr).length > 2 ? ' 等' : ''} ${money(pr)}`).join('；') : '';
+    $('#notes-body').innerHTML = `<ul>
+      <li>每盒 6 顆，全部手工製作。</li>
+      <li><b>單一口味禮盒</b>：每盒 6 顆同一口味，${S.canele.singleMinBoxes || 1} 盒起訂。${single ? `（${esc(single)}／盒）` : ''}</li>
+      ${S.canele.modes.map((m) => `<li><b>綜合口味禮盒（任選 ${m.flavors} 種）</b>：每種 ${m.each} 顆，${money(S.canele.assortedPrice)}／盒，${m.minBoxes} 盒起訂。</li>`).join('')}
+      <li>手工製作，每種口味最低製作量為 6 顆，因此綜合禮盒設有最低訂購盒數。</li>
+      <li><b>${esc(S.shipping.frozen.label)}</b>：${tiers}；單件包裹最多 ${S.shipping.frozen.maxPerParcel} 盒，超過會分箱、各自計運費。</li>
+      ${S.dateNote ? `<li>${esc(S.dateNote)}</li>` : ''}</ul>`;
+  }
+
+  function render() { renderTabs(); renderGrid(); paintBar(); }
+  document.addEventListener('ntc:cart', () => { if (cat) paintBar(); });
+  NTC.refreshCart();
+  NTC.catalog().then((c) => {
+    cat = c; S = c.settings; fl = c.products.filter((p) => p.category === 'canele');
+    render(); renderNotes();
+  }).catch((e) => { $('#grid').innerHTML = `<p class="note">${esc(e.message)}</p>`; });
+})();
 </script>
 </body>
 </html>

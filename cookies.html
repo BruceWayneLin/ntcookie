@@ -13,7 +13,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
 <link rel="preload" as="image" href="assets/cookies/ui/header.webp" type="image/webp">
-<link rel="stylesheet" href="css/app.css?v=1119p">
+<link rel="stylesheet" href="css/app.css?v=1119r">
 </head>
 <body class="ckd-body">
 <main class="ckd" id="page">
@@ -28,9 +28,9 @@
   <img class="ckd-corner r" src="assets/cookies/ui/corner-right.webp" alt="">
 </main>
 <div class="ckd-bar" id="bar" hidden></div>
-<script src="js/config.js?v=1119p"></script>
-<script src="js/app.js?v=1119p"></script>
-<script src="js/shop.js?v=1119p"></script>
+<script src="js/config.js?v=1119r"></script>
+<script src="js/app.js?v=1119r"></script>
+<script src="js/shop.js?v=1119r"></script>
 <script>
 (function () {
   const { $, esc, money, asset } = NTC;
@@ -123,7 +123,7 @@
   function renderSeries(se) {
     document.title = `${se.name}｜N.T Cookie × N.T Canelé`; setPill(se.name);
     const ps = cat.products.filter((p) => p.series === se.id);
-    app.innerHTML = `${se.active ? '' : '<div class="ckd-adm">這個系列還沒上架：只有管理員看得到，客人看不到。可以先下測試單確認。</div>'}
+    app.innerHTML = `${se.active ? '' : '<div class="ckd-adm">預覽：這個系列還沒上架，客人看不到。可以先下測試單確認。</div>'}
       <section class="ckd-banner">${banner(se)}</section>
       <img class="ckd-sec" src="assets/cookies/ui/section.webp" alt="單片選購">
       ${gridHtml(ps)}
@@ -185,7 +185,17 @@
 
   document.addEventListener('ntc:cart', () => { if (!cat || bar.hidden) return; paintBar(app.querySelector('.ckd-acc') ? groupPs : cat.products.filter((p) => app.querySelector(`.ckd-card[data-id="${CSS.escape(p.id)}"]`))); });
   NTC.refreshCart();
-  NTC.catalog().then((c) => { cat = c; render(); }).catch((e) => { app.innerHTML = `<p class="ckd-note">${esc(e.message)}</p>`; });
+  NTC.catalog().then((c) => {
+    cat = c;
+    // admins get hidden series from the server too; show them only in preview (the admin's 「看這一頁」 link adds ?preview=1),
+    // so by default an admin sees exactly what customers see
+    if (q.get('preview') !== '1' && cat.settings.cookie) {
+      const on = (cat.settings.cookie.series || []).filter((x) => x.active); const ids = new Set(on.map((x) => x.id));
+      cat.settings.cookie = { ...cat.settings.cookie, series: on };
+      cat.products = cat.products.filter((p) => p.category !== 'cookie' || ids.has(p.series)); cat.byId = Object.fromEntries(cat.products.map((p) => [p.id, p]));
+    }
+    render();
+  }).catch((e) => { app.innerHTML = `<p class="ckd-note">${esc(e.message)}</p>`; });
 })();
 </script>
 </body>

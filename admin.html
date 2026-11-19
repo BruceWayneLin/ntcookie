@@ -9,7 +9,7 @@
 <link rel="icon" href="assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css?v=1119p">
+<link rel="stylesheet" href="css/app.css?v=1119r">
 <style>
   :root { --page: 760px; }
   .tabs { position: sticky; top: 63px; z-index: 20; display: flex; gap: 6px; max-width: var(--page); margin: 0 auto; padding: 8px 14px; background: rgba(248, 237, 231, .96); }
@@ -61,8 +61,8 @@
 <div class="shopbar" id="shopbar" hidden></div>
 <main class="wrap" id="app"><div class="spinner"></div></main>
 <p class="note" id="ver" style="text-align:center;margin:0 0 24px;color:var(--muted)"></p>
-<script src="js/config.js?v=1119p"></script>
-<script src="js/app.js?v=1119p"></script>
+<script src="js/config.js?v=1119r"></script>
+<script src="js/app.js?v=1119r"></script>
 <script>
 (async function () {
   const { $, esc, money, asset } = NTC;
@@ -342,7 +342,7 @@
         ${x.active ? '' : '<p class="note" style="margin:-4px 0 10px;color:var(--warn)">整個系列還沒上架：客人看不到這一頁。下面每片的「上架」只管那一片，要兩個都打開客人才看得到。</p>'}
         ${products.filter((p) => p.category === 'cookie' && p.series === x.id).map(prodRow).join('') || '<p class="note">還沒有餅乾</p>'}
         <button class="btn ghost small add" data-c="cookie" data-s="${esc(x.id)}" style="margin-top:10px">＋ 新增餅乾</button>
-        <a class="btn ghost small" href="cookies.html?s=${esc(x.id)}" target="_blank" style="margin:10px 0 0 6px">看這一頁 ›</a></section>`).join('')}
+        <a class="btn ghost small" href="cookies.html?s=${esc(x.id)}&preview=1" target="_blank" style="margin:10px 0 0 6px">${x.active ? '看這一頁 ›' : '預覽這一頁 ›'}</a></section>`).join('')}
       ${orphans.length ? `<section class="panel"><h2>造型餅乾・（系列已刪除）</h2><p class="note" style="margin:0 0 8px">這些餅乾的系列被刪掉了，客人看不到。編輯後選一個系列就會回來。</p>${orphans.map(prodRow).join('')}</section>` : ''}`;
   }
   function editSeries(x) {
