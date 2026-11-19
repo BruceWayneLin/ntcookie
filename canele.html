@@ -31,11 +31,11 @@
     <p class="sr-only" id="flavor-status" role="status"></p>
   </section>
   <details class="cm-notes" id="notes" hidden><summary>訂購須知<i aria-hidden="true"></i></summary><div class="body" id="notes-body"></div></details>
-  <a class="cm-return" href="shop.html">返回線上商店</a>
+  <a class="cm-return" id="back-footer" href="index.html">返回上一頁</a>
 </main>
 <div class="cm-bar" id="bar" hidden></div>
 <dialog id="box-quantity" class="cm-quantity" aria-labelledby="quantity-title"></dialog>
-<script src="js/config.js?v=1120b"></script>
+<script src="js/config.js?v=1120c"></script>
 <script src="js/app.js?v=1120a"></script>
 <script src="js/shop.js?v=1120a"></script>
 <script>
@@ -48,6 +48,11 @@
   const bar = $('#bar');
   const dialog = $('#box-quantity');
   $('#back').onclick = NTC.back;
+  $('#back-footer').onclick = (event) => {
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    event.preventDefault();
+    NTC.back();
+  };
   const PHOTO = {
     original: '01-original', 'mixed-berries': '02-mixed-berries', 'honey-pistachio': '03-honey-pistachio',
     'hazelnut-chocolate': '04-hazelnut-chocolate', matcha: '05-matcha', 'thai-tea': '06-thai-tea',
