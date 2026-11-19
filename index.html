@@ -15,35 +15,18 @@
 <meta property="og:image:height" content="311">
 <link rel="icon" href="assets/favicon.png">
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
-<link rel="preload" as="image" href="assets/v2/page-home.webp" type="image/webp">
-<link rel="stylesheet" href="css/app.css?v=1119o">
+<link rel="preload" as="image" href="assets/v2/03-homepage/page-home-v2.webp" type="image/webp">
+<link rel="stylesheet" href="css/app.css?v=1119p">
 <style>
-  /* The page IS the design (S__10682424, 941 px wide): the design sits underneath as the background
-     and each tappable area is laid on top at its crop-coordinates.csv position. */
-  body { background: #eee0d8; padding-bottom: calc(min(100vw, var(--page)) * 216 / 941 + 14px + env(safe-area-inset-bottom, 0px)); }
-  .home {
-    position: relative; width: min(100vw, var(--page)); margin: 0 auto;
-    background-color: #f6e9e2;
-    background-image: url(assets/v2/page-home.jpg);
-    background-image: image-set(url(assets/v2/page-home.webp) type("image/webp"), url(assets/v2/page-home.jpg) type("image/jpeg"));
-    background-size: 100% 100%;
-  }
-  .home::before { content: ""; display: block; padding-top: calc(1441 / 941 * 100%); }
-  .home .hot { left: calc(var(--x) / 941 * 100%); top: calc(var(--y) / 1441 * 100%); width: calc(var(--w) / 941 * 100%); height: calc(var(--h) / 1441 * 100%); border-radius: calc(24 / 941 * min(100vw, var(--page))); }
-  .my-orders { display: block; width: calc(min(100vw, var(--page)) * 936 / 946); margin: calc(min(100vw, var(--page)) * 8 / 946) auto 0; border-radius: 999px; -webkit-tap-highlight-color: transparent; }
-  .my-orders img { display: block; width: 100%; height: auto; }
-  .my-orders:active { filter: brightness(.96); transform: scale(.99); }
-  .dock {
-    position: fixed; left: 0; right: 0; bottom: 0; z-index: 10;
-    padding-bottom: env(safe-area-inset-bottom, 0px);
-    background: linear-gradient(rgba(238, 224, 216, 0), #efe2da 16%, #ecdfd7);
-  }
-  .dock-inner { width: min(100vw, var(--page)); margin: 0 auto; }
-  .menu-bar { position: relative; margin: calc(4 / 941 * 100%) calc(2 / 941 * 100%) calc(38 / 941 * 100%) calc(3 / 941 * 100%); }
-  .menu-bar img { width: 100%; height: auto; }
-  .menu-bar a { position: absolute; top: 0; bottom: 0; border-radius: 14px; }
-  .menu-bar a:active { background: rgba(110, 60, 40, .08); }
-  .menu-bar .badge { position: absolute; top: 10%; right: 26%; min-width: 19px; height: 19px; padding: 0 5px; border-radius: 999px; background: var(--red); color: #fff; font: 700 11px/19px var(--sans); text-align: center; }
+  /* The page IS the designer's homepage (nt-homepage-my-orders-slices, 946 × 1655), assembled from the slices at their
+     crop-coordinates.csv positions; every tappable area is laid on top at the same coordinates. Nothing is fixed to the screen. */
+  body { background: #fbebe4; padding-bottom: env(safe-area-inset-bottom, 0px); }
+  .home { position: relative; width: min(100vw, var(--page)); margin: 0 auto; background: #fbebe4 url(assets/v2/03-homepage/page-home-v2.webp) 0 0 / 100% 100% no-repeat; }
+  .home::before { content: ""; display: block; padding-top: calc(1655 / 946 * 100%); }
+  .home .hot { left: calc(var(--x) / 946 * 100%); top: calc(var(--y) / 1655 * 100%); width: calc(var(--w) / 946 * 100%); height: calc(var(--h) / 1655 * 100%); border-radius: calc(24 / 946 * min(100vw, var(--page))); }
+  .home .hot.pill { border-radius: 999px; }
+  .home .badge { position: absolute; left: 62%; top: 4%; min-width: 19px; height: 19px; padding: 0 5px; border-radius: 999px; background: var(--red); color: #fff; font: 700 11px/19px var(--sans); text-align: center; }
+  .home .badge:empty, .home .badge[data-n="0"] { display: none; }
 </style>
 </head>
 <body>
@@ -51,30 +34,23 @@
   <h1 class="sr-only">N.T Cookie × N.T Canelé — 客製糖霜餅乾 × 豪宅裡の可麗露</h1>
   <p class="sr-only">造型訂製・節慶禮盒・活動甜點。嚴選頂級原物料・手作甜點：法國依思尼奶油、新鮮牧場直送蛋、馬達加斯加頂級香草莢。</p>
   <nav aria-label="商品分類">
-    <a class="hot" data-link="character" href="#" style="--x:4;--y:326;--w:464;--h:234">  <span class="sr-only">卡通・收涎 造型餅乾</span></a>
-    <a class="hot" data-link="birthday"  href="#" style="--x:476;--y:326;--w:462;--h:234"><span class="sr-only">慶生 造型餅乾</span></a>
-    <a class="hot" data-link="meringue"  href="#" style="--x:4;--y:569;--w:464;--h:246">  <span class="sr-only">馬林糖一口酥・送禮小點</span></a>
-    <a class="hot" data-link="canele"    href="#" style="--x:476;--y:569;--w:462;--h:246"><span class="sr-only">N.T Canelé 可麗露專區</span></a>
+    <a class="hot" data-link="character" href="#" style="--x:5;--y:320;--w:466;--h:223">  <span class="sr-only">卡通・收涎 造型餅乾</span></a>
+    <a class="hot" data-link="birthday"  href="#" style="--x:477;--y:320;--w:467;--h:223"><span class="sr-only">慶生 造型餅乾</span></a>
+    <a class="hot" data-link="meringue"  href="#" style="--x:5;--y:551;--w:466;--h:236">  <span class="sr-only">馬林糖一口酥・送禮小點</span></a>
+    <a class="hot" data-link="canele"    href="#" style="--x:477;--y:551;--w:467;--h:236"><span class="sr-only">N.T Canelé 可麗露專區</span></a>
   </nav>
+  <nav aria-label="服務">
+    <a class="hot" data-link="contact"      href="#" style="--x:5;--y:1295;--w:230;--h:173"><span class="sr-only">聯絡客服（訂製諮詢）</span></a>
+    <a class="hot" data-link="reservations" href="#" style="--x:235;--y:1295;--w:234;--h:173"><span class="sr-only">預約／訂購（檔期查詢）</span></a>
+    <a class="hot" data-link="store"        href="#" style="--x:469;--y:1295;--w:243;--h:173"><span class="sr-only">線上商店（直接下單）</span><span class="badge" data-cart-count></span></a>
+    <a class="hot" data-link="portfolio"    href="#" style="--x:712;--y:1295;--w:230;--h:173"><span class="sr-only">作品集（更多案例）</span></a>
+  </nav>
+  <!-- 我的訂單: order progress / payment lookup — LINE members see their orders, others look up by number + phone -->
+  <a class="hot pill" data-link="orders" href="#" style="--x:5;--y:1480;--w:936;--h:175"><span class="sr-only">我的訂單：訂單進度・付款查詢</span></a>
 </main>
-<!-- 我的訂單 (designer slice 16): order progress / payment lookup — LINE members see their orders, others look up by number + phone -->
-<a class="my-orders" data-link="orders" href="#"><img src="assets/v2/03-homepage/my-orders.webp" width="936" height="175" alt="我的訂單：訂單進度・付款查詢"></a>
 
-<div class="dock">
-  <div class="dock-inner">
-    <nav class="menu-bar" aria-label="服務">
-      <img src="assets/v2/03-homepage/bottom-menu.webp" width="936" height="174" alt="">
-      <!-- x = 1–229 / 230–463 / 464–705 / 706–935 of 936 -->
-      <a data-link="contact"      href="#" style="left:0;width:24.5%"><span class="sr-only">聯絡客服（訂製諮詢）</span></a>
-      <a data-link="reservations" href="#" style="left:24.5%;width:25%"><span class="sr-only">預約／訂購（檔期查詢）</span></a>
-      <a data-link="store"        href="#" style="left:49.5%;width:25.9%"><span class="sr-only">線上商店（直接下單）</span><span class="badge" data-cart-count></span></a>
-      <a data-link="portfolio"    href="#" style="left:75.4%;width:24.6%"><span class="sr-only">作品集（更多案例）</span></a>
-    </nav>
-  </div>
-</div>
-
-<script src="js/config.js?v=1119o"></script>
-<script src="js/app.js?v=1119o"></script>
+<script src="js/config.js?v=1119p"></script>
+<script src="js/app.js?v=1119p"></script>
 <script>
   /* ================= 連結設定 =================
      'line'          → 開啟 LINE 官方帳號聊天室
