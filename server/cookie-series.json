@@ -1,0 +1,958 @@
+{
+ "series": [
+  {
+   "id": "toystory",
+   "name": "玩具總動員系列",
+   "lines": [
+    "可單片選購・自由搭配",
+    "收涎・生日・派對・送禮"
+   ],
+   "photo": "assets/cookies/toystory/hero.webp",
+   "groups": [
+    "character",
+    "birthday"
+   ],
+   "active": false,
+   "sort": 20
+  },
+  {
+   "id": "pokemon",
+   "name": "寶可夢系列",
+   "lines": [
+    "可單片選購・自由搭配",
+    "收涎・生日・派對・送禮"
+   ],
+   "photo": "assets/cookies/pokemon/hero.webp",
+   "groups": [
+    "character",
+    "birthday"
+   ],
+   "active": false,
+   "sort": 30
+  },
+  {
+   "id": "sanrio",
+   "name": "三麗鷗系列",
+   "lines": [
+    "可單片選購・自由搭配",
+    "收涎・生日・派對・送禮"
+   ],
+   "photo": "assets/cookies/sanrio/hero.webp",
+   "groups": [
+    "character",
+    "birthday"
+   ],
+   "active": false,
+   "sort": 40
+  },
+  {
+   "id": "penguin",
+   "name": "企鵝寶寶系列",
+   "lines": [
+    "可單片選購・自由搭配",
+    "收涎・生日・派對・送禮"
+   ],
+   "photo": "assets/cookies/penguin/hero.webp",
+   "groups": [
+    "character"
+   ],
+   "active": false,
+   "sort": 50
+  },
+  {
+   "id": "space",
+   "name": "太空系列",
+   "lines": [
+    "可單片選購・自由搭配",
+    "收涎・生日・派對・送禮"
+   ],
+   "photo": "assets/cookies/space/hero.webp",
+   "groups": [
+    "character",
+    "birthday"
+   ],
+   "active": false,
+   "sort": 60
+  },
+  {
+   "id": "tomjerry",
+   "name": "湯姆貓與傑利鼠系列",
+   "lines": [
+    "可單片選購・自由搭配",
+    "生日・慶祝・派對・送禮"
+   ],
+   "photo": "assets/cookies/tomjerry/hero.webp",
+   "groups": [
+    "character",
+    "birthday"
+   ],
+   "active": false,
+   "sort": 70
+  },
+  {
+   "id": "basketball",
+   "name": "籃球少年系列",
+   "lines": [
+    "可單片選購・自由搭配",
+    "生日・慶祝・派對・送禮"
+   ],
+   "photo": "assets/cookies/basketball/hero.webp",
+   "groups": [
+    "character",
+    "birthday"
+   ],
+   "active": false,
+   "sort": 80
+  },
+  {
+   "id": "cars",
+   "name": "名車系列",
+   "lines": [
+    "可單片選購・自由搭配",
+    "生日・慶祝・派對・送禮"
+   ],
+   "photo": "assets/cookies/cars/hero.webp",
+   "groups": [
+    "birthday"
+   ],
+   "active": false,
+   "sort": 90
+  },
+  {
+   "id": "fashion",
+   "name": "精品禮物系列",
+   "lines": [
+    "可單片選購・自由搭配",
+    "生日・慶祝・派對・送禮"
+   ],
+   "photo": "assets/cookies/fashion/hero.webp",
+   "groups": [
+    "birthday"
+   ],
+   "active": false,
+   "sort": 100
+  }
+ ],
+ "products": [
+  {
+   "id": "cookie-toystory-logo",
+   "series": "toystory",
+   "name": "TOY STORY 字牌",
+   "price": 250,
+   "photo": "assets/cookies/toystory/logo.webp",
+   "sort": 10
+  },
+  {
+   "id": "cookie-toystory-woody",
+   "series": "toystory",
+   "name": "胡迪",
+   "price": 250,
+   "photo": "assets/cookies/toystory/woody.webp",
+   "sort": 11
+  },
+  {
+   "id": "cookie-toystory-buzz",
+   "series": "toystory",
+   "name": "巴斯光年",
+   "price": 250,
+   "photo": "assets/cookies/toystory/buzz.webp",
+   "sort": 12
+  },
+  {
+   "id": "cookie-toystory-rex",
+   "series": "toystory",
+   "name": "抱抱龍",
+   "price": 250,
+   "photo": "assets/cookies/toystory/rex.webp",
+   "sort": 13
+  },
+  {
+   "id": "cookie-toystory-hamm",
+   "series": "toystory",
+   "name": "火腿豬",
+   "price": 250,
+   "photo": "assets/cookies/toystory/hamm.webp",
+   "sort": 14
+  },
+  {
+   "id": "cookie-toystory-alien",
+   "series": "toystory",
+   "name": "三眼怪",
+   "price": 250,
+   "photo": "assets/cookies/toystory/alien.webp",
+   "sort": 15
+  },
+  {
+   "id": "cookie-toystory-slinky",
+   "series": "toystory",
+   "name": "彈簧狗",
+   "price": 250,
+   "photo": "assets/cookies/toystory/slinky.webp",
+   "sort": 16
+  },
+  {
+   "id": "cookie-toystory-sheriff-badge",
+   "series": "toystory",
+   "name": "警長徽章名字牌",
+   "price": 250,
+   "photo": "assets/cookies/toystory/sheriff-badge.webp",
+   "sort": 17,
+   "textLabel": "名字＋日期",
+   "textMax": 16
+  },
+  {
+   "id": "cookie-toystory-baby-hat",
+   "series": "toystory",
+   "name": "四個月寶寶帽",
+   "price": 250,
+   "photo": "assets/cookies/toystory/baby-hat.webp",
+   "sort": 18
+  },
+  {
+   "id": "cookie-toystory-ribbon-badge",
+   "series": "toystory",
+   "name": "抱抱龍緞帶徽章",
+   "price": 250,
+   "photo": "assets/cookies/toystory/ribbon-badge.webp",
+   "sort": 19
+  },
+  {
+   "id": "cookie-toystory-bottle",
+   "series": "toystory",
+   "name": "抱抱龍奶瓶",
+   "price": 250,
+   "photo": "assets/cookies/toystory/bottle.webp",
+   "sort": 20
+  },
+  {
+   "id": "cookie-toystory-pacifier",
+   "series": "toystory",
+   "name": "抱抱龍日期奶嘴",
+   "price": 250,
+   "photo": "assets/cookies/toystory/pacifier.webp",
+   "sort": 21,
+   "textLabel": "日期",
+   "textMax": 10
+  },
+  {
+   "id": "cookie-toystory-name-plaque",
+   "series": "toystory",
+   "name": "寶寶名字牌",
+   "price": 250,
+   "photo": "assets/cookies/toystory/name-plaque.webp",
+   "sort": 22,
+   "textLabel": "名字",
+   "textMax": 8
+  },
+  {
+   "id": "cookie-toystory-stroller",
+   "series": "toystory",
+   "name": "嬰兒推車",
+   "price": 250,
+   "photo": "assets/cookies/toystory/stroller.webp",
+   "sort": 23
+  },
+  {
+   "id": "cookie-pokemon-pikachu",
+   "series": "pokemon",
+   "name": "皮卡丘",
+   "price": 250,
+   "photo": "assets/cookies/pokemon/pikachu.webp",
+   "sort": 10
+  },
+  {
+   "id": "cookie-pokemon-pikachu-wave",
+   "series": "pokemon",
+   "name": "皮卡丘（揮手）",
+   "price": 250,
+   "photo": "assets/cookies/pokemon/pikachu-wave.webp",
+   "sort": 11
+  },
+  {
+   "id": "cookie-pokemon-pikachu-sit",
+   "series": "pokemon",
+   "name": "皮卡丘（坐姿）",
+   "price": 250,
+   "photo": "assets/cookies/pokemon/pikachu-sit.webp",
+   "sort": 12
+  },
+  {
+   "id": "cookie-pokemon-pichu",
+   "series": "pokemon",
+   "name": "皮丘",
+   "price": 250,
+   "photo": "assets/cookies/pokemon/pichu.webp",
+   "sort": 13
+  },
+  {
+   "id": "cookie-pokemon-eevee",
+   "series": "pokemon",
+   "name": "伊布",
+   "price": 250,
+   "photo": "assets/cookies/pokemon/eevee.webp",
+   "sort": 14
+  },
+  {
+   "id": "cookie-pokemon-vaporeon",
+   "series": "pokemon",
+   "name": "水伊布",
+   "price": 250,
+   "photo": "assets/cookies/pokemon/vaporeon.webp",
+   "sort": 15
+  },
+  {
+   "id": "cookie-pokemon-jolteon",
+   "series": "pokemon",
+   "name": "雷伊布",
+   "price": 250,
+   "photo": "assets/cookies/pokemon/jolteon.webp",
+   "sort": 16
+  },
+  {
+   "id": "cookie-pokemon-flareon",
+   "series": "pokemon",
+   "name": "火伊布",
+   "price": 250,
+   "photo": "assets/cookies/pokemon/flareon.webp",
+   "sort": 17
+  },
+  {
+   "id": "cookie-pokemon-espeon",
+   "series": "pokemon",
+   "name": "太陽伊布",
+   "price": 250,
+   "photo": "assets/cookies/pokemon/espeon.webp",
+   "sort": 18
+  },
+  {
+   "id": "cookie-pokemon-leafeon",
+   "series": "pokemon",
+   "name": "葉伊布",
+   "price": 250,
+   "photo": "assets/cookies/pokemon/leafeon.webp",
+   "sort": 19
+  },
+  {
+   "id": "cookie-pokemon-glaceon",
+   "series": "pokemon",
+   "name": "冰伊布",
+   "price": 250,
+   "photo": "assets/cookies/pokemon/glaceon.webp",
+   "sort": 20
+  },
+  {
+   "id": "cookie-pokemon-bulbasaur",
+   "series": "pokemon",
+   "name": "妙蛙種子",
+   "price": 250,
+   "photo": "assets/cookies/pokemon/bulbasaur.webp",
+   "sort": 21
+  },
+  {
+   "id": "cookie-pokemon-charmander",
+   "series": "pokemon",
+   "name": "小火龍",
+   "price": 250,
+   "photo": "assets/cookies/pokemon/charmander.webp",
+   "sort": 22
+  },
+  {
+   "id": "cookie-pokemon-squirtle",
+   "series": "pokemon",
+   "name": "傑尼龜",
+   "price": 250,
+   "photo": "assets/cookies/pokemon/squirtle.webp",
+   "sort": 23
+  },
+  {
+   "id": "cookie-pokemon-jigglypuff",
+   "series": "pokemon",
+   "name": "胖丁",
+   "price": 250,
+   "photo": "assets/cookies/pokemon/jigglypuff.webp",
+   "sort": 24
+  },
+  {
+   "id": "cookie-pokemon-clefairy",
+   "series": "pokemon",
+   "name": "皮皮",
+   "price": 250,
+   "photo": "assets/cookies/pokemon/clefairy.webp",
+   "sort": 25
+  },
+  {
+   "id": "cookie-pokemon-togepi",
+   "series": "pokemon",
+   "name": "波克比",
+   "price": 250,
+   "photo": "assets/cookies/pokemon/togepi.webp",
+   "sort": 26
+  },
+  {
+   "id": "cookie-pokemon-psyduck",
+   "series": "pokemon",
+   "name": "可達鴨",
+   "price": 250,
+   "photo": "assets/cookies/pokemon/psyduck.webp",
+   "sort": 27
+  },
+  {
+   "id": "cookie-pokemon-snorlax",
+   "series": "pokemon",
+   "name": "卡比獸",
+   "price": 250,
+   "photo": "assets/cookies/pokemon/snorlax.webp",
+   "sort": 28
+  },
+  {
+   "id": "cookie-pokemon-pokeball",
+   "series": "pokemon",
+   "name": "寶貝球",
+   "price": 250,
+   "photo": "assets/cookies/pokemon/pokeball.webp",
+   "sort": 29
+  },
+  {
+   "id": "cookie-pokemon-pokeball-name",
+   "series": "pokemon",
+   "name": "寶貝球名字牌",
+   "price": 250,
+   "photo": "assets/cookies/pokemon/pokeball-name.webp",
+   "sort": 30,
+   "textLabel": "名字＋日期",
+   "textMax": 16
+  },
+  {
+   "id": "cookie-pokemon-wobbuffet",
+   "series": "pokemon",
+   "name": "果然翁",
+   "price": 250,
+   "photo": "assets/cookies/pokemon/wobbuffet.webp",
+   "sort": 31
+  },
+  {
+   "id": "cookie-pokemon-dugtrio",
+   "series": "pokemon",
+   "name": "三地鼠",
+   "price": 250,
+   "photo": "assets/cookies/pokemon/dugtrio.webp",
+   "sort": 32
+  },
+  {
+   "id": "cookie-pokemon-bellsprout",
+   "series": "pokemon",
+   "name": "喇叭芽",
+   "price": 250,
+   "photo": "assets/cookies/pokemon/bellsprout.webp",
+   "sort": 33
+  },
+  {
+   "id": "cookie-pokemon-slowking",
+   "series": "pokemon",
+   "name": "呆呆王",
+   "price": 250,
+   "photo": "assets/cookies/pokemon/slowking.webp",
+   "sort": 34
+  },
+  {
+   "id": "cookie-sanrio-kitty-plaque",
+   "series": "sanrio",
+   "name": "Hello Kitty 名字牌",
+   "price": 250,
+   "photo": "assets/cookies/sanrio/kitty-plaque.webp",
+   "sort": 10,
+   "textLabel": "名字",
+   "textMax": 8
+  },
+  {
+   "id": "cookie-sanrio-heart-plaque",
+   "series": "sanrio",
+   "name": "愛心名字牌",
+   "price": 250,
+   "photo": "assets/cookies/sanrio/heart-plaque.webp",
+   "sort": 11,
+   "textLabel": "名字＋日期",
+   "textMax": 16
+  },
+  {
+   "id": "cookie-sanrio-kuromi",
+   "series": "sanrio",
+   "name": "酷洛米",
+   "price": 250,
+   "photo": "assets/cookies/sanrio/kuromi.webp",
+   "sort": 12
+  },
+  {
+   "id": "cookie-sanrio-kuromi-bow",
+   "series": "sanrio",
+   "name": "酷洛米（蝴蝶結）",
+   "price": 250,
+   "photo": "assets/cookies/sanrio/kuromi-bow.webp",
+   "sort": 13
+  },
+  {
+   "id": "cookie-sanrio-kuromi-lie",
+   "series": "sanrio",
+   "name": "酷洛米（趴姿）",
+   "price": 250,
+   "photo": "assets/cookies/sanrio/kuromi-lie.webp",
+   "sort": 14
+  },
+  {
+   "id": "cookie-sanrio-kuromi-teacup",
+   "series": "sanrio",
+   "name": "茶杯酷洛米",
+   "price": 250,
+   "photo": "assets/cookies/sanrio/kuromi-teacup.webp",
+   "sort": 15
+  },
+  {
+   "id": "cookie-sanrio-kuromi-friend",
+   "series": "sanrio",
+   "name": "酷洛米與小夥伴",
+   "price": 250,
+   "photo": "assets/cookies/sanrio/kuromi-friend.webp",
+   "sort": 16
+  },
+  {
+   "id": "cookie-penguin-fish",
+   "series": "penguin",
+   "name": "企鵝抱魚",
+   "price": 250,
+   "photo": "assets/cookies/penguin/fish.webp",
+   "sort": 10
+  },
+  {
+   "id": "cookie-penguin-lying",
+   "series": "penguin",
+   "name": "企鵝躺躺",
+   "price": 250,
+   "photo": "assets/cookies/penguin/lying.webp",
+   "sort": 11
+  },
+  {
+   "id": "cookie-penguin-heart",
+   "series": "penguin",
+   "name": "愛心企鵝",
+   "price": 250,
+   "photo": "assets/cookies/penguin/heart.webp",
+   "sort": 12
+  },
+  {
+   "id": "cookie-penguin-name-plaque",
+   "series": "penguin",
+   "name": "雲朵名字牌",
+   "price": 250,
+   "photo": "assets/cookies/penguin/name-plaque.webp",
+   "sort": 13,
+   "textLabel": "名字",
+   "textMax": 8
+  },
+  {
+   "id": "cookie-penguin-bottle",
+   "series": "penguin",
+   "name": "粉紅奶瓶",
+   "price": 250,
+   "photo": "assets/cookies/penguin/bottle.webp",
+   "sort": 14
+  },
+  {
+   "id": "cookie-penguin-pacifier",
+   "series": "penguin",
+   "name": "企鵝日期奶嘴",
+   "price": 250,
+   "photo": "assets/cookies/penguin/pacifier.webp",
+   "sort": 15,
+   "textLabel": "日期",
+   "textMax": 10
+  },
+  {
+   "id": "cookie-penguin-bib",
+   "series": "penguin",
+   "name": "四個月圍兜",
+   "price": 250,
+   "photo": "assets/cookies/penguin/bib.webp",
+   "sort": 16
+  },
+  {
+   "id": "cookie-penguin-stroller",
+   "series": "penguin",
+   "name": "嬰兒推車",
+   "price": 250,
+   "photo": "assets/cookies/penguin/stroller.webp",
+   "sort": 17
+  },
+  {
+   "id": "cookie-space-name-planet",
+   "series": "space",
+   "name": "星球名字牌",
+   "price": 250,
+   "photo": "assets/cookies/space/name-planet.webp",
+   "sort": 10,
+   "textLabel": "名字＋日期",
+   "textMax": 16
+  },
+  {
+   "id": "cookie-space-rocket",
+   "series": "space",
+   "name": "火箭",
+   "price": 250,
+   "photo": "assets/cookies/space/rocket.webp",
+   "sort": 11
+  },
+  {
+   "id": "cookie-space-shuttle",
+   "series": "space",
+   "name": "太空梭",
+   "price": 250,
+   "photo": "assets/cookies/space/shuttle.webp",
+   "sort": 12
+  },
+  {
+   "id": "cookie-space-satellite",
+   "series": "space",
+   "name": "人造衛星",
+   "price": 250,
+   "photo": "assets/cookies/space/satellite.webp",
+   "sort": 13
+  },
+  {
+   "id": "cookie-space-astronaut-rocket",
+   "series": "space",
+   "name": "太空人騎火箭",
+   "price": 250,
+   "photo": "assets/cookies/space/astronaut-rocket.webp",
+   "sort": 14
+  },
+  {
+   "id": "cookie-space-astronaut-moon",
+   "series": "space",
+   "name": "太空人坐月亮",
+   "price": 250,
+   "photo": "assets/cookies/space/astronaut-moon.webp",
+   "sort": 15
+  },
+  {
+   "id": "cookie-space-astronaut-hug",
+   "series": "space",
+   "name": "太空人抱月亮",
+   "price": 250,
+   "photo": "assets/cookies/space/astronaut-hug.webp",
+   "sort": 16
+  },
+  {
+   "id": "cookie-space-astronaut-walk",
+   "series": "space",
+   "name": "太空人登月",
+   "price": 250,
+   "photo": "assets/cookies/space/astronaut-walk.webp",
+   "sort": 17
+  },
+  {
+   "id": "cookie-space-earth",
+   "series": "space",
+   "name": "地球",
+   "price": 250,
+   "photo": "assets/cookies/space/earth.webp",
+   "sort": 18
+  },
+  {
+   "id": "cookie-space-saturn",
+   "series": "space",
+   "name": "土星",
+   "price": 250,
+   "photo": "assets/cookies/space/saturn.webp",
+   "sort": 19
+  },
+  {
+   "id": "cookie-space-moon",
+   "series": "space",
+   "name": "星星月亮",
+   "price": 250,
+   "photo": "assets/cookies/space/moon.webp",
+   "sort": 20
+  },
+  {
+   "id": "cookie-space-meteor",
+   "series": "space",
+   "name": "隕石",
+   "price": 250,
+   "photo": "assets/cookies/space/meteor.webp",
+   "sort": 21
+  },
+  {
+   "id": "cookie-tomjerry-tom",
+   "series": "tomjerry",
+   "name": "湯姆",
+   "price": 250,
+   "photo": "assets/cookies/tomjerry/tom.webp",
+   "sort": 10
+  },
+  {
+   "id": "cookie-tomjerry-jerry",
+   "series": "tomjerry",
+   "name": "傑利",
+   "price": 250,
+   "photo": "assets/cookies/tomjerry/jerry.webp",
+   "sort": 11
+  },
+  {
+   "id": "cookie-tomjerry-tom-jerry",
+   "series": "tomjerry",
+   "name": "湯姆抱傑利（全身）",
+   "price": 250,
+   "photo": "assets/cookies/tomjerry/tom-jerry.webp",
+   "sort": 12
+  },
+  {
+   "id": "cookie-tomjerry-jerry-cheese",
+   "series": "tomjerry",
+   "name": "傑利抱起司",
+   "price": 250,
+   "photo": "assets/cookies/tomjerry/jerry-cheese.webp",
+   "sort": 13
+  },
+  {
+   "id": "cookie-tomjerry-baby-mouse",
+   "series": "tomjerry",
+   "name": "小老鼠",
+   "price": 250,
+   "photo": "assets/cookies/tomjerry/baby-mouse.webp",
+   "sort": 14
+  },
+  {
+   "id": "cookie-tomjerry-cheese",
+   "series": "tomjerry",
+   "name": "起司",
+   "price": 250,
+   "photo": "assets/cookies/tomjerry/cheese.webp",
+   "sort": 15
+  },
+  {
+   "id": "cookie-basketball-no10",
+   "series": "basketball",
+   "name": "10 號紅髮球員",
+   "price": 250,
+   "photo": "assets/cookies/basketball/no10.webp",
+   "sort": 10
+  },
+  {
+   "id": "cookie-basketball-no14",
+   "series": "basketball",
+   "name": "14 號持球球員",
+   "price": 250,
+   "photo": "assets/cookies/basketball/no14.webp",
+   "sort": 11
+  },
+  {
+   "id": "cookie-basketball-no11",
+   "series": "basketball",
+   "name": "11 號持球球員",
+   "price": 250,
+   "photo": "assets/cookies/basketball/no11.webp",
+   "sort": 12
+  },
+  {
+   "id": "cookie-basketball-no7",
+   "series": "basketball",
+   "name": "7 號球員",
+   "price": 250,
+   "photo": "assets/cookies/basketball/no7.webp",
+   "sort": 13
+  },
+  {
+   "id": "cookie-basketball-no4",
+   "series": "basketball",
+   "name": "4 號大喊球員",
+   "price": 250,
+   "photo": "assets/cookies/basketball/no4.webp",
+   "sort": 14
+  },
+  {
+   "id": "cookie-basketball-coach",
+   "series": "basketball",
+   "name": "教練",
+   "price": 250,
+   "photo": "assets/cookies/basketball/coach.webp",
+   "sort": 15
+  },
+  {
+   "id": "cookie-basketball-hoop",
+   "series": "basketball",
+   "name": "Just Do It 籃框",
+   "price": 250,
+   "photo": "assets/cookies/basketball/hoop.webp",
+   "sort": 16
+  },
+  {
+   "id": "cookie-cars-ferrari",
+   "series": "cars",
+   "name": "法拉利",
+   "price": 250,
+   "photo": "assets/cookies/cars/ferrari.webp",
+   "sort": 10
+  },
+  {
+   "id": "cookie-cars-lamborghini",
+   "series": "cars",
+   "name": "藍寶堅尼",
+   "price": 250,
+   "photo": "assets/cookies/cars/lamborghini.webp",
+   "sort": 11
+  },
+  {
+   "id": "cookie-cars-porsche",
+   "series": "cars",
+   "name": "保時捷",
+   "price": 250,
+   "photo": "assets/cookies/cars/porsche.webp",
+   "sort": 12
+  },
+  {
+   "id": "cookie-cars-bentley",
+   "series": "cars",
+   "name": "賓利",
+   "price": 250,
+   "photo": "assets/cookies/cars/bentley.webp",
+   "sort": 13
+  },
+  {
+   "id": "cookie-cars-rolls-royce",
+   "series": "cars",
+   "name": "勞斯萊斯",
+   "price": 250,
+   "photo": "assets/cookies/cars/rolls-royce.webp",
+   "sort": 14
+  },
+  {
+   "id": "cookie-cars-bugatti",
+   "series": "cars",
+   "name": "布加迪",
+   "price": 250,
+   "photo": "assets/cookies/cars/bugatti.webp",
+   "sort": 15
+  },
+  {
+   "id": "cookie-cars-maserati",
+   "series": "cars",
+   "name": "瑪莎拉蒂",
+   "price": 250,
+   "photo": "assets/cookies/cars/maserati.webp",
+   "sort": 16
+  },
+  {
+   "id": "cookie-cars-pagani",
+   "series": "cars",
+   "name": "帕加尼",
+   "price": 250,
+   "photo": "assets/cookies/cars/pagani.webp",
+   "sort": 17
+  },
+  {
+   "id": "cookie-cars-aurus",
+   "series": "cars",
+   "name": "Aurus",
+   "price": 250,
+   "photo": "assets/cookies/cars/aurus.webp",
+   "sort": 18
+  },
+  {
+   "id": "cookie-cars-bmw",
+   "series": "cars",
+   "name": "BMW",
+   "price": 250,
+   "photo": "assets/cookies/cars/bmw.webp",
+   "sort": 19
+  },
+  {
+   "id": "cookie-cars-mercedes",
+   "series": "cars",
+   "name": "賓士",
+   "price": 250,
+   "photo": "assets/cookies/cars/mercedes.webp",
+   "sort": 20
+  },
+  {
+   "id": "cookie-cars-tesla",
+   "series": "cars",
+   "name": "特斯拉",
+   "price": 250,
+   "photo": "assets/cookies/cars/tesla.webp",
+   "sort": 21
+  },
+  {
+   "id": "cookie-cars-name-plate",
+   "series": "cars",
+   "name": "名字車牌",
+   "price": 250,
+   "photo": "assets/cookies/cars/name-plate.webp",
+   "sort": 22,
+   "textLabel": "名字＋日期",
+   "textMax": 16
+  },
+  {
+   "id": "cookie-fashion-chanel",
+   "series": "fashion",
+   "name": "CHANEL 圓牌",
+   "price": 250,
+   "photo": "assets/cookies/fashion/chanel.webp",
+   "sort": 10
+  },
+  {
+   "id": "cookie-fashion-gucci",
+   "series": "fashion",
+   "name": "GUCCI 圓牌",
+   "price": 250,
+   "photo": "assets/cookies/fashion/gucci.webp",
+   "sort": 11
+  },
+  {
+   "id": "cookie-fashion-lv",
+   "series": "fashion",
+   "name": "LV 老花圓牌",
+   "price": 250,
+   "photo": "assets/cookies/fashion/lv.webp",
+   "sort": 12
+  },
+  {
+   "id": "cookie-fashion-hermes-box",
+   "series": "fashion",
+   "name": "愛馬仕禮盒",
+   "price": 250,
+   "photo": "assets/cookies/fashion/hermes-box.webp",
+   "sort": 13
+  },
+  {
+   "id": "cookie-fashion-ysl-bib",
+   "series": "fashion",
+   "name": "YSL 圍兜",
+   "price": 250,
+   "photo": "assets/cookies/fashion/ysl-bib.webp",
+   "sort": 14
+  },
+  {
+   "id": "cookie-fashion-pink-bag",
+   "series": "fashion",
+   "name": "粉色菱格鍊包",
+   "price": 250,
+   "photo": "assets/cookies/fashion/pink-bag.webp",
+   "sort": 15
+  },
+  {
+   "id": "cookie-fashion-yellow-bag",
+   "series": "fashion",
+   "name": "黃色菱格包",
+   "price": 250,
+   "photo": "assets/cookies/fashion/yellow-bag.webp",
+   "sort": 16
+  },
+  {
+   "id": "cookie-fashion-blue-bag",
+   "series": "fashion",
+   "name": "藍色手提包",
+   "price": 250,
+   "photo": "assets/cookies/fashion/blue-bag.webp",
+   "sort": 17
+  }
+ ]
+}

@@ -9,7 +9,7 @@
 <link rel="icon" href="assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css?v=1119b">
+<link rel="stylesheet" href="css/app.css?v=1119c">
 <style>
   :root { --page: 760px; }
   .tabs { position: sticky; top: 63px; z-index: 20; display: flex; gap: 6px; max-width: var(--page); margin: 0 auto; padding: 8px 14px; background: rgba(248, 237, 231, .96); }
@@ -57,12 +57,12 @@
   <h1>店家後台</h1>
   <button class="circle-btn" id="reload" aria-label="重新整理"><svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg></button>
 </header>
-<nav class="tabs" id="tabs" hidden><button data-t="orders" class="on">訂單</button><button data-t="products">商品</button><button data-t="settings">設定</button></nav>
+<nav class="tabs" id="tabs" hidden><button data-t="orders" class="on">訂單</button><button data-t="inq">客製</button><button data-t="products">商品</button><button data-t="settings">設定</button></nav>
 <div class="shopbar" id="shopbar" hidden></div>
 <main class="wrap" id="app"><div class="spinner"></div></main>
 <p class="note" id="ver" style="text-align:center;margin:0 0 24px;color:var(--muted)"></p>
-<script src="js/config.js?v=1119b"></script>
-<script src="js/app.js?v=1119b"></script>
+<script src="js/config.js?v=1119c"></script>
+<script src="js/app.js?v=1119c"></script>
 <script>
 (async function () {
   const { $, esc, money, asset } = NTC;
@@ -72,7 +72,7 @@
   const PAY = { linepay: 'LINE Pay', ecpay: '綠界', transfer: '轉帳' };
   let canDeleteReal = false; // only the fixed top admin may delete customer orders
   let tab = 'orders'; let statuses = {}; let orders = []; let filter = 'open'; let sortBy = 'created';
-  let products = []; let settings = null; let ready = {};
+  let products = []; let settings = null; let ready = {}; let inqs = null; let inqStatuses = {}; let inqFilter = 'open'; let inqP = null;
 
   // ---------- who are you?  The LINE account decides: admins go straight in, everyone else is stopped here.
   NTC.preferAdmin = true;
@@ -134,6 +134,11 @@
     loginScreen(e.status === 401 || e.status === 403 ? e.message : e.message + '（請再試一次）'); return;
   }
   $('#tabs').hidden = false;
+  const deepInq = (q.get('inq') || '').toUpperCase();
+  if (deepInq) {
+    history.replaceState(null, '', location.pathname);
+    setTimeout(async () => { tab = 'inq'; $('#tabs').querySelectorAll('button').forEach((x) => x.classList.toggle('on', x.dataset.t === 'inq')); await show(); const x = inqs.find((y) => y.no === deepInq); if (x) openInq(x); else NTC.toast(`找不到客製詢問 ${deepInq}`); }, 0);
+  }
   const deep = (q.get('order') || '').toUpperCase();
   if (deep) {
     history.replaceState(null, '', location.pathname);
@@ -152,7 +157,7 @@
     };
   })();
   $('#tabs').onclick = (e) => { const b = e.target.closest('button'); if (!b) return; tab = b.dataset.t; $('#tabs').querySelectorAll('button').forEach((x) => x.classList.toggle('on', x === b)); show(); };
-  $('#reload').onclick = async () => { NTC.loading(true, '更新中…'); try { if (tab === 'orders') await loadOrders(); if (tab === 'products') products = (await NTC.api('/admin/products')).products; if (tab === 'settings') await loadSettings(); show(); } catch (e) { NTC.toast(e.message); } NTC.loading(false); };
+  $('#reload').onclick = async () => { NTC.loading(true, '更新中…'); try { if (tab === 'orders') await loadOrders(); if (tab === 'inq') await loadInqs(); if (tab === 'products') products = (await NTC.api('/admin/products')).products; if (tab === 'settings') await loadSettings(); show(); } catch (e) { NTC.toast(e.message); } NTC.loading(false); };
 
   // ---------- 開店接單／關閉接單 (one big switch at the top)
   function renderShopBar() {
@@ -178,6 +183,7 @@
   async function loadSettings() { const r = await NTC.api('/admin/settings'); settings = r.settings; ready = r.ready; }
   async function show() {
     if (tab === 'orders') return renderOrders();
+    if (tab === 'inq') { if (!inqs) { app.innerHTML = '<div class="spinner"></div>'; await loadInqs(); } return renderInqs(); }
     if (tab === 'products') { if (!products.length || !settings) { app.innerHTML = '<div class="spinner"></div>'; if (!products.length) products = (await NTC.api('/admin/products')).products; if (!settings) await loadSettings(); } return renderProducts(); }
     if (!settings) { app.innerHTML = '<div class="spinner"></div>'; await loadSettings(); }
     renderSettings();
@@ -269,6 +275,47 @@
     el.querySelector('#o-copy').onclick = async () => {
       const url = new URL(`order.html?no=${o.orderNo}&t=${o.token}`, location.href).href;
       try { await navigator.clipboard.writeText(url); NTC.toast('已複製，可以貼給客人'); } catch (e) { prompt('客人訂單連結', url); }
+    };
+  }
+
+  // ================= 客製詢問 =================
+  async function loadInqs() { inqP ||= NTC.api('/admin/inquiries').finally(() => { inqP = null; }); const r = await inqP; inqs = r.inquiries; inqStatuses = r.statuses; }
+  function inqOpen(x) { return ['new', 'talking', 'quoted'].includes(x.status); } // a function (hoisted): the ?inq= link can render before this line runs
+  function renderInqs() {
+    const counts = { open: inqs.filter(inqOpen).length, all: inqs.length }; Object.keys(inqStatuses).forEach((k) => (counts[k] = inqs.filter((x) => x.status === k).length));
+    const list = inqFilter === 'all' ? inqs : inqFilter === 'open' ? inqs.filter(inqOpen) : inqs.filter((x) => x.status === inqFilter);
+    const chip = (k, t) => `<button class="${inqFilter === k ? 'on' : ''}" data-f="${k}">${t} ${counts[k] || 0}</button>`;
+    app.innerHTML = `<div class="statusbar" style="margin-bottom:10px">${chip('open', '進行中')}${Object.entries(inqStatuses).map(([k, t]) => chip(k, t)).join('')}${chip('all', '全部')}</div>
+      <p class="note" style="margin:0 0 10px">客人在「客製造型餅乾」頁留言＋上傳參考照片。價格和細節請在 LINE 官方帳號的聊天室跟客人談，談好再到這裡改狀態。</p>
+      ${list.map((x) => `<button class="ord" data-q="${esc(x.no)}"><div class="top"><b>${esc(x.no)}</b><span class="status-pill ${x.status === 'confirmed' ? 'done' : x.status === 'declined' ? 'cancelled' : 'pending'}">${esc(inqStatuses[x.status] || x.status)}</span><span class="sp"></span><span class="amt">${x.quote ? money(x.quote) : ''}</span></div>
+        <div class="mid">🎨 ${esc(x.purpose)}${x.date ? `　📅 ${NTC.fmtDate(x.date)}` : ''}${x.qty ? `　約 ${x.qty} 片` : ''}　👤 ${esc(x.contact.name)}（LINE：${esc(x.user?.name || '')}）<br>${esc(x.design.slice(0, 70))}${x.photos.length ? `<br>🖼 參考照片 ${x.photos.length} 張` : ''}</div></button>`).join('') || '<p class="empty note">沒有客製詢問</p>'}`;
+    app.querySelectorAll('[data-f]').forEach((b) => (b.onclick = () => { inqFilter = b.dataset.f; renderInqs(); }));
+    app.querySelectorAll('[data-q]').forEach((b) => (b.onclick = () => openInq(inqs.find((x) => x.no === b.dataset.q))));
+  }
+  function openInq(x) {
+    let st = x.status;
+    const { el, close } = NTC.sheet(`<h2>${esc(x.no)}・客製詢問</h2>
+      <p class="note" style="margin:0 0 10px">${new Date(x.createdAt).toLocaleString('zh-TW', { hour12: false })} 送出</p>
+      ${x.photos.length ? `<div class="ph-grid" style="margin-bottom:12px">${x.photos.map((u) => `<a class="ph-item" href="${esc(u)}" target="_blank" rel="noopener"><img src="${esc(u)}" alt="參考照片"></a>`).join('')}</div>` : '<p class="note">沒有附參考照片</p>'}
+      <div class="panel" style="margin-bottom:12px"><b>用途</b> ${esc(x.purpose)}${x.date ? `　<b>希望收到</b> ${NTC.fmtDate(x.date)}` : ''}${x.qty ? `　<b>約</b> ${x.qty} 片` : ''}
+        <p style="white-space:pre-wrap;margin:8px 0 0">${esc(x.design)}</p>${x.text ? `<p style="margin:8px 0 0"><b>餅乾上的字：</b>${esc(x.text)}</p>` : ''}
+        <p style="margin:8px 0 0"><b>${esc(x.contact.name)}</b>　<a href="tel:${esc(x.contact.phone)}">${esc(x.contact.phone)}</a>　LINE：${esc(x.user?.name || '')}</p></div>
+      <p style="font-weight:700;margin:0 0 6px;font-size:13px;color:var(--ink2)">狀態</p>
+      <div class="statusbar" id="i-st" style="margin-bottom:12px">${Object.entries(inqStatuses).map(([k, t]) => `<button type="button" data-k="${k}" class="${k === st ? 'on' : ''}">${t}</button>`).join('')}</div>
+      <label class="field"><span>報價金額（選填，只給店家看）</span><input id="i-quote" type="number" inputmode="numeric" value="${esc(x.quote || '')}"></label>
+      <label class="field"><span>店家備註（只給店家看）</span><textarea id="i-note" maxlength="1000">${esc(x.adminNote || '')}</textarea></label>
+      <button class="btn block" id="i-save">儲存</button>
+      <button class="btn ghost block" id="i-del" style="margin-top:10px;color:var(--red)">刪除這筆詢問（連同照片）</button>
+      <p class="note" style="margin:12px 0 0">${(x.history || []).map((h) => `${new Date(h.at).toLocaleString('zh-TW', { hour12: false })}　${esc(h.note)}`).join('<br>')}</p>`);
+    el.querySelectorAll('#i-st [data-k]').forEach((b) => (b.onclick = () => { st = b.dataset.k; el.querySelectorAll('#i-st [data-k]').forEach((y) => y.classList.toggle('on', y === b)); }));
+    el.querySelector('#i-save').onclick = async () => {
+      NTC.loading(true, '儲存中…');
+      try { const r = await NTC.api(`/admin/inquiries/${x.no}`, { method: 'PATCH', body: { status: st, quote: +el.querySelector('#i-quote').value || 0, adminNote: el.querySelector('#i-note').value } }); Object.assign(x, r.inquiry); inqs = inqs.map((y) => (y.no === x.no ? { ...y, ...r.inquiry } : y)); close(); renderInqs(); NTC.toast('已儲存'); }
+      catch (e) { NTC.toast(e.message, 3500); } finally { NTC.loading(false); }
+    };
+    el.querySelector('#i-del').onclick = async () => {
+      if (!confirm(`確定刪除 ${x.no}？參考照片也會一起刪掉。`)) return;
+      NTC.loading(true); try { await NTC.api(`/admin/inquiries/${x.no}`, { method: 'DELETE' }); inqs = inqs.filter((y) => y.no !== x.no); close(); renderInqs(); NTC.toast('已刪除'); } catch (e) { NTC.toast(e.message); } finally { NTC.loading(false); }
     };
   }
 

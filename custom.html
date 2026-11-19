@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>客製造型餅乾｜N.T Cookie × N.T Canelé</title>
+<meta name="description" content="收涎・慶生・抓週・婚禮小物造型餅乾客製：留言、上傳參考照片，我們在 LINE 跟您討論細節與報價。">
+<meta name="theme-color" content="#f8e9e2">
+<link rel="icon" href="assets/favicon.png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/app.css?v=1119c">
+</head>
+<body class="ck-body">
+<header class="ck-top">
+  <button class="circle-btn" id="back" aria-label="返回"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
+  <div class="ck-brand">N.T Cookie <i>×</i> N.T Canelé</div>
+  <a class="circle-btn" href="cart.html" aria-label="購物車"><svg viewBox="0 0 24 24"><path d="M3 4h2.2l2.1 10.2a1.6 1.6 0 0 0 1.6 1.3h8.6a1.6 1.6 0 0 0 1.6-1.2L21 8H6.2"/><circle cx="9.5" cy="19.5" r="1.4"/><circle cx="17" cy="19.5" r="1.4"/></svg><span class="badge" data-cart-count></span></a>
+</header>
+<main class="ck" id="app"><div class="spinner"></div></main>
+<script src="js/config.js?v=1119c"></script>
+<script src="js/app.js?v=1119c"></script>
+<script src="js/shop.js?v=1119c"></script>
+<script>
+(function () {
+  const { $, esc } = NTC;
+  const app = $('#app'); $('#back').onclick = NTC.back;
+  const PURPOSES = ['收涎', '慶生', '抓週', '婚禮小物', '其他'];
+  const q = new URLSearchParams(location.search);
+  let photos = []; // data URLs (already shrunk)
+  let purpose = PURPOSES.includes(q.get('for')) ? q.get('for') : '收涎';
+
+  async function shrink(file) {
+    const img = await new Promise((ok, ko) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ko(new Error('這張照片讀不到，請換一張')); i.src = URL.createObjectURL(file); });
+    const scale = Math.min(1, 1100 / Math.max(img.width, img.height));
+    const c = document.createElement('canvas'); c.width = Math.round(img.width * scale); c.height = Math.round(img.height * scale);
+    c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+    for (const qv of [0.85, 0.75, 0.62, 0.5, 0.4]) { const d = c.toDataURL('image/webp', qv); if (d.startsWith('data:image/webp') && d.length < 370000) return d; const j = c.toDataURL('image/jpeg', qv); if (j.length < 370000) return j; }
+    throw new Error('照片太大，請換一張');
+  }
+
+  async function start() {
+    const head = '<h1 class="ck-title"><span>客製造型餅乾</span></h1><div class="ck-pill">留言・上傳照片・報價</div>';
+    if (!(await NTC.loggedIn())) {
+      app.innerHTML = `${head}<section class="ck-empty"><p>先用 LINE 登入</p><p class="sub">客製的細節和報價會在 LINE 跟您討論，<br>所以要先用 LINE 登入（只會拿到您的 LINE 名稱）。</p>
+        <button class="btn line block" id="login">用 LINE 登入</button></section>`;
+      $('#login').onclick = () => NTC.login();
+      return;
+    }
+    const [cat, me] = await Promise.all([NTC.catalog(), NTC.api('/me', { asLine: true }).catch(() => null)]);
+    const S = cat.settings; const min = NTC.addDays(S.today, S.leadDays || 0);
+    const c = me?.contact || {};
+    app.innerHTML = `${head}
+      <section class="panel"><p class="note" style="margin:0">每一組客製餅乾都是手繪的。告訴我們用途、日期、想要的圖案，附上參考照片，<b>我們會在 LINE 跟您討論細節並報價</b>，確認後才開始製作。</p></section>
+      <section class="panel"><h2>用途</h2><div class="chips" id="purpose">${PURPOSES.map((p) => `<button type="button" class="chip${p === purpose ? ' on' : ''}" data-p="${p}">${p}</button>`).join('')}</div></section>
+      <section class="panel"><h2>想要的圖案</h2>
+        <label class="field"><span>主題、角色、顏色、數量搭配…（必填）</span><textarea id="design" maxlength="1000" rows="4" placeholder="例：寶可夢收涎餅乾，皮卡丘 2 片、伊布 2 片、寶貝球名字牌 1 片，粉色系"></textarea></label>
+        <label class="field"><span>餅乾上要寫的字（選填）</span><input id="text" maxlength="200" placeholder="例：林羽澄 115.03.23、4 months"></label>
+        <div class="grid2"><label class="field"><span>大約幾片</span><input id="qty" type="number" inputmode="numeric" min="1" placeholder="例：12"></label>
+          <label class="field"><span>希望收到的日期</span><input id="date" type="date" min="${min}"></label></div>
+        <p class="note" style="margin:-4px 0 0">${esc(S.dateNote || '')}</p></section>
+      <section class="panel"><h2>參考照片 <small style="font:500 13px var(--sans);color:var(--muted)">（最多 5 張）</small></h2>
+        <div class="ph-grid" id="thumbs"></div>
+        <label class="btn ghost block" id="pick">＋ 選擇照片<input type="file" accept="image/*" multiple id="file" hidden></label></section>
+      <section class="panel"><h2>聯絡方式</h2>
+        <div class="grid2"><label class="field"><span>姓名</span><input id="name" maxlength="40" value="${esc(c.name || '')}" autocomplete="name"></label>
+          <label class="field"><span>手機</span><input id="phone" type="tel" inputmode="tel" maxlength="20" value="${esc(c.phone || '')}" autocomplete="tel"></label></div>
+        <p class="note" style="margin:0">我們會用 LINE 回覆您（LINE：${esc(me?.user?.name || '')}）。</p></section>
+      <button class="btn block" id="send" style="margin-top:6px">送出客製詢問</button>
+      <button type="button" class="ck-back" id="back2">‹ 返回上一頁</button>`;
+    $('#back2').onclick = NTC.back;
+    app.querySelectorAll('#purpose .chip').forEach((b) => (b.onclick = () => { purpose = b.dataset.p; app.querySelectorAll('#purpose .chip').forEach((x) => x.classList.toggle('on', x === b)); }));
+    const paintThumbs = () => {
+      $('#thumbs').innerHTML = photos.map((d, i) => `<div class="ph-item"><img src="${d}" alt=""><button type="button" data-i="${i}" aria-label="移除">✕</button></div>`).join('');
+      $('#thumbs').querySelectorAll('button').forEach((b) => (b.onclick = () => { photos.splice(+b.dataset.i, 1); paintThumbs(); }));
+      $('#pick').hidden = photos.length >= 5;
+    };
+    $('#file').onchange = async (e) => {
+      const files = [...e.target.files].slice(0, 5 - photos.length); e.target.value = '';
+      if (!files.length) return;
+      NTC.loading(true, '處理照片…');
+      try { for (const f of files) photos.push(await shrink(f)); } catch (err) { NTC.toast(err.message, 3000); } finally { NTC.loading(false); paintThumbs(); }
+    };
+    paintThumbs();
+    $('#send').onclick = async () => {
+      const body = { purpose, design: $('#design').value.trim(), text: $('#text').value.trim(), qty: +$('#qty').value || 0, date: $('#date').value,
+        name: $('#name').value.trim(), phone: $('#phone').value.trim(), photos };
+      if (!body.design) { NTC.toast('請描述想要的圖案'); $('#design').focus(); return; }
+      if (!body.name || !body.phone) { NTC.toast('請填姓名和手機'); return; }
+      if (body.date && body.date < min) { NTC.toast(`日期最早可以選 ${min}`); return; }
+      NTC.loading(true, photos.length ? '上傳照片中…' : '送出中…');
+      try {
+        const r = await NTC.api('/inquiries', { method: 'POST', body, asLine: true });
+        let posted = false;
+        try { const l = await NTC.liff(); if (l && NTC.inLine() && l.isApiAvailable && l.isApiAvailable('sendMessages')) { await l.sendMessages([{ type: 'text', text: r.summary }]); posted = true; } } catch (e) { /* not opened from the chat: fall back to the button */ }
+        done(r, posted);
+      } catch (e) { NTC.toast(e.message, 4000); } finally { NTC.loading(false); }
+    };
+  }
+
+  function done(r, posted) {
+    window.scrollTo(0, 0);
+    app.innerHTML = `<h1 class="ck-title"><span>已收到 ♡</span></h1><div class="ck-pill">詢問編號 ${esc(r.no)}</div>
+      <section class="ck-empty"><p>謝謝您！</p><p class="sub">${posted ? '這筆詢問已經傳到 LINE 聊天室。' : ''}店家看過圖案後，<br>會在 <b>LINE 聊天室</b> 跟您討論細節並報價。</p>
+        ${posted ? '' : `<a class="btn line block" href="${NTC.chatUrl(r.summary)}">到 LINE 聊天室（帶入這筆詢問）</a>`}
+        <a class="btn ghost block" href="cookies.html?g=character" style="margin-top:10px">逛逛可直接下單的造型餅乾</a></section>`;
+  }
+
+  NTC.refreshCart();
+  start().catch((e) => { app.innerHTML = `<p class="ck-note">${esc(e.message)}</p>`; });
+})();
+</script>
+</body>
+</html>

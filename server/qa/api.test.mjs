@@ -223,13 +223,13 @@ section('造型餅乾（系列・單片・最少片數・運費級距・填字�
   const CK = (slug, qty, extra = {}) => ({ type: 'product', productId: `cookie-anpanman-${slug}`, qty, ...extra });
   const COOKIE = { minPieces: 6, shipping: { label: '黑貓宅配（造型餅乾）', tiers: [{ upTo: 8, fee: 130 }, { upTo: 999, fee: 170 }] } };
   let a = await call('/admin/settings', { user: ADMIN }); const SER = a.json.settings.cookie.series;
-  ok('seeded series is hidden from customers by default', SER.length === 1 && SER[0].id === 'anpanman' && SER[0].active === false, SER);
+  ok('seeded series are all hidden from customers by default', SER.length === 10 && SER[0].id === 'anpanman' && SER.every((x) => !x.active), SER.length);
   r = await call('/catalog'); ok('guest catalog: no cookies while the series is hidden', !r.json.products.some((p) => p.category === 'cookie') && r.json.settings.cookie.series.length === 0, r.json.settings.cookie);
-  r = await call('/catalog', { user: ADMIN }); ok('admin catalog: sees the hidden series and its 17 pieces (preview)', r.json.products.filter((p) => p.category === 'cookie').length === 17 && r.json.settings.cookie.series[0]?.active === false, r.json.products.length);
+  r = await call('/catalog', { user: ADMIN }); ok('admin catalog: sees the hidden series and all 117 pieces (preview)', r.json.products.filter((p) => p.category === 'cookie').length === 117 && r.json.settings.cookie.series[0]?.active === false, r.json.products.length);
   await bad('guest cannot order from a hidden series', { items: [CK('anpanman', 6)] }, /無法訂購/);
   r = await order2({ items: [CK('anpanman', 6)] }, ADMIN); ok('admin can place a test order from a hidden series', r.status === 200 && r.json.orderNo, r.text);
   r = await putSettings({ cookie: { ...COOKIE, series: SER.map((x) => ({ ...x, active: true })) } }); ok('owner turns the series on', r.status === 200 && r.json.settings.cookie.series[0].active === true, r.text);
-  r = await call('/catalog'); ok('guest catalog now shows the 17 pieces and the series', r.json.products.filter((p) => p.category === 'cookie').length === 17 && r.json.settings.cookie.series.length === 1 && r.json.settings.cookie.minPieces === 6, r.json.settings.cookie);
+  r = await call('/catalog'); ok('guest catalog now shows the 117 pieces and the 10 series', r.json.products.filter((p) => p.category === 'cookie').length === 117 && r.json.settings.cookie.series.length === 10 && r.json.settings.cookie.minPieces === 6, r.json.settings.cookie);
   await bad('5 pieces → 6 片起訂', { items: [CK('anpanman', 3), CK('baikinman', 2)] }, /6 片起訂/);
   r = await order2({ items: [CK('anpanman', 3), CK('baikinman', 2), CK('dokinchan', 1)] }, ALICE);
   ok('6 pieces mixed: subtotal by piece, 6–8 片 shipping $130', r.status === 200 && r.json?.subtotal === 3 * 250 + 2 * 220 + 250 && r.json?.shipping?.fee === 130 && r.json?.shipping?.parts[0].kind === 'cookie' && r.json.total === r.json.subtotal + 130, r.text);
@@ -260,6 +260,35 @@ section('造型餅乾（系列・單片・最少片數・運費級距・填字�
   r = await putSettings({ cookie: { ...COOKIE, series: SER } }); r = await call('/catalog');
   ok('series hidden again → gone from the shop, old carts can no longer order it', !r.json.products.some((p) => p.category === 'cookie') && r.json.settings.cookie.series.length === 0, r.json.settings.cookie);
   await bad('ordering a hidden series is refused', { items: [CK('anpanman', 6)] }, /無法訂購/);
+}
+
+section('客製詢問（留言＋參考照片 → LINE 討論價格）');
+{
+  const PNG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
+  const INQ = { purpose: '收涎', design: '寶可夢收涎餅乾，皮卡丘 2 片、寶貝球名字牌 1 片', text: '林羽澄 115.03.23', qty: 12, date: ymd(20), name: '測試 王小明', phone: '0912-345-678', photos: [PNG, PNG] };
+  const send = (b, user = ALICE) => call('/inquiries', { method: 'POST', user, body: b });
+  r = await call('/inquiries', { method: 'POST', body: INQ }); ok('custom request needs a LINE login', r.status === 401, r.status);
+  r = await send({ ...INQ, design: ' ' }); ok('needs a design description', r.status === 400 && /圖案/.test(r.json?.error), r.json);
+  r = await send({ ...INQ, phone: '12' }); ok('needs a real phone', r.status === 400, r.status);
+  r = await send({ ...INQ, photos: [PNG, PNG, PNG, PNG, PNG, PNG] }); ok('at most 5 photos', r.status === 400 && /5 張/.test(r.json?.error), r.json);
+  r = await send({ ...INQ, photos: ['data:text/html;base64,PHNjcmlwdD4='] }); ok('non-image upload refused', r.status === 400, r.status);
+  r = await send({ ...INQ, date: '2020-01-01' }); ok('past date refused', r.status === 400, r.status);
+  r = await send({ ...INQ, purpose: 'evil<script>' }); const INQ1 = r.json;
+  ok('valid request → Q number + chat summary; unknown purpose becomes 其他', r.status === 200 && /^Q\d{9}$/.test(INQ1.no) && /您好，我送出了客製詢問/.test(INQ1.summary) && /用途：其他/.test(INQ1.summary), r.json);
+  r = await send(INQ); const INQ2 = r.json;
+  r = await call('/admin/inquiries', { user: BOB }); ok('non-admin cannot list custom requests', r.status === 403, r.status);
+  r = await call('/admin/inquiries', { user: ADMIN }); const got = r.json?.inquiries?.find((x) => x.no === INQ2.no);
+  ok('admin sees it with photos, text, contact and LINE name', got && got.photos.length === 2 && got.text === INQ.text && got.contact.phone === INQ.phone && got.user.name === 'Alice' && got.status === 'new' && r.json.statuses.quoted === '已報價', got);
+  const img = got?.photos?.[0] || ''; let g = await fetch(img); ok('uploaded photo is served', g.status === 200 && /image\/png/.test(g.headers.get('content-type') || ''), g.status);
+  r = await call(`/admin/inquiries/${INQ2.no}`, { method: 'PATCH', user: ADMIN, body: { status: 'nope' } }); ok('bad status refused', r.status === 400, r.status);
+  r = await call(`/admin/inquiries/${INQ2.no}`, { method: 'PATCH', user: ADMIN, body: { status: 'quoted', quote: 3600, adminNote: '粉色系，12 片' } });
+  ok('admin marks 已報價 with amount and note; history kept', r.status === 200 && r.json.inquiry.status === 'quoted' && r.json.inquiry.quote === 3600 && r.json.inquiry.history.length === 2, r.json);
+  r = await call(`/admin/inquiries/${INQ2.no}`, { method: 'PATCH', user: BOB, body: { status: 'declined' } }); ok('non-admin cannot change it', r.status === 403, r.status);
+  r = await call('/me', { user: ALICE }); ok('custom requests do not show up as orders in 我的訂單', r.status === 200 && !r.json.orders.some((o) => /^Q/.test(o.orderNo || '')), r.json?.orders?.length);
+  const rl = []; for (let i = 0; i < 5; i++) rl.push((await send({ ...INQ, photos: [] }, BOB)).status);
+  r = await send({ ...INQ, photos: [] }, BOB); ok('6 requests a day per LINE account, the 7th is refused', rl.slice(0, 5).every((x) => x === 200) && (await send({ ...INQ, photos: [] }, BOB)).status === 429, [rl, r.status]);
+  r = await call(`/admin/inquiries/${INQ2.no}`, { method: 'DELETE', user: ADMIN }); g = await fetch(img);
+  ok('deleting a request removes its photos too', r.status === 200 && g.status === 404, [r.status, g.status]);
 }
 
 section('dates: 公休 / 不接單 / 每日上限');

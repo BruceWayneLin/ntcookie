@@ -663,6 +663,45 @@ async function getImage(id) {
   return { statusCode: 200, headers: { 'content-type': it.type, 'cache-control': 'public, max-age=31536000, immutable' }, body: it.data, isBase64Encoded: true };
 }
 
+// ---------------------------------------------------------------- 客製詢問：客人留言＋上傳參考照片 → 店家在 LINE 跟客人討論價格
+const INQ_STATUS = { new: '新詢問', talking: '討論中', quoted: '已報價', confirmed: '已成立', declined: '不接單' };
+const PURPOSES = ['收涎', '慶生', '抓週', '婚禮小物', '其他'];
+const inqView = (q) => ({ ...q, pk: undefined, sk: undefined });
+function inquirySummary(q) {
+  return `🎨 客製詢問 ${q.no}\n用途：${q.purpose}${q.date ? `｜希望 ${q.date} 收到` : ''}${q.qty ? `｜約 ${q.qty} 片` : ''}\n圖案：${q.design.slice(0, 300)}${q.text ? `\n餅乾上的字：${q.text}` : ''}\n參考照片 ${q.photos.length} 張\n${q.contact.name} ${q.contact.phone}（LINE：${q.user.name || ''}）`;
+}
+async function createInquiry(event) {
+  const u = await requireUser(event);
+  if (u.shopAdmin) throw bad('請用 LINE 帳號送出');
+  const b = parseBody(event);
+  const date = /^\d{4}-\d{2}-\d{2}$/.test(b.date || '') ? b.date : '';
+  if (date && date < twDate()) throw bad('日期不能是過去的日子');
+  const design = str(b.design, 1000); if (!design) throw bad('請描述想要的圖案或主題');
+  const contact = { name: str(b.name, 40), phone: str(b.phone, 20) };
+  if (!contact.name) throw bad('請填聯絡人姓名');
+  if (!/^[0-9+\-() ]{8,20}$/.test(contact.phone)) throw bad('請填正確的手機號碼');
+  const photos = Array.isArray(b.photos) ? b.photos : [];
+  if (photos.length > 5) throw bad('參考照片最多 5 張');
+  for (const d of photos) if (!/^data:image\/(webp|jpeg|png);base64,/.test(d || '') || d.length > 380100) throw bad('照片格式不支援或太大');
+  const rl = (await get('INQRATE', u.sub)) || { count: 0, since: 0 }; const now = Date.now(); const fresh = now - (rl.since || 0) > 864e5;
+  if (!fresh && rl.count >= 6) throw new HttpError(429, '今天送出太多次了，請直接在 LINE 聊天室跟我們聊 ♡');
+  await put({ pk: 'INQRATE', sk: u.sub, count: fresh ? 1 : rl.count + 1, since: fresh ? now : rl.since });
+  const urls = []; for (const d of photos) urls.push(await putImage({ dataUrl: d }));
+  const day = twDate().replace(/-/g, '').slice(2);
+  const c = await ddb.send(new UpdateCommand({ TableName: TABLE, Key: { pk: 'COUNTER', sk: 'Q' + day }, UpdateExpression: 'ADD n :one', ExpressionAttributeValues: { ':one': 1 }, ReturnValues: 'UPDATED_NEW' }));
+  const no = `Q${day}${String(c.Attributes.n).padStart(3, '0')}`; const at = new Date().toISOString();
+  const q = {
+    pk: 'INQUIRY', sk: no, no, createdAt: at, status: 'new', purpose: PURPOSES.includes(b.purpose) ? b.purpose : '其他', date,
+    qty: Math.max(0, Math.min(9999, int(b.qty))), design, text: str(b.text, 200), contact, photos: urls,
+    user: { sub: u.sub, name: u.name, picture: u.picture }, history: [{ at, note: '客人送出客製詢問' }],
+  };
+  await put(q);
+  const old = (await get('USER', u.sub)) || {};
+  await put({ ...old, pk: 'USER', sk: u.sub, name: contact.name, phone: contact.phone, lineName: u.name, picture: u.picture, updatedAt: at });
+  await notifyAdmins(`${inquirySummary(q)}\n\n後台看照片：${ADMIN_URL}?inq=${no}`).catch(() => {});
+  return json(200, { no, summary: inquirySummary(q).replace('🎨 客製詢問', '您好，我送出了客製詢問') });
+}
+
 // ---------------------------------------------------------------- 每天早上 9 點：提醒「兩週後客人要收到包裹」（只傳給最大管理員）
 // 每張訂單只提醒一次：到貨日前剛好 14 天的那天早上；如果下單時已經不到 14 天（例如剛好 14 天前下單），就在下單隔天早上補提醒。
 // 沒有要提醒的訂單就不傳（省推播額度）。
@@ -721,6 +760,7 @@ async function route(event) {
     }
     if (method === 'GET' && seg[0] === 'img' && seg[1]) return getImage(seg[1]);
     if (method === 'POST' && path === '/orders') return await createOrder(event);
+    if (method === 'POST' && path === '/inquiries') return await createInquiry(event);
     if (method === 'POST' && path === '/orders/lookup') { // 查詢訂單：訂單編號＋下單時填的手機
       const b = parseBody(event);
       const ip = event.requestContext?.http?.sourceIp || 'unknown';
@@ -918,6 +958,24 @@ async function route(event) {
         if (o.status !== 'cancelled') await releaseDateSlot(o.date);
         await del('ORDER', o.orderNo);
         return json(200, { ok: true });
+      }
+      if (method === 'GET' && path === '/admin/inquiries') {
+        const all = await queryAll({ KeyConditionExpression: 'pk = :p', ExpressionAttributeValues: { ':p': 'INQUIRY' }, ScanIndexForward: false, ConsistentRead: true }); // a request sent seconds ago must be there when the owner taps the LINE alert
+        return json(200, { inquiries: all.slice(0, 300).map(inqView), statuses: INQ_STATUS });
+      }
+      if (seg[1] === 'inquiries' && seg[2] && ['PATCH', 'DELETE'].includes(method)) {
+        const q = await get('INQUIRY', seg[2]);
+        if (!q) throw new HttpError(404, '找不到這筆客製詢問');
+        if (method === 'DELETE') { for (const u of q.photos || []) { const id = String(u).split('/img/')[1]; if (id) await del('IMG', id); } await del('INQUIRY', q.no); return json(200, { ok: true }); }
+        const b = parseBody(event); const at = new Date().toISOString();
+        if (b.status !== undefined) {
+          if (!INQ_STATUS[b.status]) throw bad('狀態不正確');
+          if (b.status !== q.status) { q.history = [...(q.history || []), { at, note: `${INQ_STATUS[q.status]} → ${INQ_STATUS[b.status]}（${me.name || '店家'}）` }]; q.status = b.status; }
+        }
+        if (b.adminNote !== undefined) q.adminNote = str(b.adminNote, 1000);
+        if (b.quote !== undefined) q.quote = Math.max(0, int(b.quote));
+        q.updatedAt = at; await put(q);
+        return json(200, { inquiry: inqView(q) });
       }
       if (method === 'GET' && path === '/admin/requests') {
         const reqs = await queryAll({ KeyConditionExpression: 'pk = :p', ExpressionAttributeValues: { ':p': 'ADMINREQ' } });

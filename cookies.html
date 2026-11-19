@@ -12,7 +12,7 @@
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css?v=1119b">
+<link rel="stylesheet" href="css/app.css?v=1119c">
 </head>
 <body class="ck-body">
 <header class="ck-top">
@@ -22,9 +22,9 @@
 </header>
 <main class="ck" id="app"><div class="spinner"></div></main>
 <div class="ck-bar" id="bar" hidden></div>
-<script src="js/config.js?v=1119b"></script>
-<script src="js/app.js?v=1119b"></script>
-<script src="js/shop.js?v=1119b"></script>
+<script src="js/config.js?v=1119c"></script>
+<script src="js/app.js?v=1119c"></script>
+<script src="js/shop.js?v=1119c"></script>
 <script>
 (function () {
   const { $, esc, money, asset } = NTC;
@@ -58,7 +58,7 @@
     document.title = `${GROUPS[g]}｜N.T Cookie × N.T Canelé`;
     if (!list.length) {
       app.innerHTML = `${head(GROUPS[g])}<section class="ck-empty"><p>線上單片選購的系列準備中 ♡</p><p class="sub">卡通・收涎・慶生・抓週・婚禮小物都可以客製，<br>告訴我們日期、數量和想要的圖案，我們為您報價。</p>
-        <a class="btn line block" href="${NTC.chatUrl('您好，我想詢問客製造型餅乾\n使用日期：\n數量：\n圖案／參考照片：')}">LINE 詢問客製</a>
+        <a class="btn block" href="custom.html${g === 'birthday' ? '?for=慶生' : ''}">客製詢問（留言＋上傳參考照片）</a>
         <a class="btn ghost block" href="https://www.instagram.com/nt.cookie/" style="margin-top:10px">看作品集（Instagram）</a></section>${backBtn}`;
     } else {
       app.innerHTML = `${head(GROUPS[g])}<div class="ck-list">${list.map((x) => {
@@ -66,7 +66,7 @@
         return `<a class="ck-hero link" href="cookies.html?s=${esc(x.id)}&g=${g}">${x.photo ? `<div class="ph"><img src="${esc(asset(x.photo))}" alt=""></div>` : ''}
           <div class="tx"><h2>${esc(x.name)}</h2><div class="hr"><span>♡</span></div>${(x.lines || []).map((l) => `<p>${esc(l)}</p>`).join('')}
           <p class="from">${ps.length} 款・單片 ${money(lo)} 起 ›</p>${x.active ? '' : '<p class="adm">未上架（只有管理員看得到）</p>'}</div></a>`;
-      }).join('')}</div>${rules()}${backBtn}`;
+      }).join('')}</div>${rules()}<a class="ck-custom" href="custom.html${g === 'birthday' ? '?for=慶生' : ''}">想要其他圖案？<b>客製詢問 ›</b></a>${backBtn}`;
     }
     $('#back2').onclick = NTC.back; bar.hidden = true; document.body.classList.remove('ck-has-bar');
   }
@@ -84,7 +84,7 @@
           <div class="nm">${esc(p.name)}</div><div class="pr">${money(p.price)}</div>
           ${p.textLabel ? `<div class="tl">需填${esc(p.textLabel)}</div>` : ''}<div class="st"></div></div>`;
       }).join('') || '<p class="ck-note">這個系列還沒有餅乾，敬請期待</p>'}</div>
-      ${rules()}${backBtn}`;
+      ${rules()}<a class="ck-custom" href="custom.html">系列裡沒有想要的圖案？<b>客製詢問 ›</b></a>${backBtn}`;
     $('#back2').onclick = NTC.back;
     app.querySelectorAll('.ck-card').forEach((c) => {
       const p = ps.find((x) => x.id === c.dataset.id);

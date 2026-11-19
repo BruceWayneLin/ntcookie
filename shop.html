@@ -8,7 +8,7 @@
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css?v=1119b">
+<link rel="stylesheet" href="css/app.css?v=1119c">
 <title>線上商店｜N.T Cookie × N.T Canelé</title>
 <meta name="description" content="N.T Cookie × N.T Canelé 線上商店：可麗露禮盒、馬林糖一口酥，線上下單、LINE Pay 付款。">
 </head>
@@ -22,15 +22,15 @@
   <a href="canele.html" style="display:block;margin-bottom:12px"><img src="assets/v2/03-homepage/category-canele.webp" alt="N.T Canelé 可麗露專區" style="width:100%;border-radius:22px"></a>
   <a href="meringue.html" style="display:block;margin-bottom:16px"><img src="assets/v2/03-homepage/category-meringue-cookies.webp" alt="馬林糖一口酥・送禮小點" style="width:100%;border-radius:22px"></a>
   <div class="panel"><h2>客製造型餅乾</h2><p class="note" style="margin:0 0 12px">上面系列裡沒有的圖案也可以客製：卡通・收涎・慶生等造型餅乾都是一單一單客製，請先告訴我們使用日期、數量和想要的圖案，我們會為您報價 ♡</p>
-    <a class="btn line block" id="custom">LINE 詢問客製</a></div>
+    <a class="btn block" id="custom">客製詢問（留言＋上傳參考照片）</a></div>
   <a class="btn ghost block" href="orders.html">我的訂單</a>
 </main>
-<script src="js/config.js?v=1119b"></script>
-<script src="js/app.js?v=1119b"></script>
-<script src="js/shop.js?v=1119b"></script>
+<script src="js/config.js?v=1119c"></script>
+<script src="js/app.js?v=1119c"></script>
+<script src="js/shop.js?v=1119c"></script>
 <script>
   NTC.$('#back').onclick = NTC.back;
-  NTC.$('#custom').href = NTC.chatUrl('您好，我想詢問客製造型餅乾\n使用日期：\n數量：\n圖案／參考照片：');
+  NTC.$('#custom').href = 'custom.html';
   NTC.mountCartBar();
 </script>
 </body>
