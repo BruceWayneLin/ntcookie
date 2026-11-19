@@ -393,3 +393,20 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
 .ckd-go svg { flex: none; width: clamp(20px, 5.6vw, 26px); height: clamp(18px, 5.2vw, 24px); fill: none; stroke: #fff; stroke-width: 3.6; stroke-linecap: round; stroke-linejoin: round; }
 .ckd-go span { font: 900 clamp(14px, 4.3vw, 19px)/1 var(--serif); letter-spacing: .04em; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .ckd-go small { flex: none; font: 700 clamp(11px, 3.1vw, 13px)/1 var(--sans); opacity: .95; padding: max(5px, calc(8 * var(--u))) max(9px, calc(16 * var(--u))); border-radius: 999px; background: rgba(255, 255, 255, .18); white-space: nowrap; }
+/* 卡通・收涎 / 慶生: series accordion */
+.ckd-acc-list { display: grid; gap: calc(16 * var(--u)); padding: calc(6 * var(--u)) calc(36 * var(--u)) 0; }
+.ckd-acc { border-radius: calc(30 * var(--u)); background: linear-gradient(160deg, #fff6f2, #fbe5de 70%, #f9ded6); box-shadow: 0 calc(5 * var(--u)) calc(14 * var(--u)) rgba(170, 100, 80, .15), inset 0 0 0 calc(5 * var(--u)) #fffaf8; overflow: hidden; }
+.ckd-acc.open { box-shadow: 0 calc(6 * var(--u)) calc(18 * var(--u)) rgba(170, 100, 80, .2), inset 0 0 0 calc(5 * var(--u)) #f3b9ae; }
+.ckd-acc-head { display: flex; align-items: center; gap: calc(22 * var(--u)); width: 100%; padding: calc(14 * var(--u)); border: 0; background: none; cursor: pointer; text-align: left; color: inherit; scroll-margin-top: 8px; }
+.ckd-acc-head .ph { flex: none; width: calc(250 * var(--u)); height: calc(148 * var(--u)); border-radius: calc(20 * var(--u)); overflow: hidden; background: #ecd5c8; }
+.ckd-acc-head .ph img { width: 100%; height: 100%; object-fit: cover; }
+.ckd-acc-head .t { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: calc(8 * var(--u)); }
+.ckd-acc-head b { font: 900 max(16px, calc(min(46, 560 / var(--n, 6) / 1.08) * var(--u)))/1.2 var(--serif); letter-spacing: .05em; color: #2b1712; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ckd-acc-head small { font: 700 max(12px, calc(26 * var(--u)))/1.3 var(--sans); color: #d23a22; }
+.ckd-acc-head small em { font-style: normal; color: var(--warn); }
+.ckd-acc-head .cnt { flex: none; padding: calc(6 * var(--u)) calc(16 * var(--u)); border-radius: 999px; background: #d23a22; color: #fff; font: 700 max(11px, calc(22 * var(--u)))/1.3 var(--sans); }
+.ckd-acc-head .chev { flex: none; width: max(28px, calc(56 * var(--u))); height: max(28px, calc(56 * var(--u))); border-radius: 50%; background: #fff; box-shadow: inset 0 0 0 max(1px, calc(2 * var(--u))) #e6cfc5; position: relative; transition: transform .2s; }
+.ckd-acc-head .chev::after { content: ""; position: absolute; left: 50%; top: 44%; width: 30%; height: 30%; border: solid #2b1712; border-width: 0 max(2px, calc(4 * var(--u))) max(2px, calc(4 * var(--u))) 0; transform: translate(-50%, -50%) rotate(45deg); }
+.ckd-acc.open .chev { transform: rotate(180deg); }
+.ckd-acc-body { padding: calc(4 * var(--u)) 0 calc(22 * var(--u)); }
+.ckd-acc-body .ckd-grid { padding: 0 calc(10 * var(--u)); }
