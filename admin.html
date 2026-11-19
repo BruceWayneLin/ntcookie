@@ -9,7 +9,7 @@
 <link rel="icon" href="assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css?v=1119d">
+<link rel="stylesheet" href="css/app.css?v=1119e">
 <style>
   :root { --page: 760px; }
   .tabs { position: sticky; top: 63px; z-index: 20; display: flex; gap: 6px; max-width: var(--page); margin: 0 auto; padding: 8px 14px; background: rgba(248, 237, 231, .96); }
@@ -61,8 +61,8 @@
 <div class="shopbar" id="shopbar" hidden></div>
 <main class="wrap" id="app"><div class="spinner"></div></main>
 <p class="note" id="ver" style="text-align:center;margin:0 0 24px;color:var(--muted)"></p>
-<script src="js/config.js?v=1119d"></script>
-<script src="js/app.js?v=1119d"></script>
+<script src="js/config.js?v=1119e"></script>
+<script src="js/app.js?v=1119e"></script>
 <script>
 (async function () {
   const { $, esc, money, asset } = NTC;
@@ -335,10 +335,11 @@
         <p class="note" style="margin:0 0 10px">一個系列＝一頁（例如「麵包超人系列」）。系列「上架」關掉時，客人看不到整頁；管理員看得到，可以先預覽、下測試單。</p>
         ${series.map((x) => `<div class="prod" data-sid="${esc(x.id)}"><img src="${esc(asset(x.photo || 'assets/favicon.png'))}" alt="">
           <div class="i"><b>${esc(x.name)}</b><span>${products.filter((p) => p.series === x.id).length} 款・首頁：${(x.groups || []).map((g) => GROUP_NAMES[g]).join('、') || '（沒放）'}</span></div>
-          <label class="tg">上架<input type="checkbox" class="s-on" ${x.active ? 'checked' : ''}></label>
+          <label class="tg">整個系列上架<input type="checkbox" class="s-on" ${x.active ? 'checked' : ''}></label>
           <button class="btn ghost small s-edit">編輯</button></div>`).join('') || '<p class="note">還沒有系列</p>'}
         <button class="btn ghost small" id="s-new" style="margin-top:10px">＋ 新增系列</button></section>
-      ${series.map((x) => `<section class="panel"><h2>造型餅乾・${esc(x.name)}${x.active ? '' : ' <span class="flag">未上架</span>'}</h2>
+      ${series.map((x) => `<section class="panel" data-sid="${esc(x.id)}"><h2 class="row" style="gap:8px">造型餅乾・${esc(x.name)}<span class="sp"></span><label class="tg">整個系列上架<input type="checkbox" class="s-on" ${x.active ? 'checked' : ''}></label></h2>
+        ${x.active ? '' : '<p class="note" style="margin:-4px 0 10px;color:var(--warn)">整個系列還沒上架：客人看不到這一頁。下面每片的「上架」只管那一片，要兩個都打開客人才看得到。</p>'}
         ${products.filter((p) => p.category === 'cookie' && p.series === x.id).map(prodRow).join('') || '<p class="note">還沒有餅乾</p>'}
         <button class="btn ghost small add" data-c="cookie" data-s="${esc(x.id)}" style="margin-top:10px">＋ 新增餅乾</button>
         <a class="btn ghost small" href="cookies.html?s=${esc(x.id)}" target="_blank" style="margin:10px 0 0 6px">看這一頁 ›</a></section>`).join('')}
