@@ -9,7 +9,7 @@
 <link rel="icon" href="assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css?v=1120a">
+<link rel="stylesheet" href="css/app.css?v=1120d">
 <style>
   :root { --page: 760px; }
   .tabs { position: sticky; top: 63px; z-index: 20; display: flex; gap: 6px; max-width: var(--page); margin: 0 auto; padding: 8px 14px; background: rgba(248, 237, 231, .96); }
@@ -49,6 +49,37 @@
   .shopbar .t { flex: 1; font-size: 13px; color: var(--ink2); line-height: 1.45; }
   .shopbar .t b { display: block; font: 900 17px var(--serif); color: var(--ink); letter-spacing: .06em; }
   code { background: #f6e8e0; padding: 2px 6px; border-radius: 6px; font-size: 12.5px; word-break: break-all; }
+  /* --- admin tidy-up (11-19): badges, one-row filters, action highlight, product categories, folding settings */
+  .tabs button { position: relative; }
+  .tabs .tb { position: absolute; top: -6px; right: -4px; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 999px; background: #c2362f; color: #fff; font: 800 12px/20px var(--sans); text-align: center; box-shadow: 0 0 0 2px var(--bg); }
+  .statusbar.one { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 4px; margin-right: -14px; padding-right: 14px; scrollbar-width: none; }
+  .statusbar.one::-webkit-scrollbar { display: none; }
+  .statusbar.one button { flex: none; white-space: nowrap; }
+  .ord.needs { box-shadow: inset 5px 0 0 #d9822b, 0 2px 10px rgba(150, 95, 70, .08); }
+  .ord .todo { display: block; margin-top: 6px; padding: 6px 10px; border-radius: 10px; background: #fff3e0; color: #9a4f08; font: 700 13px/1.4 var(--sans); }
+  .testlink { display: block; margin: 6px 2px 0; text-align: right; font: 600 13px/1.4 var(--sans); color: var(--muted); }
+  .seg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin: 0 0 12px; }
+  .seg button { padding: 10px 4px; border: 1.5px solid #e3cdbf; border-radius: 14px; background: #fff; color: var(--ink); cursor: pointer; font: 800 14px/1.25 var(--sans); }
+  .seg button small { display: block; margin-top: 3px; font: 600 11.5px/1.2 var(--sans); color: var(--muted); }
+  .seg button.on { background: var(--brown); border-color: var(--brown); color: #fff; }
+  .seg button.on small { color: #f3dccf; }
+  .sr-head { display: flex; align-items: center; gap: 12px; width: 100%; padding: 0; border: 0; background: none; text-align: left; cursor: pointer; color: inherit; }
+  .sr-head img { width: 64px; height: 44px; border-radius: 10px; object-fit: cover; flex: none; background: #f3e4db; }
+  .sr-head .i { flex: 1; min-width: 0; }
+  .sr-head .i b { display: block; font: 900 16px/1.3 var(--serif); }
+  .sr-head .i span { display: block; margin-top: 3px; font: 600 12.5px/1.3 var(--sans); color: var(--muted); }
+  .sr-head .i span.live { color: var(--ok); }
+  .sr-head .chev, .acc-h .chev { flex: none; width: 9px; height: 9px; border: solid var(--brown); border-width: 0 2.5px 2.5px 0; transform: rotate(45deg); margin: -4px 6px 0 0; transition: transform .2s; }
+  .sr.open .sr-head .chev, .acc.open .acc-h .chev { transform: rotate(-135deg); margin-top: 4px; }
+  .sr-tools { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0 6px; padding-top: 12px; border-top: 1px dashed #ead7cc; }
+  .acc-h { display: flex; align-items: center; gap: 10px; width: 100%; padding: 0; border: 0; background: none; text-align: left; cursor: pointer; color: inherit; }
+  .acc-h b { font: 900 17px/1.3 var(--serif); }
+  .acc-h small { flex: 1; min-width: 0; font: 500 12.5px/1.35 var(--sans); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: right; }
+  .acc.open .acc-h { margin-bottom: 12px; }
+  .acc.open .acc-h small { visibility: hidden; }
+  .savebar { position: fixed; left: 50%; bottom: 0; transform: translateX(-50%); z-index: 45; width: min(100vw, var(--page)); display: flex; align-items: center; gap: 10px;
+    padding: 10px 14px calc(10px + env(safe-area-inset-bottom, 0px)); background: #fff8f0; border-top: 1px solid #e7cdb6; box-shadow: 0 -4px 14px rgba(120, 70, 40, .14); }
+  .savebar span { flex: 1; font: 700 14px/1.3 var(--sans); color: #9a4f08; }
 </style>
 </head>
 <body>
@@ -62,7 +93,7 @@
 <main class="wrap" id="app"><div class="spinner"></div></main>
 <p class="note" id="ver" style="text-align:center;margin:0 0 24px;color:var(--muted)"></p>
 <script src="js/config.js?v=1120b"></script>
-<script src="js/app.js?v=1120a"></script>
+<script src="js/app.js?v=1120d"></script>
 <script>
 (async function () {
   const { $, esc, money, asset } = NTC;
@@ -72,7 +103,7 @@
   const PAY = { linepay: 'LINE Pay', ecpay: '綠界', transfer: '轉帳' };
   let canDeleteReal = false; // only the fixed top admin may delete customer orders
   let tab = 'orders'; let statuses = {}; let orders = []; let filter = 'open'; let sortBy = 'created';
-  let products = []; let settings = null; let ready = {}; let inqs = null; let inqStatuses = {}; let inqFilter = 'open'; let inqP = null;
+  let products = []; let settings = null; let ready = {}; let inqs = null; let inqStatuses = {}; let inqFilter = 'open'; let inqP = null; let dirty = false; let prodCat = 'canele'; const openAcc = new Set();
 
   // ---------- who are you?  The LINE account decides: admins go straight in, everyone else is stopped here.
   NTC.preferAdmin = true;
@@ -145,6 +176,7 @@
     setTimeout(() => { const o = orders.find((x) => x.orderNo === deep); if (o) openOrder(o); else NTC.toast(`找不到訂單 ${deep}`); }, 0);
   }
   try { await loadSettings(); renderShopBar(); } catch (e) { /* settings tab will retry */ }
+  loadInqs().then(paintTabs).catch(() => {}); // so the 客製 tab can show how many new requests are waiting
   // logged in with the passcode inside LINE, but this LINE account isn't an admin yet → offer to bind it (one tap, then no passcode needed in LINE)
   (async () => {
     const me = NTC.adminToken() && !NTC.isDev() && (await NTC.lineProfile().catch(() => null));
@@ -156,7 +188,9 @@
       catch (e) { NTC.toast(e.message, 3500); } finally { NTC.loading(false); }
     };
   })();
-  $('#tabs').onclick = (e) => { const b = e.target.closest('button'); if (!b) return; tab = b.dataset.t; $('#tabs').querySelectorAll('button').forEach((x) => x.classList.toggle('on', x === b)); show(); };
+  $('#tabs').onclick = (e) => { const b = e.target.closest('button'); if (!b || b.dataset.t === tab) return;
+    if (dirty && !confirm('設定有變更還沒儲存，要離開嗎？（離開後變更不會保留）')) return;
+    setDirty(false); tab = b.dataset.t; $('#tabs').querySelectorAll('button').forEach((x) => x.classList.toggle('on', x === b)); show(); };
   $('#reload').onclick = async () => { NTC.loading(true, '更新中…'); try { if (tab === 'orders') await loadOrders(); if (tab === 'inq') await loadInqs(); if (tab === 'products') products = (await NTC.api('/admin/products')).products; if (tab === 'settings') await loadSettings(); show(); } catch (e) { NTC.toast(e.message); } NTC.loading(false); };
 
   // ---------- 開店接單／關閉接單 (one big switch at the top)
@@ -166,10 +200,10 @@
     const pays = [settings.payments.transfer && settings.bank.account ? '銀行轉帳' : '', settings.payments.ecpay && ready.ecpay ? '信用卡／ATM／超商' : '', settings.payments.linepay && ready.linepay ? 'LINE Pay' : ''].filter(Boolean).join('、');
     const how = !open ? '客人可以逛，但不能下單（休息、檔期滿都用這個）'
       : settings.testMode ? '客人結帳會「用 LINE 傳訂單給店家」（測試模式開著）' : `客人可以下單，付款方式：${pays || '（還沒開任何付款方式）'}`;
-    bar.hidden = false;
+    bar.hidden = !(tab === 'orders' || tab === 'settings'); // the switch belongs with the orders and the settings, not with 客製 / 商品
     bar.innerHTML = `<div class="box ${open ? 'on' : 'off'}"><span class="dot2"></span><span class="t"><b>${open ? '接單中' : '關閉接單中'}</b>${how}</span>
       <button class="btn small ${open ? 'ghost' : ''}" id="toggleShop">${open ? '關閉接單' : '開店接單'}</button></div>
-      <a class="btn ghost block small" href="shop.html" style="margin-top:8px">🔧 自己下一張測試單（${open ? '' : '關閉接單時也可以，'}只有登入的店家能下）</a>`;
+      ${tab === 'orders' ? '<a class="testlink" href="shop.html">🔧 自己下一張測試單 ›</a>' : ''}`;
     $('#toggleShop').onclick = async () => {
       const next = !open;
       if (!confirm(next ? '確定開店接單？客人馬上就能下單。' : '確定關閉接單？客人會看到「目前暫停接單」，已經下的訂單不受影響。')) return;
@@ -181,7 +215,16 @@
 
   async function loadOrders() { const r = await NTC.api('/admin/orders'); orders = r.orders; statuses = r.statuses; canDeleteReal = !!r.canDeleteReal; }
   async function loadSettings() { const r = await NTC.api('/admin/settings'); settings = r.settings; ready = r.ready; }
+  // red number on a tab = things waiting for the shop: transfers to confirm (訂單), new requests (客製)
+  function paintTabs() {
+    const n = { orders: orders.filter((o) => o.status === 'reported').length, inq: (inqs || []).filter((x) => x.status === 'new').length };
+    $('#tabs').querySelectorAll('button').forEach((b) => { const old = b.querySelector('.tb'); if (old) old.remove(); const k = n[b.dataset.t]; if (k) b.insertAdjacentHTML('beforeend', `<span class="tb">${k}</span>`); });
+  }
+  function setDirty(v) { dirty = v; document.body.style.paddingBottom = v ? '76px' : ''; let bar = $('#savebar'); if (!v) { if (bar) bar.remove(); return; }
+    if (!bar) { document.body.insertAdjacentHTML('beforeend', '<div class="savebar" id="savebar"><span>設定有變更還沒儲存</span><button class="btn small" id="savebar-btn">儲存設定</button></div>'); $('#savebar-btn').onclick = () => $('#s-save') && $('#s-save').click(); } }
   async function show() {
+    paintTabs(); if (settings) renderShopBar();
+    app.oninput = app.onchange = null; // the settings page's "unsaved changes" watcher must not see the other tabs' switches
     if (tab === 'orders') return renderOrders();
     if (tab === 'inq') { if (!inqs) { app.innerHTML = '<div class="spinner"></div>'; await loadInqs(); } return renderInqs(); }
     if (tab === 'products') { if (!products.length || !settings) { app.innerHTML = '<div class="spinner"></div>'; if (!products.length) products = (await NTC.api('/admin/products')).products; if (!settings) await loadSettings(); } return renderProducts(); }
@@ -196,16 +239,18 @@
     Object.keys(statuses).forEach((k) => (counts[k] = orders.filter((o) => o.status === k).length));
     let list = filter === 'all' ? orders : filter === 'open' ? orders.filter(isOpen) : orders.filter((o) => o.status === filter);
     if (sortBy === 'date') list = [...list].sort((a, b) => a.date.localeCompare(b.date) || a.orderNo.localeCompare(b.orderNo));
+    else if (filter === 'open') list = [...list.filter((o) => o.status === 'reported'), ...list.filter((o) => o.status !== 'reported')]; // transfers waiting to be confirmed come first
     const chip = (k, t) => `<button class="${filter === k ? 'on' : ''}" data-f="${k}">${t} ${counts[k] || 0}</button>`;
+    paintTabs();
     app.innerHTML = `
-      <div class="statusbar" style="margin-bottom:10px">${chip('open', '處理中')}${Object.entries(statuses).map(([k, t]) => chip(k, t)).join('')}${chip('all', '全部')}</div>
+      <div class="statusbar one" style="margin-bottom:10px">${chip('open', '處理中')}${Object.entries(statuses).filter(([k]) => counts[k] || filter === k).map(([k, t]) => chip(k, t)).join('')}${chip('all', '全部')}</div>
       <div class="row" style="margin-bottom:10px"><span class="note">${list.length} 筆</span><span class="sp"></span>
         <div class="statusbar"><button data-s="created" class="${sortBy === 'created' ? 'on' : ''}">依下單時間</button><button data-s="date" class="${sortBy === 'date' ? 'on' : ''}">依出貨日期</button></div></div>
-      ${list.map((o) => `<button class="ord" data-no="${esc(o.orderNo)}">
+      ${list.map((o) => `<button class="ord${o.status === 'reported' ? ' needs' : ''}" data-no="${esc(o.orderNo)}">
         <div class="top"><b>${esc(o.orderNo)}</b><span class="status-pill ${esc(o.status)}">${esc(o.statusLabel)}</span>${o.byShop ? '<span class="flag" style="background:#e2ecf7;color:#2d5785">店家測試單</span>' : ''}<span class="sp"></span><span class="amt">${money(o.total)}</span></div>
         <div class="mid">📅 ${NTC.fmtDate(o.date)}　👤 ${esc(o.contact.name)}　${esc(PAY[o.payment.method] || '')}
           ${o.payment.status === 'paid' ? '<span class="flag ok">已收款</span>' : o.payment.last5 ? `<span class="flag">回報末五碼 ${esc(o.payment.last5)}</span>` : '<span class="flag">未付款</span>'}<br>
-          ${esc(o.lines.map((l) => `${l.name}×${l.qty}`).join('、'))}${o.note ? `<br>💬 ${esc(o.note.slice(0, 60))}` : ''}</div></button>`).join('') || '<p class="empty note">沒有訂單</p>'}`;
+          ${esc(o.lines.map((l) => `${l.name}×${l.qty}`).join('、'))}${o.note ? `<br>💬 ${esc(o.note.slice(0, 60))}` : ''}</div>${o.status === 'reported' ? `<span class="todo">👉 客人說已匯款${o.payment.last5 ? `（末五碼 ${esc(o.payment.last5)}）` : ''}，核對後點進來按「確認已收到款項」</span>` : ''}</button>`).join('') || '<p class="empty note">沒有訂單</p>'}`;
     app.querySelectorAll('[data-f]').forEach((b) => (b.onclick = () => { filter = b.dataset.f; renderOrders(); }));
     app.querySelectorAll('[data-s]').forEach((b) => (b.onclick = () => { sortBy = b.dataset.s; renderOrders(); }));
     app.querySelectorAll('.ord').forEach((b) => (b.onclick = () => openOrder(orders.find((o) => o.orderNo === b.dataset.no))));
@@ -285,7 +330,8 @@
     const counts = { open: inqs.filter(inqOpen).length, all: inqs.length }; Object.keys(inqStatuses).forEach((k) => (counts[k] = inqs.filter((x) => x.status === k).length));
     const list = inqFilter === 'all' ? inqs : inqFilter === 'open' ? inqs.filter(inqOpen) : inqs.filter((x) => x.status === inqFilter);
     const chip = (k, t) => `<button class="${inqFilter === k ? 'on' : ''}" data-f="${k}">${t} ${counts[k] || 0}</button>`;
-    app.innerHTML = `<div class="statusbar" style="margin-bottom:10px">${chip('open', '進行中')}${Object.entries(inqStatuses).map(([k, t]) => chip(k, t)).join('')}${chip('all', '全部')}</div>
+    paintTabs();
+    app.innerHTML = `<div class="statusbar one" style="margin-bottom:10px">${chip('open', '進行中')}${Object.entries(inqStatuses).filter(([k]) => counts[k] || inqFilter === k).map(([k, t]) => chip(k, t)).join('')}${chip('all', '全部')}</div>
       <p class="note" style="margin:0 0 10px">客人在「客製造型餅乾」頁留言＋上傳參考照片。價格和細節請在 LINE 官方帳號的聊天室跟客人談，談好再到這裡改狀態。</p>
       ${list.map((x) => `<button class="ord" data-q="${esc(x.no)}"><div class="top"><b>${esc(x.no)}</b><span class="status-pill ${x.status === 'confirmed' ? 'done' : x.status === 'declined' ? 'cancelled' : 'pending'}">${esc(inqStatuses[x.status] || x.status)}</span><span class="sp"></span><span class="amt">${x.quote ? money(x.quote) : ''}</span></div>
         <div class="mid">🎨 ${esc(x.purpose)}${x.date ? `　📅 ${NTC.fmtDate(x.date)}` : ''}${x.qty ? `　約 ${x.qty} 片` : ''}　👤 ${esc(x.contact.name)}（LINE：${esc(x.user?.name || '')}）<br>${esc(x.design.slice(0, 70))}${x.photos.length ? `<br>🖼 參考照片 ${x.photos.length} 張` : ''}</div></button>`).join('') || '<p class="empty note">沒有客製詢問</p>'}`;
@@ -333,20 +379,16 @@
   function cookiePanels() {
     const series = [...(settings?.cookie?.series || [])].sort((a, b) => (a.sort ?? 999) - (b.sort ?? 999));
     const orphans = products.filter((p) => p.category === 'cookie' && !series.some((x) => x.id === p.series));
-    return `<section class="panel"><h2>造型餅乾・系列</h2>
-        <p class="note" style="margin:0 0 10px">一個系列＝一頁（例如「麵包超人系列」）。<b>系列沒有自己的開關</b>：裡面只要有一款餅乾「上架」，客人就看得到這個系列；全部下架，客人就看不到。</p>
-        ${series.map((x) => `<div class="prod" data-sid="${esc(x.id)}"><img src="${esc(asset(x.photo || 'assets/favicon.png'))}" alt="">
-          <div class="i"><b>${esc(x.name)}</b><span>${products.filter((p) => p.series === x.id).length} 款・首頁：${(x.groups || []).map((g) => GROUP_NAMES[g]).join('、') || '（沒放）'}</span></div>
-          ${liveOf(x.id) ? `<span class="flag ok">客人看得到・${liveOf(x.id)} 款上架</span>` : '<span class="flag">客人看不到</span>'}
-          <button class="btn ghost small s-edit">編輯</button></div>`).join('') || '<p class="note">還沒有系列</p>'}
-        <button class="btn ghost small" id="s-new" style="margin-top:10px">＋ 新增系列</button></section>
-      ${series.map((x) => `<section class="panel" data-sid="${esc(x.id)}" data-sname="${esc(x.name)}"><h2>造型餅乾・${esc(x.name)} ${liveOf(x.id) ? `<span class="flag ok">客人看得到・${liveOf(x.id)} 款上架</span>` : '<span class="flag">客人看不到</span>'}</h2>
-        <div class="row" style="gap:8px;margin:-2px 0 10px"><button class="btn ghost small" data-bulk="on">全部上架</button><button class="btn ghost small" data-bulk="off">全部下架</button><span class="sp"></span></div>
-        ${liveOf(x.id) ? '' : '<p class="note" style="margin:-2px 0 10px;color:var(--warn)">這個系列還沒有上架的餅乾，客人看不到這一頁。把要賣的餅乾「上架」打開（或按「全部上架」）就會出現。</p>'}
-        <button type="button" class="fold-btn${openSeries.has(x.id) ? ' open' : ''}" data-fold="${esc(x.id)}">${openSeries.has(x.id) ? '收起' : `展開 ${products.filter((p) => p.category === 'cookie' && p.series === x.id).length} 款餅乾（改名字、價格、照片、上架）`}<i></i></button>
-        ${openSeries.has(x.id) ? (products.filter((p) => p.category === 'cookie' && p.series === x.id).map(prodRow).join('') || '<p class="note">還沒有餅乾</p>') : ''}
-        <button class="btn ghost small add" data-c="cookie" data-s="${esc(x.id)}" style="margin-top:10px">＋ 新增餅乾</button>
-        <a class="btn ghost small" href="cookies.html?s=${esc(x.id)}&preview=1" target="_blank" style="margin:10px 0 0 6px">預覽這一頁 ›</a></section>`).join('')}
+    const of = (sid) => products.filter((p) => p.category === 'cookie' && p.series === sid);
+    return `<p class="note" style="margin:0 0 10px">一個系列＝一頁。系列裡只要有一款餅乾「上架」，客人就看得到這個系列；全部下架就看不到。點系列可以展開。</p>
+      ${series.map((x) => { const open = openSeries.has(x.id); const live = liveOf(x.id);
+        return `<section class="panel sr${open ? ' open' : ''}" data-sid="${esc(x.id)}" data-sname="${esc(x.name)}">
+        <button type="button" class="sr-head" data-fold="${esc(x.id)}" aria-expanded="${open}"><img src="${esc(asset(x.photo || 'assets/favicon.png'))}" alt="">
+          <span class="i"><b>${esc(x.name)}</b><span class="${live ? 'live' : ''}">${of(x.id).length} 款・${live ? `客人看得到（${live} 款上架）` : '客人看不到（都沒上架）'}</span></span><i class="chev"></i></button>
+        ${open ? `<div class="sr-tools"><button class="btn ghost small" data-bulk="on">全部上架</button><button class="btn ghost small" data-bulk="off">全部下架</button><button class="btn ghost small s-edit">編輯系列</button><a class="btn ghost small" href="cookies.html?s=${esc(x.id)}&preview=1" target="_blank">預覽 ›</a></div>
+          ${of(x.id).map(prodRow).join('') || '<p class="note">還沒有餅乾</p>'}
+          <button class="btn ghost small add" data-c="cookie" data-s="${esc(x.id)}" style="margin-top:10px">＋ 新增餅乾</button>` : ''}</section>`; }).join('') || '<p class="note">還沒有系列</p>'}
+      <button class="btn ghost block" id="s-new" style="margin:2px 0 14px">＋ 新增系列</button>
       ${orphans.length ? `<section class="panel"><h2>造型餅乾・（系列已刪除）</h2><p class="note" style="margin:0 0 8px">這些餅乾的系列被刪掉了，客人看不到。編輯後選一個系列就會回來。</p>${orphans.map(prodRow).join('')}</section>` : ''}`;
   }
   function editSeries(x) {
@@ -386,17 +428,15 @@
     const d = el.querySelector('#x-del');
     if (d) d.onclick = () => { if (confirm(`確定刪除「${x.name}」系列？裡面的餅乾會一起從前台消失（資料還在，之後可以改到別的系列）。只想暫時不賣的話，把餅乾「全部下架」就好。`)) save(settings.cookie.series.filter((y) => y.id !== x.id), '已刪除系列'); };
   }
+  const CAT_TABS = [['canele', '可麗露'], ['meringue', '馬林糖'], ['cookie', '造型餅乾']];
   function renderProducts() {
-    app.innerHTML = Object.entries(CATS).map(([c, t]) => `<section class="panel"><h2>${t}</h2>
-      ${products.filter((p) => p.category === c).map((p) => `<div class="prod" data-id="${esc(p.id)}">
-        <img src="${esc(asset(p.photo || p.card))}" alt=""><div class="i"><b>${esc(p.name)}</b><span>${money(p.price)} / ${esc(p.unit || '')}</span></div>
-        <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
-          <label class="tg">上架<input type="checkbox" data-k="active" ${p.active ? 'checked' : ''}></label>
-          <label class="tg red">售完<input type="checkbox" data-k="soldOut" ${p.soldOut ? 'checked' : ''}></label></div>
-        <button class="btn ghost small edit">編輯</button></div>`).join('')}
-      <button class="btn ghost small add" data-c="${c}" style="margin-top:10px">＋ 新增${c === 'canele' ? '口味' : '商品'}</button></section>`).join('')
-      + cookiePanels()
-      + '<p class="note">「上架」關掉＝客人看不到；「售完」打開＝看得到但不能買。可麗露／馬林糖改名字或價格後，那張卡會改用文字顯示（設計圖上的字是印在圖裡的）。</p>';
+    const cnt = (c) => { const l = products.filter((p) => p.category === c); return `${l.filter((p) => p.active).length}／${l.length} 上架`; };
+    const simple = (c) => `<section class="panel"><h2>${CATS[c]}</h2>${products.filter((p) => p.category === c).map(prodRow).join('') || '<p class="note">還沒有商品</p>'}
+      <button class="btn ghost small add" data-c="${c}" style="margin-top:10px">＋ 新增${c === 'canele' ? '口味' : '商品'}</button></section>`;
+    app.innerHTML = `<div class="seg">${CAT_TABS.map(([c, t]) => `<button type="button" data-cat="${c}" class="${prodCat === c ? 'on' : ''}">${t}<small>${cnt(c)}</small></button>`).join('')}</div>`
+      + (prodCat === 'cookie' ? cookiePanels() : simple(prodCat))
+      + `<p class="note">「上架」關掉＝客人看不到；「售完」打開＝看得到但不能買。點「編輯」可以改名稱、價格、照片。${prodCat === 'cookie' ? '' : '改名字或價格後，那張卡會改用文字顯示（設計圖上的字是印在圖裡的）。'}</p>`;
+    app.querySelectorAll('[data-cat]').forEach((b) => (b.onclick = () => { if (prodCat === b.dataset.cat) return; prodCat = b.dataset.cat; renderProducts(); window.scrollTo(0, 0); }));
     app.querySelectorAll('[data-fold]').forEach((b) => (b.onclick = () => { const id = b.dataset.fold; openSeries.has(id) ? openSeries.delete(id) : openSeries.add(id); const y = window.scrollY; renderProducts(); window.scrollTo(0, y); }));
     app.querySelectorAll('[data-bulk]').forEach((b) => (b.onclick = async () => {
       const sec = b.closest('[data-sid]'); const sid = sec.dataset.sid; const name = sec.dataset.sname; const on = b.dataset.bulk === 'on';
@@ -568,6 +608,7 @@
     NTC.api('/admin/requests').then(({ requests }) => {
       const box = $('#s-reqs'); if (!box || !requests.length) return;
       box.innerHTML = `<div style="background:#fff6ec;border-radius:12px;padding:10px 12px;margin-bottom:10px"><b style="font-size:14px">申請成為管理員（${requests.length}）</b>${requests.map((r) => `<div class="row" style="padding:6px 0">${r.picture ? `<img src="${esc(r.picture)}" style="width:30px;height:30px;border-radius:50%" alt="">` : ''}<span class="sp">${esc(r.name)}</span><button class="btn small" data-ok="${esc(r.sub)}">核准</button><button class="tag-del" data-no="${esc(r.sub)}">拒絕</button></div>`).join('')}<p class="note" style="margin:4px 0 0">只核准你認識的人：管理員看得到所有客人的姓名、電話、地址。</p></div>`;
+      const asec = box.closest('section.acc'); if (asec && !asec.classList.contains('open')) asec.querySelector('.acc-h').click(); // someone is waiting for approval: open 管理員
       box.querySelectorAll('[data-ok],[data-no]').forEach((b) => (b.onclick = async () => {
         const sub = b.dataset.ok || b.dataset.no; const ok = !!b.dataset.ok;
         if (ok && !confirm('確定讓這個 LINE 帳號成為管理員？')) return;
@@ -579,6 +620,35 @@
     $('#s-copyinv').onclick = async () => { try { await navigator.clipboard.writeText(liffInvite || inviteUrl); NTC.toast('已複製'); } catch (e) { prompt('邀請連結', liffInvite || inviteUrl); } };
     $('#s-rotate').onclick = () => { if (confirm('換新連結後，舊的邀請連結就失效（已經是管理員的人不受影響）。')) put({ rotateInvite: true }, '已換新連結'); };
     app.querySelectorAll('[data-rm]').forEach((b) => (b.onclick = () => { if (confirm('移除這位管理員？')) put({ removeAdmins: [b.dataset.rm] }, '已移除'); }));
+    foldSettings();
+  }
+  // each settings section folds to its title + a one-line summary of what is set; fields stay in the page, so 儲存設定 still saves everything
+  function foldSettings() {
+    const s = settings; const pays = [s.payments.transfer && '銀行轉帳', s.payments.linepay && 'LINE Pay', s.payments.ecpay && '信用卡／ATM／超商'].filter(Boolean);
+    const sum = {
+      接單日期: `最早今天＋${s.leadDays} 天${(s.closedWeekdays || []).length ? '・公休週' + [...s.closedWeekdays].sort().map((d) => '日一二三四五六'[d]).join('') : ''}${(s.blockedDates || []).length ? `・${s.blockedDates.length} 天不接單` : ''}`,
+      運費: `冷凍 ${money(s.shipping.frozen.tiers[0].fee)} 起・常溫 ${money(s.shipping.ambient.fee)}${s.freeShippingOver ? `・滿 ${money(s.freeShippingOver)} 免運` : ''}`,
+      付款方式: (pays.join('、') || '還沒開任何付款方式') + (s.testMode ? '・測試模式開著' : ''),
+      可麗露禮盒規則: `綜合禮盒 ${money(s.canele.assortedPrice)}／盒`,
+      造型餅乾規則: `${s.cookie.minPieces} 片起訂・運費 ${money(s.cookie.shipping.tiers[0].fee)} 起`,
+      公告: s.notice ? s.notice.slice(0, 18) : '沒有公告',
+      這支裝置: '登出',
+      管理員: `${(s.admins || []).length} 位`,
+    };
+    app.querySelectorAll('section.panel').forEach((sec) => {
+      const h = sec.querySelector(':scope > h2'); if (!h) return; const title = h.textContent.trim();
+      const body = document.createElement('div'); while (h.nextSibling) body.appendChild(h.nextSibling);
+      const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'acc-h'; btn.innerHTML = `<b>${esc(title)}</b><small>${esc(sum[title] || '')}</small><i class="chev"></i>`;
+      h.replaceWith(btn); sec.appendChild(body); sec.classList.add('acc'); sec.dataset.acc = title;
+      const set = (open) => { sec.classList.toggle('open', open); body.hidden = !open; btn.setAttribute('aria-expanded', open); };
+      set(openAcc.has(title)); btn.onclick = () => { openAcc.has(title) ? openAcc.delete(title) : openAcc.add(title); set(openAcc.has(title)); };
+    });
+    // 暫停接單 is the big switch at the top of this page: keep its value for saving, don't show it a second time
+    const pz = $('#s-pause'); if (pz) { const row = pz.closest('label'); row.hidden = true; if (row.nextElementSibling && row.nextElementSibling.matches('p.note')) row.nextElementSibling.hidden = true; }
+    setDirty(false);
+    const mark = (e) => { if (!e.target.closest('#s-addphone, #s-addlabel, #s-addday')) setDirty(true); }; // typing a new admin phone / date to add isn't a setting yet
+    app.oninput = mark; app.onchange = mark;
+    ['#s-week', '#s-blocked', '#s-addbtn', '#s-ctadd', '#s-ctrm'].forEach((q) => { const el = $(q); if (el) el.addEventListener('click', () => setDirty(true)); });
   }
 
   show();
