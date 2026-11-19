@@ -9,7 +9,7 @@
 <link rel="icon" href="assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css?v=1119x">
+<link rel="stylesheet" href="css/app.css?v=1119y">
 <style>
   :root { --page: 760px; }
   .tabs { position: sticky; top: 63px; z-index: 20; display: flex; gap: 6px; max-width: var(--page); margin: 0 auto; padding: 8px 14px; background: rgba(248, 237, 231, .96); }
@@ -61,8 +61,8 @@
 <div class="shopbar" id="shopbar" hidden></div>
 <main class="wrap" id="app"><div class="spinner"></div></main>
 <p class="note" id="ver" style="text-align:center;margin:0 0 24px;color:var(--muted)"></p>
-<script src="js/config.js?v=1119x"></script>
-<script src="js/app.js?v=1119x"></script>
+<script src="js/config.js?v=1119y"></script>
+<script src="js/app.js?v=1119y"></script>
 <script>
 (async function () {
   const { $, esc, money, asset } = NTC;
@@ -328,6 +328,7 @@
           <label class="tg">上架<input type="checkbox" data-k="active" ${p.active ? 'checked' : ''}></label>
           <label class="tg red">售完<input type="checkbox" data-k="soldOut" ${p.soldOut ? 'checked' : ''}></label></div>
         <button class="btn ghost small edit">編輯</button></div>`;
+  const openSeries = new Set(); // which cookie series are unfolded in the 商品 tab
   const liveOf = (sid) => products.filter((p) => p.category === 'cookie' && p.series === sid && p.active).length; // 這個系列有幾款上架（>0 客人就看得到）
   function cookiePanels() {
     const series = [...(settings?.cookie?.series || [])].sort((a, b) => (a.sort ?? 999) - (b.sort ?? 999));
@@ -342,7 +343,8 @@
       ${series.map((x) => `<section class="panel" data-sid="${esc(x.id)}" data-sname="${esc(x.name)}"><h2>造型餅乾・${esc(x.name)} ${liveOf(x.id) ? `<span class="flag ok">客人看得到・${liveOf(x.id)} 款上架</span>` : '<span class="flag">客人看不到</span>'}</h2>
         <div class="row" style="gap:8px;margin:-2px 0 10px"><button class="btn ghost small" data-bulk="on">全部上架</button><button class="btn ghost small" data-bulk="off">全部下架</button><span class="sp"></span></div>
         ${liveOf(x.id) ? '' : '<p class="note" style="margin:-2px 0 10px;color:var(--warn)">這個系列還沒有上架的餅乾，客人看不到這一頁。把要賣的餅乾「上架」打開（或按「全部上架」）就會出現。</p>'}
-        ${products.filter((p) => p.category === 'cookie' && p.series === x.id).map(prodRow).join('') || '<p class="note">還沒有餅乾</p>'}
+        <button type="button" class="fold-btn${openSeries.has(x.id) ? ' open' : ''}" data-fold="${esc(x.id)}">${openSeries.has(x.id) ? '收起' : `展開 ${products.filter((p) => p.category === 'cookie' && p.series === x.id).length} 款餅乾（改名字、價格、照片、上架）`}<i></i></button>
+        ${openSeries.has(x.id) ? (products.filter((p) => p.category === 'cookie' && p.series === x.id).map(prodRow).join('') || '<p class="note">還沒有餅乾</p>') : ''}
         <button class="btn ghost small add" data-c="cookie" data-s="${esc(x.id)}" style="margin-top:10px">＋ 新增餅乾</button>
         <a class="btn ghost small" href="cookies.html?s=${esc(x.id)}&preview=1" target="_blank" style="margin:10px 0 0 6px">預覽這一頁 ›</a></section>`).join('')}
       ${orphans.length ? `<section class="panel"><h2>造型餅乾・（系列已刪除）</h2><p class="note" style="margin:0 0 8px">這些餅乾的系列被刪掉了，客人看不到。編輯後選一個系列就會回來。</p>${orphans.map(prodRow).join('')}</section>` : ''}`;
@@ -395,6 +397,7 @@
       <button class="btn ghost small add" data-c="${c}" style="margin-top:10px">＋ 新增${c === 'canele' ? '口味' : '商品'}</button></section>`).join('')
       + cookiePanels()
       + '<p class="note">「上架」關掉＝客人看不到；「售完」打開＝看得到但不能買。可麗露／馬林糖改名字或價格後，那張卡會改用文字顯示（設計圖上的字是印在圖裡的）。</p>';
+    app.querySelectorAll('[data-fold]').forEach((b) => (b.onclick = () => { const id = b.dataset.fold; openSeries.has(id) ? openSeries.delete(id) : openSeries.add(id); const y = window.scrollY; renderProducts(); window.scrollTo(0, y); }));
     app.querySelectorAll('[data-bulk]').forEach((b) => (b.onclick = async () => {
       const sec = b.closest('[data-sid]'); const sid = sec.dataset.sid; const name = sec.dataset.sname; const on = b.dataset.bulk === 'on';
       const list = products.filter((p) => p.category === 'cookie' && p.series === sid && !!p.active !== on);
@@ -469,7 +472,7 @@
       if (photo !== p.photo) body.card = null; // a new photo replaces the designed card
       delete body.isNew;
       NTC.loading(true, '儲存中…');
-      try { const r = await NTC.api(`/admin/products/${id}`, { method: 'PUT', body }); const i = products.findIndex((x) => x.id === id); if (i >= 0) products[i] = r.product; else products.push(r.product); close(); renderProducts(); NTC.toast('已儲存'); }
+      try { const r = await NTC.api(`/admin/products/${id}`, { method: 'PUT', body }); const i = products.findIndex((x) => x.id === id); if (i >= 0) products[i] = r.product; else products.push(r.product); if (r.product.category === 'cookie') openSeries.add(r.product.series); const y = window.scrollY; close(); renderProducts(); window.scrollTo(0, y); NTC.toast('已儲存'); }
       catch (e) { NTC.toast(e.message, 3500); } finally { NTC.loading(false); }
     };
     const d = el.querySelector('#e-del');

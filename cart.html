@@ -9,7 +9,7 @@
 <link rel="icon" href="assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css?v=1119x">
+<link rel="stylesheet" href="css/app.css?v=1119y">
 </head>
 <body>
 <header class="topbar">
@@ -20,9 +20,9 @@
 <main class="wrap" id="app"><div class="spinner"></div></main>
 <button type="button" class="nt-back" onclick="window.NTC && NTC.back ? NTC.back() : history.back()"><i aria-hidden="true"></i>返回上一頁</button>
 
-<script src="js/config.js?v=1119x"></script>
-<script src="js/app.js?v=1119x"></script>
-<script src="js/shop.js?v=1119x"></script>
+<script src="js/config.js?v=1119y"></script>
+<script src="js/app.js?v=1119y"></script>
+<script src="js/shop.js?v=1119y"></script>
 <script>
 (async function () {
   const { $, esc, money, asset } = NTC;
@@ -73,9 +73,8 @@
           <div class="line-item" data-i="${l.idx}">
             <img class="th" src="${esc(asset(l.photo))}" alt="">
             <div class="info"><div class="nm">${esc(l.name)}</div>${l.detail ? `<div class="dt">${esc(l.detail)}</div>` : ''}
-              <div class="row" style="margin-top:8px"><div class="st"></div><span class="sp"></span><span class="pr">${money(l.subtotal)}</span></div>
-              ${l.error ? `<p class="err">${esc(l.error)}</p>` : ''}
-              <button class="rm" type="button">移除</button></div>
+              <div class="row" style="margin-top:6px;gap:4px"><div class="st"></div><button class="rm" type="button">移除</button><span class="sp"></span><span class="pr">${money(l.subtotal)}</span></div>
+              ${l.error ? `<p class="err">${esc(l.error)}</p>` : ''}</div>
           </div>`).join('')}</div>
         <div class="row" style="margin-top:6px;gap:8px"><a class="btn small ghost" href="canele.html">＋ 可麗露</a><a class="btn small ghost" href="meringue.html">＋ 馬林糖</a><a class="btn small ghost" href="cookies.html?g=character">＋ 造型餅乾</a></div>
       </section>`;

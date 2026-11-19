@@ -13,7 +13,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
 <link rel="preload" as="image" href="assets/cookies/ui/header.webp" type="image/webp">
-<link rel="stylesheet" href="css/app.css?v=1119x">
+<link rel="stylesheet" href="css/app.css?v=1119y">
 </head>
 <body class="ckd-body">
 <main class="ckd" id="page">
@@ -28,9 +28,9 @@
   <img class="ckd-corner r" src="assets/cookies/ui/corner-right.webp" alt="">
 </main>
 <div class="ckd-bar" id="bar" hidden></div>
-<script src="js/config.js?v=1119x"></script>
-<script src="js/app.js?v=1119x"></script>
-<script src="js/shop.js?v=1119x"></script>
+<script src="js/config.js?v=1119y"></script>
+<script src="js/app.js?v=1119y"></script>
+<script src="js/shop.js?v=1119y"></script>
 <script>
 (function () {
   const { $, esc, money, asset } = NTC;
@@ -183,7 +183,7 @@
       return `<div class="tf" data-id="${esc(p.id)}" data-kind="${k}" data-opt="${p.textOptional ? 1 : ''}">${head}${k !== 'd' ? nameIn : ''}${k !== 'n' ? dateIn : ''}</div>`;
     };
     const allNames = needText.every((p) => has(p, '名字'));
-    const { el, close } = NTC.sheet(`<h2>${allNames ? '填寫寶寶名字' : '填寫餅乾上的字'}</h2><p class="sub">我們會照您填的內容手繪在餅乾上。每片要不同的字，請分次加入購物車。</p>
+    const { el, close } = NTC.sheet(`<h2>${allNames ? (needText.some((p) => has(p, '日期')) ? '填寫寶寶名字與日期' : '填寫寶寶名字') : '填寫餅乾上的字'}</h2><p class="sub">我們會照您填的內容手繪在餅乾上。每片要不同的字，請分次加入購物車。</p>
       ${needText.map(field).join('')}
       <button class="btn block" id="ok">加入購物車</button>`);
     el.querySelectorAll('input[type=date]').forEach((i) => (i.onchange = () => { const h = el.querySelector(`.tf-hint[data-for="${CSS.escape(i.dataset.id)}"]`); if (h) h.textContent = i.value ? `餅乾上會寫成：${roc(i.value)}` : '餅乾上會寫成民國日期，例如 115.03.23'; }));
