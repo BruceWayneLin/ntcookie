@@ -255,7 +255,7 @@ async function requireAdmin(event) {
 }
 
 // ---------------------------------------------------------------- 購物須知
-const NOTE_KEYS = ['date', 'cookie', 'canele', 'meringue', 'pay', 'custom'];
+const NOTE_KEYS = ['date', 'cookie', 'canele', 'meringue', 'pay', 'custom', 'fraud'];
 const multiline = (v, max) => String(v ?? '').replace(/\r\n?/g, '\n').trim().slice(0, max); // like str(), but keeps the line breaks
 const cleanNotes = (n) => ({
   over: Object.fromEntries(NOTE_KEYS.map((k) => [k, multiline(n?.over?.[k], 400)]).filter(([, v]) => v)),

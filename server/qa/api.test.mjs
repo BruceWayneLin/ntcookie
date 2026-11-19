@@ -116,9 +116,9 @@ r = await call('/catalog'); ok('customers get the jar tiers (and a flat fee for 
 
 section('購物須知 (the owner can rewrite it in the admin)');
 ok('starts automatic (nothing customised)', JSON.stringify(r.json.settings.shopNotes) === '{"over":{},"off":[],"extra":[]}', r.json.settings.shopNotes);
-r = await putSettings({ shopNotes: { over: { meringue: ' 小箱 130、大箱 170 \r\n第二行 ', hacker: 'x', pay: '' }, off: ['custom', 'nope'], extra: [{ title: ' 保存方式 ', text: '常溫 14 天' }, { title: '', text: '' }, ...Array.from({ length: 12 }, (_, i) => ({ title: 't' + i, text: 'x'.repeat(900) }))] } });
+r = await putSettings({ shopNotes: { over: { meringue: ' 小箱 130、大箱 170 \r\n第二行 ', hacker: 'x', pay: '', fraud: ' 小心詐騙 ' }, off: ['custom', 'nope'], extra: [{ title: ' 保存方式 ', text: '常溫 14 天' }, { title: '', text: '' }, ...Array.from({ length: 12 }, (_, i) => ({ title: 't' + i, text: 'x'.repeat(900) }))] } });
 { const sn = r.json?.settings?.shopNotes || {};
-  ok('cleaned up (known topics only, trimmed, line breaks kept, empty rows dropped, at most 10, 400 chars each)', JSON.stringify(sn.over) === '{"meringue":"小箱 130、大箱 170 \\n第二行"}' && JSON.stringify(sn.off) === '["custom"]' && sn.extra?.length === 10 && sn.extra[0].title === '保存方式' && sn.extra[1].text.length === 400, sn); }
+  ok('cleaned up (known topics only, trimmed, line breaks kept, empty rows dropped, at most 10, 400 chars each)', JSON.stringify(sn.over) === '{"meringue":"小箱 130、大箱 170 \\n第二行","fraud":"小心詐騙"}' && JSON.stringify(sn.off) === '["custom"]' && sn.extra?.length === 10 && sn.extra[0].title === '保存方式' && sn.extra[1].text.length === 400, sn); }
 r = await call('/catalog'); ok('customers get the owner\'s wording', /^小箱 130/.test(r.json.settings.shopNotes.over.meringue) && r.json.settings.shopNotes.extra[0].text === '常溫 14 天' && r.json.settings.shopNotes.off[0] === 'custom', r.json.settings.shopNotes);
 r = await putSettings({ notice: '' }); ok('saving other settings leaves it alone', r.json.settings.shopNotes.extra.length === 10, r.json.settings.shopNotes);
 r = await putSettings({ shopNotes: {} }); ok('clearing it goes back to automatic', JSON.stringify(r.json.settings.shopNotes) === '{"over":{},"off":[],"extra":[]}', r.json.settings.shopNotes);

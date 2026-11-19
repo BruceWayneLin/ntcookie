@@ -2,8 +2,8 @@
 <html lang="zh-Hant-TW">
 <head>
 <meta charset="utf-8">
-<script>/* stale-page guard, part 1 (see js/app.js) */try{(function(d){var n=performance.getEntriesByType&&performance.getEntriesByType('navigation')[0];if(n&&n.transferSize>0)return;d.className+=' vchk';setTimeout(function(){d.classList.remove('vchk')},2500)})(document.documentElement)}catch(e){}</script>
-<style>.vchk body{visibility:hidden}</style>
+<script>/* stale-page guard, part 1 (see js/app.js) */try{(function(d){var n=performance.getEntriesByType&&performance.getEntriesByType('navigation')[0];if(n&&n.transferSize>0)return;d.className+=' vchk';setTimeout(function(){d.classList.remove('vchk')},1200)})(document.documentElement)}catch(e){}</script>
+<style>.vchk body{visibility:hidden}.vchk::before{content:"";position:fixed;left:50%;top:40%;width:36px;height:36px;margin:-18px 0 0 -18px;border-radius:50%;border:3px solid #ecd5c8;border-top-color:#b0604a;opacity:0;animation:vchk .8s linear infinite,vchkin .15s .12s forwards}@keyframes vchk{to{transform:rotate(360deg)}}@keyframes vchkin{to{opacity:1}}</style>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>訂單｜N.T Cookie × N.T Canelé</title>
 <meta name="theme-color" content="#f8ede7">
@@ -51,6 +51,7 @@
         <dl class="kv"><dt>銀行</dt><dd>${esc(b.name)}${b.code ? `（${esc(b.code)}）` : ''}</dd>
         <dt>帳號</dt><dd>${esc(b.account)} ${copyBtn(b.account)}</dd>${b.holder ? `<dt>戶名</dt><dd>${esc(b.holder)}</dd>` : ''}
         <dt>金額</dt><dd>${money(o.total)} ${copyBtn(o.total)}</dd></dl>
+        ${(() => { const f = NTC.shopNotes(cat.settings).find((r) => r.key === 'fraud'); return f && !f.hidden && f.text ? `<p class="note" id="fraud-note" style="margin:10px 0 0;padding:9px 11px;border-radius:10px;background:#fff6ec">⚠️ <b>${esc(f.title)}</b>　${esc(f.text).replace(/\n/g, '<br>')}</p>` : ''; })()}
         ${p.last5 ? `<div style="margin:12px 0 0;padding:10px 12px;border-radius:12px;background:#eef4fb"><b>✓ 已回報匯款</b>（末五碼 ${esc(p.last5)}）<br><span class="note">店家確認收到後，這裡會變成「已付款」。想讓店家更快看到，可以按下面的按鈕用 LINE 通知。</span>
           <a class="btn line block small" style="margin-top:10px" href="${NTC.chatUrl(`您好，我已經匯款了\n訂單：${o.orderNo}\n金額：${money(o.total)}\n帳號末五碼：${p.last5}`)}">用 LINE 通知店家我已匯款</a></div>` : ''}
         <div class="row" style="margin-top:12px"><input id="last5" inputmode="numeric" maxlength="5" placeholder="帳號末五碼" style="flex:1;border:1.5px solid #e6d2c6;border-radius:12px;padding:12px;font-size:16px" value="${esc(p.last5 || '')}">

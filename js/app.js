@@ -315,6 +315,8 @@
       ['meringue', '馬林糖一口酥', `${S.shipping.ambient.label}：${tiers(amb, '罐')}。和造型餅乾一起訂會裝同一箱，運費 ${m(Math.max(...S.cookie.shipping.tiers.map((t) => t.fee)))}。`],
       ['pay', '付款', pay.length ? `${pay.join('、')}。確認收到款項後開始製作。` : '下單後會用 LINE 跟您確認付款方式。'],
       ['custom', '客製造型', '系列裡沒有的圖案，請到「聊聊客製需求」留言並附參考照片，我們報價後再製作。'],
+      // 防詐騙警語（店主 11-19）：also shown under the bank details on the order page
+      ['fraud', '防詐騙提醒', `我們不會打電話或傳訊息要求您操作 ATM、網路銀行、「解除分期付款」，也不會索取信用卡號或簡訊驗證碼。訂單與付款資訊請以本站「我的訂單」和 LINE 官方帳號 ${CFG.lineId || '@ntcookie'} 為準；接到可疑來電請撥 165 反詐騙專線查證。`],
     ];
     const n = S.shopNotes || {}; const over = n.over || {}; const off = n.off || [];
     return [...auto.map(([key, title, text]) => ({ key, title, auto: text, text: over[key] || text, custom: !!over[key], hidden: off.includes(key) })),
