@@ -16,7 +16,7 @@
 <link rel="icon" href="assets/favicon.png">
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 <link rel="preload" as="image" href="assets/v2/03-homepage/home-hero.webp" type="image/webp">
-<link rel="stylesheet" href="css/app.css?v=1119v">
+<link rel="stylesheet" href="css/app.css?v=1119w">
 <style>
   /* The designer's homepage (nt-homepage-my-orders-slices, 946 px wide) in its five sections. The page always fills the screen:
      when the screen is taller than the design, the spare height is shared out between the sections (never stretched);
@@ -29,7 +29,7 @@
   .gap { flex: 1 1 0; min-height: calc(var(--g) * var(--u)); }
   .blk .hot { left: calc(var(--x) / 946 * 100%); top: calc(var(--y) / var(--h0) * 100%); width: calc(var(--w) / 946 * 100%); height: calc(var(--h) / var(--h0) * 100%); border-radius: calc(24 * var(--u)); }
   .blk .hot.pill { border-radius: 999px; }
-  .blk .badge { position: absolute; left: 62%; top: 10%; min-width: 19px; height: 19px; padding: 0 5px; border-radius: 999px; background: var(--red); color: #fff; font: 700 11px/19px var(--sans); text-align: center; }
+  .blk .badge { position: absolute; left: 62%; top: 14%; min-width: 19px; height: 19px; padding: 0 5px; border-radius: 999px; background: var(--red); color: #fff; font: 700 11px/19px var(--sans); text-align: center; }
   .blk .badge:empty, .blk .badge[data-n="0"] { display: none; }
 </style>
 </head>
@@ -49,23 +49,23 @@
   <div class="blk"><img src="assets/v2/03-homepage/home-ingredients.webp" width="946" height="494" alt="HANDMADE WITH LOVE　嚴選頂級原物料・手作甜點：法國依思尼奶油（AOP產品・濃郁乳香）、新鮮牧場直送蛋（蛋香濃郁・品質安心）、馬達加斯加頂級香草莢（天然香氣・層次細緻）" loading="lazy"></div>
   <div class="gap" style="--g:10"></div>
   <!-- 我的訂單: order progress / payment lookup — LINE members see their orders, others look up by number + phone -->
-  <div class="blk" style="--h0:175">
-    <img src="assets/v2/03-homepage/home-orders.webp" width="946" height="175" alt="">
-    <a class="hot pill" data-link="orders" href="#" style="--x:5;--y:0;--w:936;--h:175"><span class="sr-only">我的訂單：訂單進度・付款查詢</span></a>
+  <div class="blk" style="--h0:148">
+    <img src="assets/v2/03-homepage/home-orders-gold.webp" width="946" height="148" alt="">
+    <a class="hot" data-link="orders" href="#" style="--x:5;--y:4;--w:936;--h:132"><span class="sr-only">我的訂單：訂單進度・付款查詢</span></a>
   </div>
   <div class="gap" style="--g:10"></div>
   <!-- the 4 service buttons sit last, like an app's bottom bar (SK 11-19) -->
-  <nav class="blk" aria-label="服務" style="--h0:173">
-    <img src="assets/v2/03-homepage/home-nav.webp" width="946" height="173" alt="">
-    <a class="hot" data-link="contact"      href="#" style="--x:5;--y:0;--w:230;--h:173"><span class="sr-only">聯絡客服（訂製諮詢）</span></a>
-    <a class="hot" data-link="reservations" href="#" style="--x:235;--y:0;--w:234;--h:173"><span class="sr-only">預約／訂購（檔期查詢）</span></a>
-    <a class="hot" data-link="store"        href="#" style="--x:469;--y:0;--w:243;--h:173"><span class="sr-only">線上商店（直接下單）</span><span class="badge" data-cart-count></span></a>
-    <a class="hot" data-link="portfolio"    href="#" style="--x:712;--y:0;--w:230;--h:173"><span class="sr-only">作品集（更多案例）</span></a>
+  <nav class="blk" aria-label="服務" style="--h0:189">
+    <img src="assets/v2/03-homepage/home-nav-gold.webp" width="946" height="189" alt="">
+    <a class="hot" data-link="contact"      href="#" style="--x:5;--y:4;--w:238;--h:172"><span class="sr-only">聯絡客服（訂製諮詢）</span></a>
+    <a class="hot" data-link="reservations" href="#" style="--x:243;--y:4;--w:230;--h:172"><span class="sr-only">預約／訂購（檔期查詢）</span></a>
+    <a class="hot" data-link="store"        href="#" style="--x:473;--y:4;--w:231;--h:172"><span class="sr-only">線上商店（直接下單）</span><span class="badge" data-cart-count></span></a>
+    <a class="hot" data-link="portfolio"    href="#" style="--x:704;--y:4;--w:237;--h:172"><span class="sr-only">作品集（更多案例）</span></a>
   </nav>
 </main>
 
-<script src="js/config.js?v=1119v"></script>
-<script src="js/app.js?v=1119v"></script>
+<script src="js/config.js?v=1119w"></script>
+<script src="js/app.js?v=1119w"></script>
 <script>
   /* ================= 連結設定 =================
      'line'          → 開啟 LINE 官方帳號聊天室
