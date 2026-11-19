@@ -217,6 +217,51 @@ r = await call('/admin/images', { method: 'POST', user: ADMIN, body: { dataUrl: 
 r = await call('/admin/images', { method: 'POST', user: ADMIN, body: { dataUrl: png } }); const img = await fetch(r.json.url);
 ok('photo upload → served as an image', img.status === 200 && img.headers.get('content-type') === 'image/png' && (await img.arrayBuffer()).byteLength > 50, [r.json, img.status]);
 
+section('造型餅乾（系列・單片・最少片數・運費級距・填字）');
+{
+  const order2 = async (o, u) => { const x = await order(o, u); return x.status === 200 ? { status: 200, json: (await call(`/orders/${x.json.orderNo}?t=${x.json.token}`, { user: u })).json.order } : x; };
+  const CK = (slug, qty, extra = {}) => ({ type: 'product', productId: `cookie-anpanman-${slug}`, qty, ...extra });
+  const COOKIE = { minPieces: 6, shipping: { label: '黑貓宅配（造型餅乾）', tiers: [{ upTo: 8, fee: 130 }, { upTo: 999, fee: 170 }] } };
+  let a = await call('/admin/settings', { user: ADMIN }); const SER = a.json.settings.cookie.series;
+  ok('seeded series is hidden from customers by default', SER.length === 1 && SER[0].id === 'anpanman' && SER[0].active === false, SER);
+  r = await call('/catalog'); ok('guest catalog: no cookies while the series is hidden', !r.json.products.some((p) => p.category === 'cookie') && r.json.settings.cookie.series.length === 0, r.json.settings.cookie);
+  r = await call('/catalog', { user: ADMIN }); ok('admin catalog: sees the hidden series and its 17 pieces (preview)', r.json.products.filter((p) => p.category === 'cookie').length === 17 && r.json.settings.cookie.series[0]?.active === false, r.json.products.length);
+  await bad('guest cannot order from a hidden series', { items: [CK('anpanman', 6)] }, /無法訂購/);
+  r = await order2({ items: [CK('anpanman', 6)] }, ADMIN); ok('admin can place a test order from a hidden series', r.status === 200 && r.json.orderNo, r.text);
+  r = await putSettings({ cookie: { ...COOKIE, series: SER.map((x) => ({ ...x, active: true })) } }); ok('owner turns the series on', r.status === 200 && r.json.settings.cookie.series[0].active === true, r.text);
+  r = await call('/catalog'); ok('guest catalog now shows the 17 pieces and the series', r.json.products.filter((p) => p.category === 'cookie').length === 17 && r.json.settings.cookie.series.length === 1 && r.json.settings.cookie.minPieces === 6, r.json.settings.cookie);
+  await bad('5 pieces → 6 片起訂', { items: [CK('anpanman', 3), CK('baikinman', 2)] }, /6 片起訂/);
+  r = await order2({ items: [CK('anpanman', 3), CK('baikinman', 2), CK('dokinchan', 1)] }, ALICE);
+  ok('6 pieces mixed: subtotal by piece, 6–8 片 shipping $130', r.status === 200 && r.json?.subtotal === 3 * 250 + 2 * 220 + 250 && r.json?.shipping?.fee === 130 && r.json?.shipping?.parts[0].kind === 'cookie' && r.json.total === r.json.subtotal + 130, r.text);
+  r = await order2({ items: [CK('anpanman', 9)] }, ALICE); ok('9 pieces → $170 (the 9+ tier)', r.status === 200 && r.json?.shipping?.fee === 170, r.json?.shipping);
+  await bad('name plaque without the name', { items: [CK('anpanman', 5), CK('name-plaque', 1)] }, /請填寫寶寶名字/);
+  await bad('name text longer than allowed (16)', { items: [CK('anpanman', 5), CK('name-plaque', 1, { text: '一二三四五六七八九十一二三四五六七' })] }, /最多 16 個字/);
+  r = await order2({ items: [CK('anpanman', 5), CK('name-plaque', 2, { text: '  林羽澄   115.03.23 ' })] }, ALICE);
+  const pl = r.json?.lines?.find((l) => l.productId === 'cookie-anpanman-name-plaque');
+  ok('name plaque keeps the text (tidied) on the order line', r.status === 200 && pl?.text === '林羽澄 115.03.23' && /寶寶名字＋日期：林羽澄 115\.03\.23/.test(pl.detail) && /麵包超人系列/.test(pl.detail), pl);
+  r = await order2({ items: [CK('anpanman', 6), { type: 'product', productId: 'meringue-butter', qty: 1 }] }, ALICE);
+  ok('cookies + meringue ship in one box: one fee = max(130, 150)', r.status === 200 && r.json?.shipping?.parts.length === 1 && r.json?.shipping?.fee === 150 && /含馬林糖/.test(r.json?.shipping?.label), r.json?.shipping);
+  r = await order2({ items: [CK('anpanman', 6), { type: 'product', productId: 'canele-original', qty: 1 }] }, ALICE);
+  ok('cookies + canelé: frozen and cookie parcels charged separately', r.status === 200 && r.json?.shipping?.fee === 175 + 130 && r.json?.shipping?.parts.map((x) => x.kind).join() === 'frozen,cookie', r.json?.shipping);
+  r = await putSettings({ cookie: { minPieces: 1, shipping: { label: 'X', tiers: [{ upTo: 9, fee: 120 }, { upTo: 999, fee: 180 }] }, series: SER.map((x) => ({ ...x, active: true })) } });
+  r = await order2({ items: [CK('rattle', 1)] }, ALICE); ok('owner changes minimum to 1 and tiers → applied', r.status === 200 && r.json?.shipping?.fee === 120, r.json?.shipping);
+  r = await order2({ items: [CK('rattle', 10)] }, ALICE); ok('10 pieces → new top tier $180', r.status === 200 && r.json?.shipping?.fee === 180, r.json?.shipping);
+  r = await putSettings({ cookie: { ...COOKIE, shipping: { label: 'X', tiers: [] } } }); ok('cookie shipping needs at least one tier', r.status === 400, r.status);
+  r = await putSettings({ cookie: { ...COOKIE, series: [...SER, { ...SER[0] }] } }); ok('duplicate series id refused', r.status === 400, r.status);
+  r = await putSettings({ cookie: { ...COOKIE, series: [...SER, { id: 'x2', name: '' }] } }); ok('series without a name refused', r.status === 400, r.status);
+  r = await putSettings({ cookie: { ...COOKIE, series: [...SER.map((x) => ({ ...x, active: true })), { id: 'Bday 01!', name: '慶生系列', lines: ['a', 'b', 'c', 'd'], groups: ['birthday', 'evil'], active: true }] } });
+  const nb = r.json?.settings?.cookie?.series?.find((x) => x.name === '慶生系列');
+  ok('new series: id cleaned, at most 3 lines, unknown home card dropped', r.status === 200 && nb?.id === 'bday01' && nb.lines.length === 3 && nb.groups.join() === 'birthday', nb);
+  r = await call('/admin/products/cookie-qa-x', { method: 'PUT', user: ADMIN, body: { category: 'cookie', series: 'nope', name: 'QA', price: 100 } }); ok('cookie piece must belong to an existing series', r.status === 400, r.text);
+  r = await call('/admin/products/cookie-qa-x', { method: 'PUT', user: ADMIN, body: { category: 'cookie', series: 'bday01', name: 'QA 蛋糕', price: 300, textLabel: '名字', textMax: 99, active: true } });
+  ok('new cookie piece: unit 片, text limit capped at 40', r.status === 200 && r.json.product.unit === '片' && r.json.product.textMax === 40 && r.json.product.series === 'bday01', r.json?.product);
+  r = await call('/catalog'); ok('the new birthday series and its piece show for guests', r.json.settings.cookie.series.some((x) => x.id === 'bday01') && r.json.products.some((p) => p.id === 'cookie-qa-x'), r.json.settings.cookie.series.map((x) => x.id));
+  await call('/admin/products/cookie-qa-x', { method: 'DELETE', user: ADMIN });
+  r = await putSettings({ cookie: { ...COOKIE, series: SER } }); r = await call('/catalog');
+  ok('series hidden again → gone from the shop, old carts can no longer order it', !r.json.products.some((p) => p.category === 'cookie') && r.json.settings.cookie.series.length === 0, r.json.settings.cookie);
+  await bad('ordering a hidden series is refused', { items: [CK('anpanman', 6)] }, /無法訂購/);
+}
+
 section('dates: 公休 / 不接單 / 每日上限');
 const D = ymd(12);
 await putSettings({ blockedDates: [D] }); await bad('blocked date rejected', { date: D }, /不接單/);

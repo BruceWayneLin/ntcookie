@@ -90,6 +90,12 @@ const DEFAULT_SETTINGS = {
       { id: '6x1', flavors: 6, each: 1, minBoxes: 6 },
     ],
   },
+  // 造型餅乾：依系列單片選購；最少片數、運費級距、系列都由店家在後台設定
+  cookie: {
+    minPieces: 6,
+    shipping: { label: '黑貓宅配（造型餅乾）', tiers: [{ upTo: 8, fee: 130 }, { upTo: 999, fee: 170 }] },
+    series: [], // { id, name, lines: [說明], photo, groups: ['character'|'birthday'], active, sort }
+  },
   notice: '',
   pauseOrders: true, // 暫停接單：客人只能看、不能下單（管理員照樣能測）
   testMode: true, // 測試模式：只有管理員能線上結帳；客人看到「用 LINE 傳訂單給店家」
@@ -101,6 +107,7 @@ async function getSettings() {
   if (s) {
     return {
       ...DEFAULT_SETTINGS, ...s, canele: { ...DEFAULT_SETTINGS.canele, ...(s.canele || {}) },
+      cookie: { ...DEFAULT_SETTINGS.cookie, ...(s.cookie || {}), shipping: { ...DEFAULT_SETTINGS.cookie.shipping, ...(s.cookie?.shipping || {}) } },
       shipping: { frozen: { ...DEFAULT_SETTINGS.shipping.frozen, ...(s.shipping?.frozen || {}) }, ambient: { ...DEFAULT_SETTINGS.shipping.ambient, ...(s.shipping?.ambient || {}) } },
     };
   }
@@ -109,6 +116,8 @@ async function getSettings() {
   return (await get('SETTINGS', 'main')) || fresh;
 }
 
+// 造型餅乾系列：客人只看得到「上架」的；管理員也看得到還沒上架的（可以先預覽、下測試單）
+const cookieSeries = (s, admin = false) => [...(s.cookie?.series || [])].filter((x) => x.active || admin).sort((a, b) => (a.sort ?? 999) - (b.sort ?? 999));
 const linepayReady = () => !!(env.LINEPAY_CHANNEL_ID && env.LINEPAY_CHANNEL_SECRET);
 const ecpayReady = () => !!(env.ECPAY_MERCHANT_ID && env.ECPAY_HASH_KEY && env.ECPAY_HASH_IV);
 
@@ -129,11 +138,12 @@ function publicSettings(s, admin = false) {
       transfer: !!(open && s.payments?.transfer && bankReady),
     },
     canele: s.canele, notice: s.notice, today: twDate(),
+    cookie: { minPieces: s.cookie.minPieces, shipping: s.cookie.shipping, series: cookieSeries(s, admin) },
     preview: admin ? { closed: !!s.pauseOrders, testMode: !!s.testMode } : undefined, // 店家登入時：客人實際看到的狀態
   };
 }
 
-const PRODUCT_FIELDS = ['id', 'category', 'name', 'price', 'unit', 'photo', 'card', 'cardName', 'cardPrice', 'cardKind', 'icon', 'desc', 'active', 'soldOut', 'sort'];
+const PRODUCT_FIELDS = ['id', 'category', 'name', 'price', 'unit', 'photo', 'card', 'cardName', 'cardPrice', 'cardKind', 'icon', 'desc', 'active', 'soldOut', 'sort', 'series', 'textLabel', 'textMax'];
 const pick = (o, keys) => Object.fromEntries(keys.filter((k) => o[k] !== undefined).map((k) => [k, o[k]]));
 const listProducts = async () => (await queryAll({ KeyConditionExpression: 'pk = :p', ExpressionAttributeValues: { ':p': 'PRODUCT' } }))
   .map((p) => pick(p, PRODUCT_FIELDS)).sort((a, b) => (a.sort ?? 999) - (b.sort ?? 999) || a.id.localeCompare(b.id));
@@ -220,7 +230,7 @@ async function requireAdmin(event) {
 }
 
 // ---------------------------------------------------------------- pricing
-const TEMP = { canele: 'frozen', meringue: 'ambient' };
+const TEMP = { canele: 'frozen', meringue: 'ambient', cookie: 'cookie' };
 // keep in sync with NTC.shipping in js/app.js
 function calcShipping(lines, subtotal, settings) {
   const sh = settings.shipping; const parts = [];
@@ -234,12 +244,18 @@ function calcShipping(lines, subtotal, settings) {
     parts.push({ kind: 'frozen', label: sh.frozen.label, units: boxes, parcels, fee });
   }
   const jars = lines.filter((l) => l.temp === 'ambient').reduce((a, l) => a + l.qty, 0);
-  if (jars) parts.push({ kind: 'ambient', label: sh.ambient.label, units: jars, parcels: 1, fee: int(sh.ambient.fee) });
+  const pieces = lines.filter((l) => l.temp === 'cookie').reduce((a, l) => a + l.qty, 0);
+  if (pieces) { // 造型餅乾：依片數級距；同一單的馬林糖跟餅乾裝同一箱常溫寄（運費取兩者較高的）
+    const cs = settings.cookie?.shipping || DEFAULT_SETTINGS.cookie.shipping;
+    const tiers = [...(cs.tiers || [])].map((t) => ({ upTo: int(t.upTo), fee: int(t.fee) })).filter((t) => t.upTo > 0).sort((a, b) => a.upTo - b.upTo);
+    const fee = (tiers.find((t) => pieces <= t.upTo) || tiers[tiers.length - 1] || { fee: 0 }).fee;
+    parts.push(jars ? { kind: 'cookie', label: `${cs.label}（含馬林糖）`, units: pieces, parcels: 1, fee: Math.max(fee, int(sh.ambient.fee)) } : { kind: 'cookie', label: cs.label, units: pieces, parcels: 1, fee });
+  } else if (jars) parts.push({ kind: 'ambient', label: sh.ambient.label, units: jars, parcels: 1, fee: int(sh.ambient.fee) });
   const freeOver = int(settings.freeShippingOver);
   if (freeOver > 0 && subtotal >= freeOver) parts.forEach((p) => { p.fee = 0; });
   return { label: parts.map((p) => p.label + (p.parcels > 1 ? `（${p.parcels} 件）` : '')).join('＋'), fee: parts.reduce((a, p) => a + p.fee, 0), parts };
 }
-function priceOrder(reqItems, products, settings) {
+function priceOrder(reqItems, products, settings, { admin = false } = {}) {
   const byId = new Map(products.map((p) => [p.id, p]));
   const usable = (p) => p && p.active && !p.soldOut;
   if (!Array.isArray(reqItems) || !reqItems.length) throw bad('購物車是空的');
@@ -251,7 +267,17 @@ function priceOrder(reqItems, products, settings) {
     if (it.type === 'product') {
       const p = byId.get(it.productId);
       if (!usable(p)) throw bad(`「${p?.name || '商品'}」目前無法訂購，請從購物車移除`);
-      if (p.category === 'canele') {
+      if (p.category === 'cookie') {
+        const se = cookieSeries(settings, admin).find((x) => x.id === p.series);
+        if (!se) throw bad(`「${p.name}」目前無法訂購，請從購物車移除`);
+        let text = '';
+        if (p.textLabel) {
+          text = String(it.text ?? '').trim().replace(/\s+/g, ' ');
+          if (!text) throw bad(`「${p.name}」請填寫${p.textLabel}`);
+          if ([...text].length > int(p.textMax, 12)) throw bad(`「${p.name}」的${p.textLabel}最多 ${int(p.textMax, 12)} 個字`);
+        }
+        lines.push({ type: 'product', productId: p.id, name: p.name, detail: se.name + (text ? `｜${p.textLabel}：${text}` : ''), text: text || undefined, unit: p.unit || '片', price: int(p.price), qty, temp: 'cookie' });
+      } else if (p.category === 'canele') {
         const min = int(settings.canele?.singleMinBoxes, 1);
         if (qty < min) throw bad(`單一口味禮盒 ${min} 盒起訂`);
         lines.push({ type: 'product', productId: p.id, name: `${p.name}・單一口味禮盒`, detail: '每盒 6 顆・皆為相同口味', unit: '盒', price: int(p.price), qty, temp: 'frozen' });
@@ -273,6 +299,9 @@ function priceOrder(reqItems, products, settings) {
       });
     } else throw bad('購物車資料不正確');
   }
+  const pieces = lines.filter((l) => l.temp === 'cookie').reduce((a, l) => a + l.qty, 0);
+  const minPieces = int(settings.cookie?.minPieces, 1);
+  if (pieces && pieces < minPieces) throw bad(`造型餅乾 ${minPieces} 片起訂（目前 ${pieces} 片），可以跨系列搭配`);
   for (const l of lines) l.subtotal = l.price * l.qty;
   const subtotal = lines.reduce((a, l) => a + l.subtotal, 0);
   const shipping = calcShipping(lines, subtotal, settings);
@@ -443,7 +472,7 @@ async function lineWebhook(event) {
 }
 
 function orderSummaryText(o) {
-  const items = o.lines.map((l) => `・${l.name} ×${l.qty}${l.detail && l.type === 'canele-assorted' ? `（${l.detail}）` : ''}`).join('\n');
+  const items = o.lines.map((l) => `・${l.name} ×${l.qty}${l.detail && (l.type === 'canele-assorted' || l.temp === 'cookie') ? `（${l.detail}）` : ''}`).join('\n');
   return `🧾 新訂單 ${o.orderNo}\n${items}\n合計 $${o.total}（含運 $${o.shipping.fee}）\n${o.date}｜${o.contact.name} ${o.contact.phone}\n付款：${PAY_LABEL[o.payment.method]}${o.note ? `\n備註：${o.note}` : ''}`;
 }
 
@@ -452,7 +481,7 @@ async function createOrder(event) {
   const viewer = await getUser(event).catch(() => null);
   const user = viewer && !viewer.shopAdmin ? viewer : null; // the LINE member this order belongs to (none for guests / 店家密碼)
   const [settings, products] = await Promise.all([getSettings(), listProducts()]);
-  const priced = priceOrder(b.items, products, settings);
+  const priced = priceOrder(b.items, products, settings, { admin: isAdminOf(settings, viewer) });
   await checkDate(b.date, settings);
   const contact = { name: str(b.contact?.name, 40), phone: str(b.contact?.phone, 20), address: str(b.contact?.address, 160) };
   if (!contact.name) throw bad('請填收件人姓名');
@@ -683,9 +712,10 @@ async function route(event) {
     if (method === 'POST' && path === '/line/webhook') return await lineWebhook(event);
     if (method === 'GET' && path === '/catalog') {
       const [settings, products, viewer] = await Promise.all([getSettings(), listProducts(), getUser(event).catch(() => null)]);
+      const admin = isAdminOf(settings, viewer); const seriesIds = new Set(cookieSeries(settings, admin).map((x) => x.id));
       return json(200, {
-        products: products.filter((p) => p.active),
-        settings: publicSettings(settings, isAdminOf(settings, viewer)),
+        products: products.filter((p) => p.active && (p.category !== 'cookie' || seriesIds.has(p.series))),
+        settings: publicSettings(settings, admin),
         fullDates: await fullDates(settings),
       }, { 'cache-control': 'no-cache' });
     }
@@ -909,7 +939,12 @@ async function route(event) {
         if (!id) throw bad('商品代號不正確');
         const old = (await get('PRODUCT', id)) || {};
         const p = { ...old, ...pick(b, PRODUCT_FIELDS), pk: 'PRODUCT', sk: id, id };
-        if (!['canele', 'meringue'].includes(p.category)) throw bad('分類不正確');
+        if (!['canele', 'meringue', 'cookie'].includes(p.category)) throw bad('分類不正確');
+        if (p.category === 'cookie') {
+          if (!(settings.cookie?.series || []).some((x) => x.id === p.series)) throw bad('請選擇這片餅乾屬於哪個系列');
+          p.textLabel = str(p.textLabel, 30) || undefined; p.textMax = p.textLabel ? Math.min(40, Math.max(1, int(p.textMax, 12))) : undefined;
+          p.unit = str(p.unit, 4) || '片';
+        } else { delete p.series; delete p.textLabel; delete p.textMax; }
         p.name = str(p.name, 40); if (!p.name) throw bad('請填商品名稱');
         p.price = int(p.price); if (!(p.price > 0)) throw bad('請填價格');
         p.active = !!p.active; p.soldOut = !!p.soldOut; p.sort = int(p.sort, 999);
@@ -924,7 +959,7 @@ async function route(event) {
       }
       if (method === 'PUT' && path === '/admin/settings') {
         const b = parseBody(event);
-        const keys = ['leadDays', 'maxDays', 'maxOrdersPerDay', 'closedWeekdays', 'blockedDates', 'dateLabel', 'dateNote', 'shipping', 'freeShippingOver', 'payments', 'bank', 'transferDays', 'canele', 'notice', 'testMode', 'pauseOrders'];
+        const keys = ['leadDays', 'maxDays', 'maxOrdersPerDay', 'closedWeekdays', 'blockedDates', 'dateLabel', 'dateNote', 'shipping', 'freeShippingOver', 'payments', 'bank', 'transferDays', 'canele', 'notice', 'testMode', 'pauseOrders', 'cookie'];
         const next = { ...settings, ...pick(b, keys), pk: 'SETTINGS', sk: 'main' };
         if (b.shipping) {
           const f = b.shipping.frozen || {}; const a = b.shipping.ambient || {};
@@ -934,6 +969,20 @@ async function route(event) {
             frozen: { label: str(f.label, 30) || DEFAULT_SETTINGS.shipping.frozen.label, tiers, maxPerParcel: Math.max(1, int(f.maxPerParcel) || tiers[tiers.length - 1].upTo) },
             ambient: { label: str(a.label, 30) || DEFAULT_SETTINGS.shipping.ambient.label, fee: Math.max(0, int(a.fee)) },
           };
+        }
+        if (b.cookie) {
+          const c = b.cookie; const cs = c.shipping || settings.cookie.shipping;
+          const tiers = (Array.isArray(cs.tiers) ? cs.tiers : []).map((t) => ({ upTo: int(t.upTo), fee: Math.max(0, int(t.fee)) })).filter((t) => t.upTo > 0).sort((x, y) => x.upTo - y.upTo);
+          if (!tiers.length) throw bad('餅乾運費至少要有一個級距');
+          const ids = new Set();
+          const series = (Array.isArray(c.series) ? c.series : settings.cookie.series).slice(0, 40).map((x, i) => ({
+            id: str(x.id, 30).toLowerCase().replace(/[^a-z0-9-]/g, ''), name: str(x.name, 30),
+            lines: (Array.isArray(x.lines) ? x.lines : []).map((l) => str(l, 40)).filter(Boolean).slice(0, 3),
+            photo: str(x.photo, 300), groups: (Array.isArray(x.groups) ? x.groups : []).filter((g) => ['character', 'birthday'].includes(g)),
+            active: !!x.active, sort: int(x.sort, (i + 1) * 10),
+          }));
+          for (const x of series) { if (!x.id || !x.name) throw bad('每個系列都要有名稱'); if (ids.has(x.id)) throw bad('系列代號重複'); ids.add(x.id); }
+          next.cookie = { minPieces: Math.min(200, Math.max(1, int(c.minPieces ?? settings.cookie.minPieces, 1))), shipping: { label: str(cs.label, 30) || DEFAULT_SETTINGS.cookie.shipping.label, tiers }, series };
         }
         let token;
         if (b.newAdminPass !== undefined && env.ALLOW_PASSCODE !== '1') throw bad('後台只能用 LINE 帳號登入，沒有店家密碼');

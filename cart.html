@@ -9,7 +9,7 @@
 <link rel="icon" href="assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css?v=1119a">
+<link rel="stylesheet" href="css/app.css?v=1119b">
 </head>
 <body>
 <header class="topbar">
@@ -19,9 +19,9 @@
 </header>
 <main class="wrap" id="app"><div class="spinner"></div></main>
 
-<script src="js/config.js?v=1119a"></script>
-<script src="js/app.js?v=1119a"></script>
-<script src="js/shop.js?v=1119a"></script>
+<script src="js/config.js?v=1119b"></script>
+<script src="js/app.js?v=1119b"></script>
+<script src="js/shop.js?v=1119b"></script>
 <script>
 (async function () {
   const { $, esc, money, asset } = NTC;
@@ -61,9 +61,10 @@
     const pc = NTC.priceCart(items, cat);
     const fee = pc.shipping.fee; const total = pc.total;
     const frozen = pc.shipping.parts.find((x) => x.kind === 'frozen'); const ambient = pc.shipping.parts.find((x) => x.kind === 'ambient');
-    const shipRows = pc.shipping.parts.map((x) => `<div class="row"><span>${x.kind === 'frozen' ? '❄️ ' : ''}${esc(x.label)}${x.kind === 'frozen' ? `（${x.units} 盒${x.parcels > 1 ? `・${x.parcels} 件包裹` : ''}）` : ''}</span><span class="sp"></span><span>${x.fee ? money(x.fee) : '免運'}</span></div>`).join('');
+    const shipRows = pc.shipping.parts.map((x) => `<div class="row"><span>${x.kind === 'frozen' ? '❄️ ' : x.kind === 'cookie' ? '🍪 ' : ''}${esc(x.label)}${x.kind === 'frozen' ? `（${x.units} 盒${x.parcels > 1 ? `・${x.parcels} 件包裹` : ''}）` : x.kind === 'cookie' ? `（${x.units} 片）` : ''}</span><span class="sp"></span><span>${x.fee ? money(x.fee) : '免運'}</span></div>`).join('');
     const shipNote = [frozen ? `可麗露皆採冷凍宅配寄送${frozen.parcels > 1 ? `；單件包裹最多 ${frozen.max} 盒，這張訂單會拆成 ${frozen.parcels} 件寄出，運費依各件盒數計算` : ''}。` : '',
-      frozen && ambient ? '馬林糖一口酥為常溫，會和冷凍的可麗露分開寄送。' : ''].filter(Boolean).join('');
+      frozen && ambient ? '馬林糖一口酥為常溫，會和冷凍的可麗露分開寄送。' : '',
+      frozen && pc.shipping.parts.some((x) => x.kind === 'cookie') ? '造型餅乾為常溫寄送，會和冷凍的可麗露分開寄出。' : ''].filter(Boolean).join('');
     const dateOk = NTC.dateRules(S, cat.fullDates).ok(form.date);
     // the cart list (quantities, remove) is the same whether or not the shop is taking orders
     const cartPanel = (numbered) => `<section class="panel"><h2>${numbered ? '<span class="n">1</span>' : ''}購物車</h2>
@@ -75,7 +76,7 @@
               ${l.error ? `<p class="err">${esc(l.error)}</p>` : ''}
               <button class="rm" type="button">移除</button></div>
           </div>`).join('')}</div>
-        <div class="row" style="margin-top:6px;gap:8px"><a class="btn small ghost" href="canele.html">＋ 可麗露</a><a class="btn small ghost" href="meringue.html">＋ 馬林糖</a></div>
+        <div class="row" style="margin-top:6px;gap:8px"><a class="btn small ghost" href="canele.html">＋ 可麗露</a><a class="btn small ghost" href="meringue.html">＋ 馬林糖</a><a class="btn small ghost" href="cookies.html?g=character">＋ 造型餅乾</a></div>
       </section>`;
     const wireLines = () => app.querySelectorAll('.line-item').forEach((row) => {
       const i = +row.dataset.i; const l = pc.lines.find((x) => x.idx === i);
@@ -168,7 +169,7 @@
     keep();
     const err = checkForm(pc); if (err) return fail(err);
     persist();
-    const text = ['您好，我想訂購：', ...pc.lines.map((l) => `・${l.name} ×${l.qty}${l.it.type === 'canele-assorted' ? `（${l.detail}）` : ''}　${money(l.subtotal)}`),
+    const text = ['您好，我想訂購：', ...pc.lines.map((l) => `・${l.name} ×${l.qty}${l.it.type === 'canele-assorted' || l.temp === 'cookie' ? `（${l.detail}）` : ''}　${money(l.subtotal)}`),
       `運費 ${fee ? money(fee) : '免運'}／合計 ${money(total)}`, `${S.dateLabel || '日期'}：${NTC.fmtDate(form.date)}`,
       `收件人：${form.contact.name} ${form.contact.phone}`, `地址：${form.contact.address}`, form.note ? `備註：${form.note}` : ''].filter(Boolean).join('\n');
     if (NTC.inLine() && window.liff.sendMessages) {

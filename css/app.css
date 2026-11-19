@@ -253,3 +253,62 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
 .loading-cover { position: fixed; inset: 0; z-index: 90; background: rgba(248, 237, 231, .8); display: none; align-items: center; justify-content: center; flex-direction: column; gap: 6px; font-weight: 700; color: var(--ink2); }
 .loading-cover.show { display: flex; }
 @media (prefers-reduced-motion: reduce) { .pcard, .sheet, .sheet-mask, .cartbar, .toast { transition: none; } }
+
+/* ---------------------------------------------------------------- 造型餅乾 cookies.html（照店主範例稿：線上購物／系列／單片選購） */
+.ck-body { background: radial-gradient(120% 60% at 50% 0, #fff4ef 0, #f8e9e2 55%, #f4dfd6 100%) fixed; }
+.ck-top { position: sticky; top: 0; z-index: 30; display: flex; align-items: center; gap: 10px; max-width: var(--page); margin: 0 auto; padding: 10px 14px;
+  background: rgba(250, 236, 229, .9); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+.ck-brand { flex: 1; text-align: center; font: 700 15px/1.2 var(--serif); letter-spacing: .04em; color: var(--ink); }
+.ck-brand i { font-style: normal; color: var(--muted); margin: 0 .3em; }
+.ck { max-width: var(--page); margin: 0 auto; padding: 4px 14px 24px; }
+.ck-has-bar .ck { padding-bottom: calc(110px + env(safe-area-inset-bottom, 0px)); }
+.ck-title { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 6px 0 8px; font: 900 32px/1.1 var(--serif); letter-spacing: .1em; color: #3a2016; }
+.ck-title svg { width: 34px; height: 34px; stroke: #3a2016; fill: none; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.ck-pill { width: max-content; max-width: 92%; margin: 0 auto 14px; padding: 7px 26px; border-radius: 999px; background: #f6cdc7; color: #3a2016;
+  font: 900 21px/1.25 var(--serif); letter-spacing: .12em; text-align: center; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .6); }
+.ck-hero { display: flex; gap: 12px; align-items: center; padding: 8px; margin-bottom: 14px; border-radius: 22px; text-decoration: none; color: inherit;
+  background: rgba(255, 250, 247, .82); box-shadow: 0 6px 18px rgba(150, 90, 70, .12), inset 0 0 0 1.5px #fff; }
+.ck-hero .ph { flex: 0 0 52%; aspect-ratio: 16 / 9.5; border-radius: 16px; overflow: hidden; background: #ecd5c8; }
+.ck-hero .ph img { width: 100%; height: 100%; object-fit: cover; }
+.ck-hero .tx { flex: 1; min-width: 0; text-align: center; }
+.ck-hero h2 { margin: 0; font: 900 clamp(19px, 5.4vw, 26px)/1.2 var(--serif); letter-spacing: .06em; color: #3a2016; }
+.ck-hero .hr { display: flex; align-items: center; gap: 6px; margin: 6px 4px 6px; color: #3a2016; font-size: 12px; }
+.ck-hero .hr::before, .ck-hero .hr::after { content: ""; flex: 1; height: 1px; background: #8a6a5c; }
+.ck-hero p { margin: 2px 0; font: 700 clamp(11.5px, 3.3vw, 14px)/1.5 var(--serif); letter-spacing: .06em; color: #3a2016; }
+.ck-hero p.from { margin-top: 6px; color: var(--red); }
+.ck-hero p.adm, .ck-adm { color: var(--warn); font: 700 12px/1.5 var(--sans); }
+.ck-adm { background: #fff6e6; border: 1px dashed #e7b66b; border-radius: 12px; padding: 8px 12px; margin: 0 0 12px; }
+.ck-list { display: grid; gap: 4px; }
+.ck-sec { display: flex; align-items: center; gap: 10px; margin: 6px 0 12px; }
+.ck-sec i { flex: 1; border-top: 2px dotted #d9b8aa; }
+.ck-sec span { padding: 6px 22px; border-radius: 999px; background: #f6cdc7; font: 900 19px/1.2 var(--serif); letter-spacing: .14em; color: #3a2016; }
+.ck-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px 8px; }
+.ck-card { grid-column: span 2; display: flex; flex-direction: column; align-items: center; padding: 0 0 9px; border-radius: 16px; overflow: hidden;
+  background: #fffaf7; box-shadow: 0 4px 12px rgba(150, 90, 70, .1), inset 0 0 0 1.5px #f3e1d8; transition: box-shadow .15s; }
+.ck-card.on { box-shadow: 0 4px 14px rgba(196, 72, 64, .22), inset 0 0 0 2.5px #e07b72; }
+.ck-card .ph { position: relative; width: 100%; aspect-ratio: 1.75; background: #f3dccf; cursor: pointer; }
+.ck-card .ph img { width: 100%; height: 100%; object-fit: contain; }
+.ck-card .nm { margin-top: 7px; padding: 0 4px; text-align: center; font: 900 clamp(13px, 3.8vw, 16px)/1.25 var(--serif); letter-spacing: .04em; color: #3a2016; }
+.ck-card .pr { margin-top: 2px; font: 900 clamp(16px, 4.6vw, 20px)/1.2 var(--serif); color: #d23f2c; }
+.ck-card .tl { margin-top: 2px; padding: 1px 8px; border-radius: 999px; background: #fde7e3; color: #b0473d; font: 700 10.5px/1.6 var(--sans); }
+.ck-card .st { margin-top: 6px; }
+.ck-card .stepper.sm button { width: 30px; height: 30px; }
+.ck-card .stepper.sm output { min-width: 22px; }
+.ck-card.so { opacity: .6; }
+.ck-card .sob { position: absolute; inset: auto 8px 8px auto; padding: 2px 10px; border-radius: 999px; background: rgba(60, 30, 20, .75); color: #fff; font: 700 12px/1.6 var(--sans); }
+.ck-note { margin: 14px 4px 0; text-align: center; font: 500 13px/1.7 var(--sans); color: var(--ink2); }
+.ck-empty { padding: 22px 18px; border-radius: 22px; background: rgba(255, 250, 247, .85); text-align: center; }
+.ck-empty p { margin: 0 0 6px; font: 900 18px/1.5 var(--serif); }
+.ck-empty .sub { font: 500 14px/1.7 var(--sans); color: var(--ink2); margin-bottom: 16px; }
+.ck-back { display: flex; margin: 16px auto 0; padding: 11px 34px; border: 0; border-radius: 999px; background: #fff3ef; color: #3a2016; cursor: pointer;
+  font: 900 17px/1.2 var(--serif); letter-spacing: .1em; box-shadow: 0 3px 10px rgba(150, 90, 70, .12), inset 0 0 0 1.5px #f3cfc6; }
+.ck-bar { position: fixed; left: 50%; bottom: 0; transform: translateX(-50%); z-index: 40; width: 100%; max-width: var(--page);
+  padding: 10px 18px calc(12px + env(safe-area-inset-bottom, 0px)); background: linear-gradient(180deg, rgba(248, 233, 226, 0), rgba(248, 233, 226, .96) 35%); }
+.ck-add { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; padding: 14px 18px; border: 0; border-radius: 999px; cursor: pointer; text-decoration: none;
+  background: linear-gradient(180deg, #e9888a, #c9565f); color: #fff; font: 900 21px/1.1 var(--serif); letter-spacing: .14em; box-shadow: 0 8px 20px rgba(185, 70, 80, .3), inset 0 1px 0 rgba(255, 255, 255, .4); }
+.ck-add svg { width: 26px; height: 26px; stroke: #fff; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+.ck-add small { font: 700 13px/1 var(--sans); letter-spacing: 0; opacity: .95; }
+.ck-add.ghost { background: #fff; color: #b44a52; box-shadow: 0 6px 16px rgba(150, 90, 70, .16), inset 0 0 0 2px #e9a2a2; }
+.ck-add.ghost svg { stroke: #b44a52; }
+.ck-add.off { background: rgba(255, 255, 255, .85); color: var(--muted); font: 700 15px/1.2 var(--sans); letter-spacing: .04em; box-shadow: inset 0 0 0 1.5px #ecd3c8; cursor: default; }
+@media (max-width: 360px) { .ck-grid { gap: 8px 6px; } .ck-card .stepper.sm button { width: 26px; } }

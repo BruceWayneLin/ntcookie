@@ -11,6 +11,6 @@ for (const pk of ['ORDER', 'COUNTER', 'DATE', 'USER', 'PRODUCT', 'IMG', 'LOGINFA
   const r = await ddb.send(new QueryCommand({ TableName: T, KeyConditionExpression: 'pk = :p', ExpressionAttributeValues: { ':p': pk }, ProjectionExpression: 'pk, sk' }));
   for (const it of r.Items || []) { await ddb.send(new DeleteCommand({ TableName: T, Key: { pk: it.pk, sk: it.sk } })); n++; }
 }
-await ddb.send(new UpdateCommand({ TableName: T, Key: { pk: 'SETTINGS', sk: 'main' }, UpdateExpression: 'SET closedWeekdays = :e, blockedDates = :e, maxOrdersPerDay = :z, admins = :adm REMOVE adminPass, sessionSecret, passVersion, adminPhones',
+await ddb.send(new UpdateCommand({ TableName: T, Key: { pk: 'SETTINGS', sk: 'main' }, UpdateExpression: 'SET closedWeekdays = :e, blockedDates = :e, maxOrdersPerDay = :z, admins = :adm REMOVE adminPass, sessionSecret, passVersion, adminPhones, cookie',
   ExpressionAttributeValues: { ':e': [], ':z': 0, ':adm': [{ sub: 'Uqa-admin', name: 'QA店長', addedAt: new Date().toISOString() }] } }));
-console.log('deleted', n, 'items — now run: node seed.mjs ' + T);
+console.log('deleted', n, 'items — now run: node seed.mjs ' + T + ' && node seed-cookies.mjs ' + T);

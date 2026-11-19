@@ -155,7 +155,7 @@
   // ---- menu sheet (☰)
   NTC.openMenu = () => {
     const links = [
-      [NTC.HOME, '首頁'], ['canele.html', 'N.T Canelé 可麗露專區'], ['meringue.html', '馬林糖一口酥'],
+      [NTC.HOME, '首頁'], ['cookies.html?g=character', '卡通・收涎造型餅乾'], ['cookies.html?g=birthday', '慶生造型餅乾'], ['canele.html', 'N.T Canelé 可麗露專區'], ['meringue.html', '馬林糖一口酥'],
       ['reserve.html', '預約／訂購（選日期）'], ['cart.html', '購物車'], ['orders.html', '我的訂單'],
     ];
     const { el } = NTC.sheet(`<h2>選單</h2><div style="margin-top:12px">${links.map(([u, t]) => `<a class="opt" href="${u}" style="text-decoration:none"><span class="t">${t}</span><span class="r">›</span></a>`).join('')}

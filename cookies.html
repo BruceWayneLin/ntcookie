@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>造型餅乾｜N.T Cookie × N.T Canelé</title>
+<meta name="description" content="N.T Cookie 手作糖霜造型餅乾：可單片選購、自由搭配。生日・收涎・派對・送禮。">
+<meta name="theme-color" content="#f8e9e2">
+<meta property="og:title" content="造型餅乾｜N.T Cookie × N.T Canelé">
+<meta property="og:image" content="https://brucewaynelin.github.io/ntcookie/assets/v2/03-homepage/category-character-cookies.png">
+<link rel="icon" href="assets/favicon.png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/app.css?v=1119b">
+</head>
+<body class="ck-body">
+<header class="ck-top">
+  <button class="circle-btn" id="back" aria-label="返回"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
+  <div class="ck-brand">N.T Cookie <i>×</i> N.T Canelé</div>
+  <a class="circle-btn" href="cart.html" aria-label="購物車"><svg viewBox="0 0 24 24"><path d="M3 4h2.2l2.1 10.2a1.6 1.6 0 0 0 1.6 1.3h8.6a1.6 1.6 0 0 0 1.6-1.2L21 8H6.2"/><circle cx="9.5" cy="19.5" r="1.4"/><circle cx="17" cy="19.5" r="1.4"/></svg><span class="badge" data-cart-count></span></a>
+</header>
+<main class="ck" id="app"><div class="spinner"></div></main>
+<div class="ck-bar" id="bar" hidden></div>
+<script src="js/config.js?v=1119b"></script>
+<script src="js/app.js?v=1119b"></script>
+<script src="js/shop.js?v=1119b"></script>
+<script>
+(function () {
+  const { $, esc, money, asset } = NTC;
+  const q = new URLSearchParams(location.search);
+  const GROUPS = { character: '卡通・收涎造型餅乾', birthday: '慶生造型餅乾' };
+  const CART = '<svg viewBox="0 0 24 24"><path d="M3 4h2.2l2.1 10.2a1.6 1.6 0 0 0 1.6 1.3h8.6a1.6 1.6 0 0 0 1.6-1.2L21 8H6.2"/><circle cx="9.5" cy="19.5" r="1.4"/><circle cx="17" cy="19.5" r="1.4"/></svg>';
+  const app = $('#app'); const bar = $('#bar');
+  $('#back').onclick = NTC.back;
+  let cat; let pick = {}; // productId -> qty chosen on this page
+
+  const head = (pill) => `<h1 class="ck-title">${CART}<span>線上購物</span></h1><div class="ck-pill">${esc(pill)}</div>`;
+  const hero = (se) => `<section class="ck-hero">
+      ${se.photo ? `<div class="ph"><img src="${esc(asset(se.photo))}" alt=""></div>` : ''}
+      <div class="tx"><h2>${esc(se.name)}</h2><div class="hr"><span>♡</span></div>${(se.lines || []).map((l) => `<p>${esc(l)}</p>`).join('')}</div></section>`;
+  const backBtn = '<button type="button" class="ck-back" id="back2">‹ 返回上一頁</button>';
+  const rules = () => {
+    const c = cat.settings.cookie; const t = [...c.shipping.tiers].sort((a, b) => a.upTo - b.upTo);
+    const from = (i) => (i ? t[i - 1].upTo + 1 : Math.max(1, c.minPieces || 1));
+    const ship = t.filter((x, i) => x.upTo >= from(i)).length === t.length ? t.map((x, i) => (i === t.length - 1 && i > 0 ? `${from(i)} 片以上 ${money(x.fee)}` : from(i) === x.upTo ? `${x.upTo} 片 ${money(x.fee)}` : `${from(i)}–${x.upTo} 片 ${money(x.fee)}`)).join('・')
+      : t.map((x, i) => `${i ? t[i - 1].upTo + 1 : 1}–${x.upTo} 片 ${money(x.fee)}`).join('・');
+    return `<p class="ck-note">造型餅乾 <b>${c.minPieces} 片起訂</b>，可跨系列搭配。<br>🍪 ${esc(c.shipping.label)}：${ship}</p>`;
+  };
+
+  function render() {
+    const series = cat.settings.cookie?.series || [];
+    const se = q.get('s') && series.find((x) => x.id === q.get('s'));
+    if (se) return renderSeries(se);
+    const g = GROUPS[q.get('g')] ? q.get('g') : 'character';
+    const list = series.filter((x) => (x.groups || []).includes(g));
+    if (list.length === 1) return renderSeries(list[0], g);
+    document.title = `${GROUPS[g]}｜N.T Cookie × N.T Canelé`;
+    if (!list.length) {
+      app.innerHTML = `${head(GROUPS[g])}<section class="ck-empty"><p>線上單片選購的系列準備中 ♡</p><p class="sub">卡通・收涎・慶生・抓週・婚禮小物都可以客製，<br>告訴我們日期、數量和想要的圖案，我們為您報價。</p>
+        <a class="btn line block" href="${NTC.chatUrl('您好，我想詢問客製造型餅乾\n使用日期：\n數量：\n圖案／參考照片：')}">LINE 詢問客製</a>
+        <a class="btn ghost block" href="https://www.instagram.com/nt.cookie/" style="margin-top:10px">看作品集（Instagram）</a></section>${backBtn}`;
+    } else {
+      app.innerHTML = `${head(GROUPS[g])}<div class="ck-list">${list.map((x) => {
+        const ps = cat.products.filter((p) => p.series === x.id); const lo = ps.length ? Math.min(...ps.map((p) => p.price)) : 0;
+        return `<a class="ck-hero link" href="cookies.html?s=${esc(x.id)}&g=${g}">${x.photo ? `<div class="ph"><img src="${esc(asset(x.photo))}" alt=""></div>` : ''}
+          <div class="tx"><h2>${esc(x.name)}</h2><div class="hr"><span>♡</span></div>${(x.lines || []).map((l) => `<p>${esc(l)}</p>`).join('')}
+          <p class="from">${ps.length} 款・單片 ${money(lo)} 起 ›</p>${x.active ? '' : '<p class="adm">未上架（只有管理員看得到）</p>'}</div></a>`;
+      }).join('')}</div>${rules()}${backBtn}`;
+    }
+    $('#back2').onclick = NTC.back; bar.hidden = true; document.body.classList.remove('ck-has-bar');
+  }
+
+  function renderSeries(se) {
+    document.title = `${se.name}｜N.T Cookie × N.T Canelé`;
+    const ps = cat.products.filter((p) => p.series === se.id);
+    const n = ps.length; const tail = n % 3;
+    app.innerHTML = `${head(se.name)}${se.active ? '' : '<div class="ck-adm">這個系列還沒上架：只有管理員看得到，客人看不到。可以先下測試單確認。</div>'}${hero(se)}
+      <div class="ck-sec"><i></i><span>單片選購</span><i></i></div>
+      <div class="ck-grid">${ps.map((p, i) => {
+        const col = tail && i >= n - tail ? (tail === 1 ? 'grid-column:3 / span 2' : `grid-column:${i === n - 2 ? 2 : 4} / span 2`) : '';
+        return `<div class="ck-card${p.soldOut ? ' so' : ''}" data-id="${esc(p.id)}" style="${col}">
+          <div class="ph">${p.photo ? `<img src="${esc(asset(p.photo))}" alt="" loading="lazy">` : ''}${p.soldOut ? '<span class="sob">售完</span>' : ''}</div>
+          <div class="nm">${esc(p.name)}</div><div class="pr">${money(p.price)}</div>
+          ${p.textLabel ? `<div class="tl">需填${esc(p.textLabel)}</div>` : ''}<div class="st"></div></div>`;
+      }).join('') || '<p class="ck-note">這個系列還沒有餅乾，敬請期待</p>'}</div>
+      ${rules()}${backBtn}`;
+    $('#back2').onclick = NTC.back;
+    app.querySelectorAll('.ck-card').forEach((c) => {
+      const p = ps.find((x) => x.id === c.dataset.id);
+      const st = NTC.stepper(c.querySelector('.st'), { value: pick[p.id] || 0, min: 0, max: p.soldOut ? 0 : 200, onChange: (v) => { pick[p.id] = v; c.classList.toggle('on', v > 0); paintBar(ps); } });
+      st.el = c.querySelector('.st'); c.querySelector('.st').classList.add('sm');
+      c.querySelector('.ph').onclick = () => { if (!p.soldOut) st.set(st.value + 1); };
+    });
+    document.body.classList.add('ck-has-bar');
+    paintBar(ps);
+  }
+
+  function paintBar(ps) {
+    const chosen = ps.filter((p) => (pick[p.id] || 0) > 0);
+    const n = chosen.reduce((a, p) => a + pick[p.id], 0); const sum = chosen.reduce((a, p) => a + pick[p.id] * p.price, 0);
+    const inCart = NTC.cart.items().reduce((a, i) => a + i.qty, 0);
+    bar.hidden = false;
+    bar.innerHTML = n
+      ? `<button type="button" class="ck-add" id="add">${CART}<span>加入購物車</span><small>${n} 片・${money(sum)}</small></button>`
+      : inCart ? `<a class="ck-add ghost" href="cart.html">${CART}<span>去購物車結帳</span><small>購物車 ${inCart} 件</small></a>`
+        : '<div class="ck-add off">請點 ＋ 選擇想要的餅乾</div>';
+    const b = $('#add'); if (b) b.onclick = () => add(chosen);
+  }
+
+  function add(chosen) {
+    const needText = chosen.filter((p) => p.textLabel);
+    const done = (texts = {}) => {
+      chosen.forEach((p) => NTC.cart.add({ type: 'product', productId: p.id, qty: pick[p.id], ...(texts[p.id] ? { text: texts[p.id] } : {}) }));
+      const n = chosen.reduce((a, p) => a + pick[p.id], 0);
+      pick = {}; render();
+      const ck = NTC.cart.items().filter((i) => cat.byId[i.productId]?.category === 'cookie').reduce((a, i) => a + i.qty, 0); const min = cat.settings.cookie.minPieces;
+      NTC.toast(ck < min ? `已加入 ${n} 片，再選 ${min - ck} 片就能結帳（${min} 片起訂）` : `已加入 ${n} 片到購物車 ♡`, 3200);
+    };
+    if (!needText.length) return done();
+    const { el, close } = NTC.sheet(`<h2>填寫餅乾上的字</h2><p class="sub">我們會照您填的內容手繪在餅乾上。每片要不同的字，請分次加入購物車。</p>
+      ${needText.map((p) => `<label class="field"><span>${esc(p.name)} × ${pick[p.id]}：${esc(p.textLabel)}（最多 ${p.textMax || 12} 字）</span>
+        <input data-id="${esc(p.id)}" maxlength="${p.textMax || 12}" placeholder="例：林羽澄 115.03.23" autocomplete="off"></label>`).join('')}
+      <button class="btn block" id="ok">加入購物車</button>`);
+    el.querySelector('input').focus();
+    el.querySelector('#ok').onclick = () => {
+      const texts = {};
+      for (const i of el.querySelectorAll('input')) {
+        const v = i.value.trim().replace(/\s+/g, ' ');
+        if (!v) { NTC.toast('請填寫餅乾上的字'); i.focus(); return; }
+        texts[i.dataset.id] = v;
+      }
+      close(); done(texts);
+    };
+  }
+
+  document.addEventListener('ntc:cart', () => { const se = app.querySelector('.ck-grid'); if (se) { const ps = cat.products.filter((p) => app.querySelector(`.ck-card[data-id="${CSS.escape(p.id)}"]`)); paintBar(ps); } });
+  NTC.refreshCart();
+  NTC.catalog().then((c) => { cat = c; render(); }).catch((e) => { app.innerHTML = `<p class="ck-note">${esc(e.message)}</p>`; });
+})();
+</script>
+</body>
+</html>

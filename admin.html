@@ -9,7 +9,7 @@
 <link rel="icon" href="assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css?v=1119a">
+<link rel="stylesheet" href="css/app.css?v=1119b">
 <style>
   :root { --page: 760px; }
   .tabs { position: sticky; top: 63px; z-index: 20; display: flex; gap: 6px; max-width: var(--page); margin: 0 auto; padding: 8px 14px; background: rgba(248, 237, 231, .96); }
@@ -61,8 +61,8 @@
 <div class="shopbar" id="shopbar" hidden></div>
 <main class="wrap" id="app"><div class="spinner"></div></main>
 <p class="note" id="ver" style="text-align:center;margin:0 0 24px;color:var(--muted)"></p>
-<script src="js/config.js?v=1119a"></script>
-<script src="js/app.js?v=1119a"></script>
+<script src="js/config.js?v=1119b"></script>
+<script src="js/app.js?v=1119b"></script>
 <script>
 (async function () {
   const { $, esc, money, asset } = NTC;
@@ -178,7 +178,7 @@
   async function loadSettings() { const r = await NTC.api('/admin/settings'); settings = r.settings; ready = r.ready; }
   async function show() {
     if (tab === 'orders') return renderOrders();
-    if (tab === 'products') { if (!products.length) { app.innerHTML = '<div class="spinner"></div>'; products = (await NTC.api('/admin/products')).products; } return renderProducts(); }
+    if (tab === 'products') { if (!products.length || !settings) { app.innerHTML = '<div class="spinner"></div>'; if (!products.length) products = (await NTC.api('/admin/products')).products; if (!settings) await loadSettings(); } return renderProducts(); }
     if (!settings) { app.innerHTML = '<div class="spinner"></div>'; await loadSettings(); }
     renderSettings();
   }
@@ -274,6 +274,66 @@
 
   // ================= 商品 =================
   const CATS = { canele: 'N.T Canelé 可麗露（單一口味禮盒價格）', meringue: '馬林糖一口酥' };
+  const GROUP_NAMES = { character: '卡通・收涎', birthday: '慶生' };
+  const prodRow = (p) => `<div class="prod" data-id="${esc(p.id)}">
+        <img src="${esc(asset(p.photo || p.card))}" alt=""><div class="i"><b>${esc(p.name)}</b><span>${money(p.price)} / ${esc(p.unit || '')}${p.textLabel ? `・填字：${esc(p.textLabel)}` : ''}</span></div>
+        <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
+          <label class="tg">上架<input type="checkbox" data-k="active" ${p.active ? 'checked' : ''}></label>
+          <label class="tg red">售完<input type="checkbox" data-k="soldOut" ${p.soldOut ? 'checked' : ''}></label></div>
+        <button class="btn ghost small edit">編輯</button></div>`;
+  function cookiePanels() {
+    const series = [...(settings?.cookie?.series || [])].sort((a, b) => (a.sort ?? 999) - (b.sort ?? 999));
+    const orphans = products.filter((p) => p.category === 'cookie' && !series.some((x) => x.id === p.series));
+    return `<section class="panel"><h2>造型餅乾・系列</h2>
+        <p class="note" style="margin:0 0 10px">一個系列＝一頁（例如「麵包超人系列」）。系列「上架」關掉時，客人看不到整頁；管理員看得到，可以先預覽、下測試單。</p>
+        ${series.map((x) => `<div class="prod" data-sid="${esc(x.id)}"><img src="${esc(asset(x.photo || 'assets/favicon.png'))}" alt="">
+          <div class="i"><b>${esc(x.name)}</b><span>${products.filter((p) => p.series === x.id).length} 款・首頁：${(x.groups || []).map((g) => GROUP_NAMES[g]).join('、') || '（沒放）'}</span></div>
+          <label class="tg">上架<input type="checkbox" class="s-on" ${x.active ? 'checked' : ''}></label>
+          <button class="btn ghost small s-edit">編輯</button></div>`).join('') || '<p class="note">還沒有系列</p>'}
+        <button class="btn ghost small" id="s-new" style="margin-top:10px">＋ 新增系列</button></section>
+      ${series.map((x) => `<section class="panel"><h2>造型餅乾・${esc(x.name)}${x.active ? '' : ' <span class="flag">未上架</span>'}</h2>
+        ${products.filter((p) => p.category === 'cookie' && p.series === x.id).map(prodRow).join('') || '<p class="note">還沒有餅乾</p>'}
+        <button class="btn ghost small add" data-c="cookie" data-s="${esc(x.id)}" style="margin-top:10px">＋ 新增餅乾</button>
+        <a class="btn ghost small" href="cookies.html?s=${esc(x.id)}" target="_blank" style="margin:10px 0 0 6px">看這一頁 ›</a></section>`).join('')}
+      ${orphans.length ? `<section class="panel"><h2>造型餅乾・（系列已刪除）</h2><p class="note" style="margin:0 0 8px">這些餅乾的系列被刪掉了，客人看不到。編輯後選一個系列就會回來。</p>${orphans.map(prodRow).join('')}</section>` : ''}`;
+  }
+  function editSeries(x) {
+    const isNew = !x;
+    x = x || { id: '', name: '', lines: ['可單片選購・自由搭配', '生日・收涎・派對・送禮'], photo: '', groups: ['character'], active: false, sort: 100 };
+    const { el, close } = NTC.sheet(`<h2>${isNew ? '新增' : '編輯'}・餅乾系列</h2>
+      <div class="row" style="margin:6px 0 12px"><img id="x-img" src="${esc(asset(x.photo || 'assets/favicon.png'))}" style="width:150px;height:90px;border-radius:12px;object-fit:cover" alt="">
+        <label class="btn ghost small">換頁首照片<input type="file" accept="image/*" id="x-file" hidden></label></div>
+      <label class="field"><span>系列名稱</span><input id="x-name" value="${esc(x.name)}" maxlength="30" placeholder="例如：麵包超人系列"></label>
+      <label class="field"><span>說明第一行</span><input id="x-l1" value="${esc(x.lines?.[0] || '')}" maxlength="40"></label>
+      <label class="field"><span>說明第二行</span><input id="x-l2" value="${esc(x.lines?.[1] || '')}" maxlength="40"></label>
+      <p style="font-weight:700;margin:4px 0 6px;font-size:13px;color:var(--ink2)">放在首頁哪張卡（可以兩張都放）</p>
+      <div class="row" style="gap:16px;margin-bottom:12px">${Object.entries(GROUP_NAMES).map(([g, t]) => `<label class="tg">${t}造型餅乾<input type="checkbox" class="x-g" data-g="${g}" ${(x.groups || []).includes(g) ? 'checked' : ''}></label>`).join('')}</div>
+      <div class="grid2"><label class="field"><span>排序（小的在前）</span><input id="x-sort" type="number" value="${esc(x.sort ?? 100)}"></label>
+        <label class="tg" style="align-self:center">上架<input type="checkbox" id="x-on" ${x.active ? 'checked' : ''}></label></div>
+      <button class="btn block" id="x-save">儲存</button>
+      ${isNew ? '' : '<button class="btn ghost block" id="x-del" style="margin-top:10px;color:var(--red)">刪除這個系列</button>'}`);
+    let photo = x.photo;
+    el.querySelector('#x-file').onchange = async (e) => {
+      const f = e.target.files[0]; if (!f) return;
+      NTC.loading(true, '上傳照片…');
+      try { const dataUrl = await shrink(f); el.querySelector('#x-img').src = dataUrl; photo = (await NTC.api('/admin/images', { method: 'POST', body: { dataUrl } })).url; NTC.toast('照片已上傳'); }
+      catch (err) { NTC.toast(err.message); } finally { NTC.loading(false); }
+    };
+    const save = async (list, msg) => {
+      NTC.loading(true, '儲存中…');
+      try { settings = (await NTC.api('/admin/settings', { method: 'PUT', body: { cookie: { ...settings.cookie, series: list } } })).settings; close(); renderProducts(); NTC.toast(msg); }
+      catch (e) { NTC.toast(e.message, 3500); } finally { NTC.loading(false); }
+    };
+    el.querySelector('#x-save').onclick = () => {
+      const name = el.querySelector('#x-name').value.trim(); if (!name) return NTC.toast('請填系列名稱');
+      const next = { ...x, id: x.id || `s${Date.now().toString(36)}`, name, photo, lines: [el.querySelector('#x-l1').value.trim(), el.querySelector('#x-l2').value.trim()].filter(Boolean),
+        groups: [...el.querySelectorAll('.x-g')].filter((i) => i.checked).map((i) => i.dataset.g), sort: +el.querySelector('#x-sort').value, active: el.querySelector('#x-on').checked };
+      const list = settings.cookie.series || [];
+      save(isNew ? [...list, next] : list.map((y) => (y.id === x.id ? next : y)), '已儲存');
+    };
+    const d = el.querySelector('#x-del');
+    if (d) d.onclick = () => { if (confirm(`確定刪除「${x.name}」系列？裡面的餅乾會一起從前台消失（資料還在，之後可以改到別的系列）。只想暫時不賣的話，關掉「上架」就好。`)) save(settings.cookie.series.filter((y) => y.id !== x.id), '已刪除系列'); };
+  }
   function renderProducts() {
     app.innerHTML = Object.entries(CATS).map(([c, t]) => `<section class="panel"><h2>${t}</h2>
       ${products.filter((p) => p.category === c).map((p) => `<div class="prod" data-id="${esc(p.id)}">
@@ -283,14 +343,22 @@
           <label class="tg red">售完<input type="checkbox" data-k="soldOut" ${p.soldOut ? 'checked' : ''}></label></div>
         <button class="btn ghost small edit">編輯</button></div>`).join('')}
       <button class="btn ghost small add" data-c="${c}" style="margin-top:10px">＋ 新增${c === 'canele' ? '口味' : '商品'}</button></section>`).join('')
-      + '<p class="note">「上架」關掉＝客人看不到；「售完」打開＝看得到但不能買。改名字或價格後，那張卡會改用文字顯示（設計圖上的字是印在圖裡的）。</p>';
-    app.querySelectorAll('.prod input').forEach((i) => (i.onchange = async () => {
+      + cookiePanels()
+      + '<p class="note">「上架」關掉＝客人看不到；「售完」打開＝看得到但不能買。可麗露／馬林糖改名字或價格後，那張卡會改用文字顯示（設計圖上的字是印在圖裡的）。</p>';
+    app.querySelectorAll('.s-on').forEach((i) => (i.onchange = async () => {
+      const id = i.closest('[data-sid]').dataset.sid;
+      try { settings = (await NTC.api('/admin/settings', { method: 'PUT', body: { cookie: { ...settings.cookie, series: settings.cookie.series.map((y) => (y.id === id ? { ...y, active: i.checked } : y)) } } })).settings; renderProducts(); NTC.toast(i.checked ? '系列已上架，客人看得到了' : '系列已下架'); }
+      catch (e) { i.checked = !i.checked; NTC.toast(e.message); }
+    }));
+    app.querySelectorAll('.s-edit').forEach((b) => (b.onclick = () => editSeries(settings.cookie.series.find((y) => y.id === b.closest('[data-sid]').dataset.sid))));
+    const sn = $('#s-new'); if (sn) sn.onclick = () => editSeries(null);
+    app.querySelectorAll('.prod[data-id] input').forEach((i) => (i.onchange = async () => {
       const p = products.find((x) => x.id === i.closest('.prod').dataset.id);
       try { const r = await NTC.api(`/admin/products/${p.id}`, { method: 'PUT', body: { ...p, [i.dataset.k]: i.checked } }); Object.assign(p, r.product); NTC.toast(`${p.name}：${i.dataset.k === 'active' ? (p.active ? '已上架' : '已下架') : (p.soldOut ? '標示售完' : '恢復販售')}`); }
       catch (e) { i.checked = !i.checked; NTC.toast(e.message); }
     }));
     app.querySelectorAll('.edit').forEach((b) => (b.onclick = () => editProduct(products.find((x) => x.id === b.closest('.prod').dataset.id))));
-    app.querySelectorAll('.add').forEach((b) => (b.onclick = () => editProduct({ category: b.dataset.c, unit: b.dataset.c === 'canele' ? '盒' : '罐', active: false, soldOut: false, sort: 100, isNew: true })));
+    app.querySelectorAll('.add').forEach((b) => (b.onclick = () => editProduct({ category: b.dataset.c, series: b.dataset.s, unit: b.dataset.c === 'canele' ? '盒' : b.dataset.c === 'cookie' ? '片' : '罐', active: true, soldOut: false, sort: 100, isNew: true })));
   }
   async function shrink(file) {
     const img = await new Promise((ok, ko) => { const i = new Image(); i.onload = () => ok(i); i.onerror = ko; i.src = URL.createObjectURL(file); });
@@ -302,13 +370,16 @@
   }
   function editProduct(p) {
     const { el, close } = NTC.sheet(`
-      <h2>${p.isNew ? '新增' : '編輯'}・${p.category === 'canele' ? '可麗露口味' : '馬林糖'}</h2>
+      <h2>${p.isNew ? '新增' : '編輯'}・${p.category === 'canele' ? '可麗露口味' : p.category === 'cookie' ? '造型餅乾' : '馬林糖'}</h2>
       <div class="row" style="margin:6px 0 12px"><img id="e-img" src="${esc(asset(p.photo || p.card || 'assets/favicon.png'))}" style="width:96px;height:96px;border-radius:14px;object-fit:cover" alt="">
         <label class="btn ghost small">換照片<input type="file" accept="image/*" id="e-file" hidden></label></div>
       <label class="field"><span>名稱</span><input id="e-name" value="${esc(p.name || '')}" maxlength="40"></label>
-      <div class="grid2"><label class="field"><span>${p.category === 'canele' ? '單一口味禮盒價格（每盒 6 顆）' : '價格'}</span><input id="e-price" type="number" inputmode="numeric" value="${esc(p.price || '')}"></label>
+      ${p.category === 'cookie' ? `<label class="field"><span>系列</span><select id="e-series">${(settings?.cookie?.series || []).map((x) => `<option value="${esc(x.id)}" ${x.id === p.series ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select></label>` : ''}
+      <div class="grid2"><label class="field"><span>${p.category === 'canele' ? '單一口味禮盒價格（每盒 6 顆）' : p.category === 'cookie' ? '每片價格' : '價格'}</span><input id="e-price" type="number" inputmode="numeric" value="${esc(p.price || '')}"></label>
         <label class="field"><span>單位</span><input id="e-unit" value="${esc(p.unit || '')}" maxlength="4"></label></div>
-      <label class="field"><span>說明（選填，顯示在加入購物車的視窗）</span><textarea id="e-desc" maxlength="300">${esc(p.desc || '')}</textarea></label>
+      ${p.category === 'cookie' ? `<div class="grid2"><label class="field"><span>客人要填的字（不用填就空白）</span><input id="e-tl" value="${esc(p.textLabel || '')}" maxlength="30" placeholder="例如：寶寶名字＋日期"></label>
+        <label class="field"><span>最多幾個字</span><input id="e-tm" type="number" min="1" max="40" value="${esc(p.textMax || 12)}"></label></div>`
+    : `<label class="field"><span>說明（選填，顯示在加入購物車的視窗）</span><textarea id="e-desc" maxlength="300">${esc(p.desc || '')}</textarea></label>`}
       <label class="field"><span>排序（數字小的排前面）</span><input id="e-sort" type="number" value="${esc(p.sort ?? 100)}"></label>
       <div class="row" style="gap:16px;margin-bottom:14px"><label class="tg">上架<input type="checkbox" id="e-active" ${p.active ? 'checked' : ''}></label><label class="tg red">售完<input type="checkbox" id="e-sold" ${p.soldOut ? 'checked' : ''}></label></div>
       <button class="btn block" id="e-save">儲存</button>
@@ -322,8 +393,10 @@
     };
     el.querySelector('#e-save').onclick = async () => {
       const name = el.querySelector('#e-name').value.trim();
-      const id = p.id || `${p.category}-${Date.now().toString(36)}`;
-      const body = { ...p, id, name, price: +el.querySelector('#e-price').value, unit: el.querySelector('#e-unit').value.trim(), desc: el.querySelector('#e-desc').value.trim(),
+      const ser = el.querySelector('#e-series')?.value;
+      const id = p.id || (p.category === 'cookie' ? `cookie-${ser}-${Date.now().toString(36)}` : `${p.category}-${Date.now().toString(36)}`);
+      const body = { ...p, id, name, price: +el.querySelector('#e-price').value, unit: el.querySelector('#e-unit').value.trim(), desc: el.querySelector('#e-desc')?.value.trim() ?? p.desc,
+        ...(p.category === 'cookie' ? { series: ser, textLabel: el.querySelector('#e-tl').value.trim(), textMax: +el.querySelector('#e-tm').value } : {}),
         sort: +el.querySelector('#e-sort').value, active: el.querySelector('#e-active').checked, soldOut: el.querySelector('#e-sold').checked, photo };
       if (photo !== p.photo) body.card = null; // a new photo replaces the designed card
       delete body.isNew;
@@ -372,6 +445,13 @@
       <section class="panel"><h2>可麗露禮盒規則</h2>
         <div class="grid2"><label class="field"><span>綜合口味禮盒價格</span><input id="s-aprice" type="number" value="${c.assortedPrice}"></label><label class="field"><span>單一口味最少幾盒</span><input id="s-smin" type="number" min="1" value="${c.singleMinBoxes}"></label></div>
         ${c.modes.map((m, i) => `<label class="field"><span>任選 ${m.flavors} 種（每種 ${m.each} 顆）最少幾盒</span><input class="s-mode" data-i="${i}" type="number" min="1" value="${m.minBoxes}"></label>`).join('')}</section>
+      <section class="panel"><h2>造型餅乾規則</h2>
+        <label class="field"><span>最少幾片起訂（整張訂單的餅乾加起來，可跨系列）</span><input id="s-cmin" type="number" min="1" value="${s.cookie.minPieces}"></label>
+        <label class="field"><span>運費名稱</span><input id="s-clabel" value="${esc(s.cookie.shipping.label)}" maxlength="30"></label>
+        <p style="font-weight:700;margin:0 0 6px;font-size:13px;color:var(--ink2)">🍪 運費（依整張訂單的片數）</p>
+        <div id="s-ctiers">${s.cookie.shipping.tiers.map((t, i) => `<div class="grid2" data-i="${i}"><label class="field"><span>${i === 0 ? '1' : s.cookie.shipping.tiers[i - 1].upTo + 1} 片 ～ 幾片</span><input class="tu" type="number" min="1" value="${t.upTo}"></label><label class="field"><span>運費</span><input class="tf" type="number" min="0" value="${t.fee}"></label></div>`).join('')}</div>
+        <div class="row" style="gap:8px;margin-bottom:6px"><button class="btn ghost small" id="s-ctadd" type="button">＋ 加一級</button><button class="btn ghost small" id="s-ctrm" type="button">－ 刪最後一級</button></div>
+        <p class="note" style="margin:0">最後一級的片數填大一點（例如 999）＝「幾片以上」都是這個運費。同一張訂單有馬林糖時，會跟餅乾裝同一箱寄（運費取兩者較高的）。</p></section>
       <section class="panel"><h2>公告</h2><label class="field"><span>顯示在購物車最上面（選填）</span><textarea id="s-notice" maxlength="300" placeholder="例如：12/24–12/26 聖誕檔期已滿">${esc(s.notice)}</textarea></label></section>
       <button class="btn block" id="s-save" style="margin-bottom:14px">儲存設定</button>
       <section class="panel"><h2>這支裝置</h2><p class="note" style="margin:0 0 10px">登出後，下次打開後台要再用 LINE 登入。</p><button class="btn ghost small block" id="s-logout">登出這支裝置</button></section>
@@ -404,11 +484,15 @@
       payments: { linepay: $('#s-p-lp').checked, ecpay: $('#s-p-ec').checked, transfer: $('#s-p-tr').checked },
       bank: { name: $('#s-bname').value.trim(), code: $('#s-bcode').value.trim(), account: $('#s-bacc').value.trim(), holder: $('#s-bholder').value.trim() },
       transferDays: +$('#s-tdays').value,
+      cookie: { ...s.cookie, minPieces: +$('#s-cmin').value, shipping: { label: $('#s-clabel').value.trim(), tiers: [...app.querySelectorAll('#s-ctiers [data-i]')].map((r) => ({ upTo: +r.querySelector('.tu').value, fee: +r.querySelector('.tf').value })) } },
       canele: { ...c, assortedPrice: +$('#s-aprice').value, singleMinBoxes: +$('#s-smin').value, modes: c.modes.map((m, i) => ({ ...m, minBoxes: +app.querySelector(`.s-mode[data-i="${i}"]`).value })) },
       notice: $('#s-notice').value.trim(),
       testMode: $('#s-test').checked,
       pauseOrders: $('#s-pause').checked,
     });
+    $('#s-ctadd').onclick = () => { const box = $('#s-ctiers'); const n = box.children.length; const last = box.lastElementChild; const from = last ? +last.querySelector('.tu').value + 1 : 1;
+      box.insertAdjacentHTML('beforeend', `<div class="grid2" data-i="${n}"><label class="field"><span>${from} 片 ～ 幾片</span><input class="tu" type="number" min="1" value="${from + 5}"></label><label class="field"><span>運費</span><input class="tf" type="number" min="0" value="${last ? last.querySelector('.tf').value : 0}"></label></div>`); };
+    $('#s-ctrm').onclick = () => { const box = $('#s-ctiers'); if (box.children.length > 1) box.lastElementChild.remove(); else NTC.toast('至少要留一級'); };
     $('#s-logout').onclick = async () => { if (confirm('登出這支裝置的後台？')) { NTC.setAdminToken(''); await NTC.logout(); location.replace('index.html'); } };
     NTC.api('/admin/requests').then(({ requests }) => {
       const box = $('#s-reqs'); if (!box || !requests.length) return;

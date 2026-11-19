@@ -110,7 +110,7 @@
 
   // ---------------- cart (kept in this browser)
   const CK = 'ntc-cart-v1';
-  const keyOf = (i) => i.type === 'canele-assorted' ? `a|${i.mode}|${[...i.flavors].sort().join(',')}` : `p|${i.productId}`;
+  const keyOf = (i) => i.type === 'canele-assorted' ? `a|${i.mode}|${[...i.flavors].sort().join(',')}` : `p|${i.productId}|${i.text || ''}`;
   NTC.cart = {
     items: () => store.get(CK, []),
     save(items) { store.set(CK, items); NTC.refreshCart(); },
@@ -140,7 +140,12 @@
       parts.push({ kind: 'frozen', label: sh.frozen.label, units: boxes, parcels, fee, max });
     }
     const jars = lines.filter((l) => l.temp === 'ambient').reduce((a, l) => a + l.qty, 0);
-    if (jars) parts.push({ kind: 'ambient', label: sh.ambient.label, units: jars, parcels: 1, fee: sh.ambient.fee || 0 });
+    const pieces = lines.filter((l) => l.temp === 'cookie').reduce((a, l) => a + l.qty, 0);
+    if (pieces && s.cookie) { // 造型餅乾：依片數級距；馬林糖跟餅乾同一箱（運費取較高的）
+      const cs = s.cookie.shipping; const tiers = [...(cs.tiers || [])].sort((a, b) => a.upTo - b.upTo);
+      const fee = (tiers.find((t) => pieces <= t.upTo) || tiers[tiers.length - 1] || { fee: 0 }).fee;
+      parts.push(jars ? { kind: 'cookie', label: `${cs.label}（含馬林糖）`, units: pieces, parcels: 1, fee: Math.max(fee, sh.ambient.fee || 0) } : { kind: 'cookie', label: cs.label, units: pieces, parcels: 1, fee });
+    } else if (jars) parts.push({ kind: 'ambient', label: sh.ambient.label, units: jars, parcels: 1, fee: sh.ambient.fee || 0 });
     if (s.freeShippingOver > 0 && subtotal >= s.freeShippingOver) parts.forEach((p) => { p.fee = 0; });
     return { fee: parts.reduce((a, p) => a + p.fee, 0), parts, label: parts.map((p) => p.label + (p.parcels > 1 ? `（${p.parcels} 件）` : '')).join('＋') };
   };
@@ -149,7 +154,14 @@
   NTC.priceCart = (items, cat) => {
     const s = cat.settings; const lines = [];
     items.forEach((it, idx) => {
-      if (it.type === 'product') {
+      if (it.type === 'product' && cat.byId[it.productId]?.category === 'cookie') {
+        const p = cat.byId[it.productId]; const se = (s.cookie?.series || []).find((x) => x.id === p.series);
+        lines.push({
+          idx, it, ok: !p.soldOut && !!se, temp: 'cookie', photo: p.photo || '', price: p.price, unit: p.unit || '片', min: 1,
+          name: p.name, detail: (se ? se.name : '') + (p.textLabel ? `｜${p.textLabel}：${it.text || '（未填）'}` : ''),
+          error: !se ? '這個系列目前沒有開放訂購，請移除' : p.soldOut ? '這片目前售完，請移除' : p.textLabel && !it.text ? `請移除後重新加入，並填寫${p.textLabel}` : '',
+        });
+      } else if (it.type === 'product') {
         const p = cat.byId[it.productId];
         const ok = p && !p.soldOut;
         const isC = p && p.category === 'canele';
@@ -174,6 +186,8 @@
       }
     });
     lines.forEach((l) => { l.qty = l.it.qty; l.subtotal = l.price * l.qty; if (!l.error && l.qty < l.min) l.error = `這個禮盒 ${l.min} 盒起訂`; });
+    const ck = lines.filter((l) => l.temp === 'cookie'); const pieces = ck.reduce((a, l) => a + l.qty, 0); const minP = s.cookie?.minPieces || 1;
+    if (pieces && pieces < minP && !ck[ck.length - 1].error) ck[ck.length - 1].error = `造型餅乾 ${minP} 片起訂（可跨系列搭配），目前 ${pieces} 片，還差 ${minP - pieces} 片`;
     const subtotal = lines.reduce((a, l) => a + l.subtotal, 0);
     const shipping = NTC.shipping(lines.filter((l) => l.ok), subtotal, s);
     return { lines, subtotal, shipping, total: subtotal + shipping.fee, count: lines.reduce((a, l) => a + l.qty, 0), valid: lines.length > 0 && lines.every((l) => !l.error) };
