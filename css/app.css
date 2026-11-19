@@ -388,8 +388,8 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
 .ckd-add img { width: 100%; display: block; }
 .ckd-add.off { opacity: .55; filter: grayscale(.25); }
 .ckd-chip a { color: #b44a52; font-weight: 800; text-decoration: none; }
-.ckd-go { display: flex; align-items: center; justify-content: center; gap: max(8px, calc(16 * var(--u))); width: auto; min-width: min(calc(620 * var(--u)), calc(100vw - 32px)); max-width: calc(100vw - 32px); height: calc(92 * var(--u)); min-height: 50px; padding: 0 max(16px, calc(30 * var(--u))); border-radius: 999px; text-decoration: none; white-space: nowrap;
+.ckd-go { display: flex; align-items: center; justify-content: center; gap: clamp(6px, 2vw, 10px); width: auto; min-width: min(calc(620 * var(--u)), calc(100vw - 32px)); max-width: calc(100vw - 24px); box-sizing: border-box; overflow: hidden; height: calc(92 * var(--u)); min-height: 50px; padding: 0 max(16px, calc(30 * var(--u))); border-radius: 999px; text-decoration: none; white-space: nowrap;
   background: linear-gradient(180deg, #9a5739, #6e3a24); color: #fff; box-shadow: 0 calc(8 * var(--u)) calc(18 * var(--u)) rgba(110, 58, 36, .35), inset 0 0 0 calc(4 * var(--u)) rgba(255, 255, 255, .45); }
-.ckd-go svg { flex: none; width: max(22px, calc(46 * var(--u))); height: max(20px, calc(42 * var(--u))); fill: none; stroke: #fff; stroke-width: 3.6; stroke-linecap: round; stroke-linejoin: round; }
-.ckd-go span { font: 900 max(16px, calc(34 * var(--u)))/1 var(--serif); letter-spacing: .06em; }
-.ckd-go small { flex: none; font: 700 max(12px, calc(24 * var(--u)))/1 var(--sans); opacity: .95; padding: max(5px, calc(8 * var(--u))) max(9px, calc(16 * var(--u))); border-radius: 999px; background: rgba(255, 255, 255, .18); white-space: nowrap; }
+.ckd-go svg { flex: none; width: clamp(20px, 5.6vw, 26px); height: clamp(18px, 5.2vw, 24px); fill: none; stroke: #fff; stroke-width: 3.6; stroke-linecap: round; stroke-linejoin: round; }
+.ckd-go span { font: 900 clamp(14px, 4.3vw, 19px)/1 var(--serif); letter-spacing: .04em; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.ckd-go small { flex: none; font: 700 clamp(11px, 3.1vw, 13px)/1 var(--sans); opacity: .95; padding: max(5px, calc(8 * var(--u))) max(9px, calc(16 * var(--u))); border-radius: 999px; background: rgba(255, 255, 255, .18); white-space: nowrap; }
