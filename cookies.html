@@ -13,7 +13,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
 <link rel="preload" as="image" href="assets/cookies/ui/header.webp" type="image/webp">
-<link rel="stylesheet" href="css/app.css?v=1119e">
+<link rel="stylesheet" href="css/app.css?v=1119f">
 </head>
 <body class="ckd-body">
 <main class="ckd" id="page">
@@ -28,9 +28,9 @@
   <img class="ckd-corner r" src="assets/cookies/ui/corner-right.webp" alt="">
 </main>
 <div class="ckd-bar" id="bar" hidden></div>
-<script src="js/config.js?v=1119e"></script>
-<script src="js/app.js?v=1119e"></script>
-<script src="js/shop.js?v=1119e"></script>
+<script src="js/config.js?v=1119f"></script>
+<script src="js/app.js?v=1119f"></script>
+<script src="js/shop.js?v=1119f"></script>
 <script>
 (function () {
   const { $, esc, money, asset } = NTC;
@@ -103,11 +103,22 @@
   function paintBar(ps) {
     const chosen = ps.filter((p) => (pick[p.id] || 0) > 0);
     const n = chosen.reduce((a, p) => a + pick[p.id], 0); const sum = chosen.reduce((a, p) => a + pick[p.id] * p.price, 0);
-    const inCart = NTC.cart.items().reduce((a, i) => a + i.qty, 0);
+    const items = NTC.cart.items(); const inCart = items.reduce((a, i) => a + i.qty, 0);
+    const cartSum = inCart ? NTC.priceCart(items, cat).subtotal : 0;
+    const CART = '<svg viewBox="0 0 48 44"><path d="M3 5h7l6 24h22l5-17H13"/><circle cx="19" cy="37" r="3.3"/><circle cx="35" cy="37" r="3.3"/></svg>';
     bar.hidden = false;
-    bar.innerHTML = `${n ? `<div class="ckd-chip">已選 <b>${n}</b> 片・${money(sum)}</div>` : inCart ? `<a class="ckd-chip go" href="cart.html">購物車 ${inCart} 件・去結帳 ›</a>` : '<div class="ckd-chip muted">點 ＋ 或點餅乾照片來選擇</div>'}
-      <button type="button" class="ckd-add${n ? '' : ' off'}" id="add" aria-label="加入購物車"><img src="assets/cookies/ui/add.webp" alt="加入購物車"></button>`;
-    $('#add').onclick = () => (n ? add(chosen) : NTC.toast('請先點 ＋ 選擇想要的餅乾'));
+    if (n) { // picked something on this page → add it
+      bar.innerHTML = `<div class="ckd-chip">已選 <b>${n}</b> 片・${money(sum)}${inCart ? `　<a href="cart.html">購物車 ${inCart} 件 ›</a>` : ''}</div>
+        <button type="button" class="ckd-add" id="add" aria-label="加入購物車"><img src="assets/cookies/ui/add.webp" alt="加入購物車"></button>`;
+      $('#add').onclick = () => add(chosen);
+    } else if (inCart) { // nothing picked, cart has items → a real button to the cart
+      bar.innerHTML = `<div class="ckd-chip muted">想再加選？點餅乾的 ＋</div>
+        <a class="ckd-go" href="cart.html">${CART}<span>前往購物車結帳</span><small>${inCart} 件・${money(cartSum)}</small></a>`;
+    } else {
+      bar.innerHTML = `<div class="ckd-chip muted">點 ＋ 或點餅乾照片來選擇</div>
+        <button type="button" class="ckd-add off" id="add" aria-label="加入購物車"><img src="assets/cookies/ui/add.webp" alt="加入購物車"></button>`;
+      $('#add').onclick = () => NTC.toast('請先點 ＋ 選擇想要的餅乾');
+    }
   }
 
   function add(chosen) {
