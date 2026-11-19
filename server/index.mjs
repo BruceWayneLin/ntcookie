@@ -116,13 +116,18 @@ async function getSettings() {
   return (await get('SETTINGS', 'main')) || fresh;
 }
 
-// 造型餅乾系列：客人只看得到「上架」的；管理員也看得到還沒上架的（可以先預覽、下測試單）
-const cookieSeries = (s, admin = false) => [...(s.cookie?.series || [])].filter((x) => x.active || admin).sort((a, b) => (a.sort ?? 999) - (b.sort ?? 999));
+// 造型餅乾系列沒有自己的開關（SK 11-19）：系列裡只要有一款餅乾「上架」，客人就看得到這個系列；一款都沒上架＝客人看不到。
+// 管理員看得到全部系列（預覽、下測試單用）；回傳的 active＝這個系列現在客人看不看得到。
+const seriesOf = (s) => [...(s.cookie?.series || [])].sort((a, b) => (a.sort ?? 999) - (b.sort ?? 999));
+function visibleSeries(s, products, admin = false) {
+  const live = new Set(products.filter((p) => p.category === 'cookie' && p.active).map((p) => p.series));
+  return seriesOf(s).filter((x) => admin || live.has(x.id)).map((x) => ({ ...x, active: live.has(x.id) }));
+}
 const linepayReady = () => !!(env.LINEPAY_CHANNEL_ID && env.LINEPAY_CHANNEL_SECRET);
 const ecpayReady = () => !!(env.ECPAY_MERCHANT_ID && env.ECPAY_HASH_KEY && env.ECPAY_HASH_IV);
 
 const isAdminOf = (s, u) => !!(u && (u.shopAdmin || OWNER_IDS.has(u.sub) || (s.admins || []).some((a) => a.sub === u.sub)));
-function publicSettings(s, admin = false) {
+function publicSettings(s, admin = false, products = null) {
   const bankReady = !!(s.bank?.account);
   const open = !s.testMode || admin; // while testing, only admins can pay online
   return {
@@ -138,7 +143,7 @@ function publicSettings(s, admin = false) {
       transfer: !!(open && s.payments?.transfer && bankReady),
     },
     canele: s.canele, notice: s.notice, today: twDate(),
-    cookie: { minPieces: s.cookie.minPieces, shipping: s.cookie.shipping, series: cookieSeries(s, admin) },
+    cookie: { minPieces: s.cookie.minPieces, shipping: s.cookie.shipping, series: products ? visibleSeries(s, products, admin) : [] },
     preview: admin ? { closed: !!s.pauseOrders, testMode: !!s.testMode } : undefined, // 店家登入時：客人實際看到的狀態
   };
 }
@@ -257,7 +262,7 @@ function calcShipping(lines, subtotal, settings) {
 }
 function priceOrder(reqItems, products, settings, { admin = false } = {}) {
   const byId = new Map(products.map((p) => [p.id, p]));
-  const usable = (p) => p && p.active && !p.soldOut;
+  const usable = (p) => p && !p.soldOut && (p.active || (admin && p.category === 'cookie')); // admins can test-order 未上架 cookies
   if (!Array.isArray(reqItems) || !reqItems.length) throw bad('購物車是空的');
   if (reqItems.length > 40) throw bad('品項太多');
   const lines = [];
@@ -268,7 +273,7 @@ function priceOrder(reqItems, products, settings, { admin = false } = {}) {
       const p = byId.get(it.productId);
       if (!usable(p)) throw bad(`「${p?.name || '商品'}」目前無法訂購，請從購物車移除`);
       if (p.category === 'cookie') {
-        const se = cookieSeries(settings, admin).find((x) => x.id === p.series);
+        const se = seriesOf(settings).find((x) => x.id === p.series);
         if (!se) throw bad(`「${p.name}」目前無法訂購，請從購物車移除`);
         let text = '';
         if (p.textLabel) {
@@ -751,10 +756,11 @@ async function route(event) {
     if (method === 'POST' && path === '/line/webhook') return await lineWebhook(event);
     if (method === 'GET' && path === '/catalog') {
       const [settings, products, viewer] = await Promise.all([getSettings(), listProducts(), getUser(event).catch(() => null)]);
-      const admin = isAdminOf(settings, viewer); const seriesIds = new Set(cookieSeries(settings, admin).map((x) => x.id));
+      const admin = isAdminOf(settings, viewer); const seriesIds = new Set(seriesOf(settings).map((x) => x.id));
       return json(200, {
-        products: products.filter((p) => p.active && (p.category !== 'cookie' || seriesIds.has(p.series))),
-        settings: publicSettings(settings, admin),
+        // customers: only 上架 products; admins also get 未上架 cookies (cookie preview marks them)
+        products: products.filter((p) => (p.active || (admin && p.category === 'cookie')) && (p.category !== 'cookie' || seriesIds.has(p.series))),
+        settings: publicSettings(settings, admin, products),
         fullDates: await fullDates(settings),
       }, { 'cache-control': 'no-cache' });
     }

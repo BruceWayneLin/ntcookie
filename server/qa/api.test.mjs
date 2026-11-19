@@ -223,12 +223,21 @@ section('造型餅乾（系列・單片・最少片數・運費級距・填字�
   const CK = (slug, qty, extra = {}) => ({ type: 'product', productId: `cookie-anpanman-${slug}`, qty, ...extra });
   const COOKIE = { minPieces: 6, shipping: { label: '黑貓宅配（造型餅乾）', tiers: [{ upTo: 8, fee: 130 }, { upTo: 999, fee: 170 }] } };
   let a = await call('/admin/settings', { user: ADMIN }); const SER = a.json.settings.cookie.series;
-  ok('seeded series are all hidden from customers by default', SER.length === 10 && SER[0].id === 'anpanman' && SER.every((x) => !x.active), SER.length);
-  r = await call('/catalog'); ok('guest catalog: no cookies while the series is hidden', !r.json.products.some((p) => p.category === 'cookie') && r.json.settings.cookie.series.length === 0, r.json.settings.cookie);
-  r = await call('/catalog', { user: ADMIN }); ok('admin catalog: sees the hidden series and all 117 pieces (preview)', r.json.products.filter((p) => p.category === 'cookie').length === 117 && r.json.settings.cookie.series[0]?.active === false, r.json.products.length);
+  const AP = (await call('/admin/products', { user: ADMIN })).json.products.filter((p) => p.category === 'cookie');
+  const list = async (ps, on) => { for (let i = 0; i < ps.length; i += 10) await Promise.all(ps.slice(i, i + 10).map((p) => call(`/admin/products/${p.id}`, { method: 'PUT', user: ADMIN, body: { ...p, active: on } }))); };
+  ok('seeded: 10 series, 117 cookies, every cookie 未上架', SER.length === 10 && SER[0].id === 'anpanman' && AP.length === 117 && AP.every((p) => !p.active), [SER.length, AP.length]);
+  r = await call('/catalog'); ok('guest catalog: no cookies while nothing is 上架', !r.json.products.some((p) => p.category === 'cookie') && r.json.settings.cookie.series.length === 0, r.json.settings.cookie);
+  r = await call('/catalog', { user: ADMIN }); ok('admin catalog: gets every series and all 117 cookies (preview)', r.json.products.filter((p) => p.category === 'cookie').length === 117 && r.json.settings.cookie.series[0]?.active === false, r.json.products.length);
   await bad('guest cannot order from a hidden series', { items: [CK('anpanman', 6)] }, /無法訂購/);
   r = await order2({ items: [CK('anpanman', 6)] }, ADMIN); ok('admin can place a test order from a hidden series', r.status === 200 && r.json.orderNo, r.text);
-  r = await putSettings({ cookie: { ...COOKIE, series: SER.map((x) => ({ ...x, active: true })) } }); ok('owner turns the series on', r.status === 200 && r.json.settings.cookie.series[0].active === true, r.text);
+  // a series has no switch of its own: it shows as soon as one of its cookies is 上架
+  await list(AP.filter((p) => p.id === 'cookie-pokemon-pikachu'), true); r = await call('/catalog');
+  ok('one cookie 上架 → customers see that series, with only that cookie', r.json.settings.cookie.series.map((x) => x.id).join() === 'pokemon' && r.json.products.filter((p) => p.category === 'cookie').map((p) => p.id).join() === 'cookie-pokemon-pikachu', r.json.settings.cookie.series.map((x) => x.id));
+  r = await call('/catalog', { user: ADMIN }); ok('admin still gets every series; active says whether customers see it', r.json.settings.cookie.series.length === 10 && r.json.settings.cookie.series.find((x) => x.id === 'pokemon').active === true && r.json.settings.cookie.series.find((x) => x.id === 'anpanman').active === false, r.json.settings.cookie.series.map((x) => [x.id, x.active]));
+  await bad('a 未上架 cookie in a visible series still cannot be ordered by customers', { items: [{ type: 'product', productId: 'cookie-pokemon-eevee', qty: 6 }] }, /無法訂購/);
+  await list(AP.filter((p) => p.id === 'cookie-pokemon-pikachu'), false); r = await call('/catalog');
+  ok('下架 the last cookie → the series disappears for customers', r.json.settings.cookie.series.length === 0 && !r.json.products.some((p) => p.category === 'cookie'), r.json.settings.cookie.series);
+  await list(AP, true); r = await putSettings({ cookie: { ...COOKIE, series: SER } }); ok('owner lists every cookie (全部上架)', r.status === 200, r.text);
   r = await call('/catalog'); ok('guest catalog now shows the 117 pieces and the 10 series', r.json.products.filter((p) => p.category === 'cookie').length === 117 && r.json.settings.cookie.series.length === 10 && r.json.settings.cookie.minPieces === 6, r.json.settings.cookie);
   await bad('5 pieces → 6 片起訂', { items: [CK('anpanman', 3), CK('baikinman', 2)] }, /6 片起訂/);
   r = await order2({ items: [CK('anpanman', 3), CK('baikinman', 2), CK('dokinchan', 1)] }, ALICE);
@@ -262,8 +271,8 @@ section('造型餅乾（系列・單片・最少片數・運費級距・填字�
   ok('new cookie piece: unit 片, text limit capped at 40', r.status === 200 && r.json.product.unit === '片' && r.json.product.textMax === 40 && r.json.product.series === 'bday01', r.json?.product);
   r = await call('/catalog'); ok('the new birthday series and its piece show for guests', r.json.settings.cookie.series.some((x) => x.id === 'bday01') && r.json.products.some((p) => p.id === 'cookie-qa-x'), r.json.settings.cookie.series.map((x) => x.id));
   await call('/admin/products/cookie-qa-x', { method: 'DELETE', user: ADMIN });
-  r = await putSettings({ cookie: { ...COOKIE, series: SER } }); r = await call('/catalog');
-  ok('series hidden again → gone from the shop, old carts can no longer order it', !r.json.products.some((p) => p.category === 'cookie') && r.json.settings.cookie.series.length === 0, r.json.settings.cookie);
+  r = await putSettings({ cookie: { ...COOKIE, series: SER } }); await list(AP, false); r = await call('/catalog');
+  ok('全部下架 → cookies gone from the shop, old carts can no longer order them', !r.json.products.some((p) => p.category === 'cookie') && r.json.settings.cookie.series.length === 0, r.json.settings.cookie);
   await bad('ordering a hidden series is refused', { items: [CK('anpanman', 6)] }, /無法訂購/);
 }
 

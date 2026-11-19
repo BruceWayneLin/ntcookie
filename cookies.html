@@ -13,7 +13,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
 <link rel="preload" as="image" href="assets/cookies/ui/header.webp" type="image/webp">
-<link rel="stylesheet" href="css/app.css?v=1119w">
+<link rel="stylesheet" href="css/app.css?v=1119x">
 </head>
 <body class="ckd-body">
 <main class="ckd" id="page">
@@ -28,9 +28,9 @@
   <img class="ckd-corner r" src="assets/cookies/ui/corner-right.webp" alt="">
 </main>
 <div class="ckd-bar" id="bar" hidden></div>
-<script src="js/config.js?v=1119w"></script>
-<script src="js/app.js?v=1119w"></script>
-<script src="js/shop.js?v=1119w"></script>
+<script src="js/config.js?v=1119x"></script>
+<script src="js/app.js?v=1119x"></script>
+<script src="js/shop.js?v=1119x"></script>
 <script>
 (function () {
   const { $, esc, money, asset } = NTC;
@@ -78,7 +78,7 @@
     return `<div class="ckd-grid">${ps.map((p, i) => {
       const col = tail && i >= n - tail ? (tail === 1 ? 'grid-column:3 / span 2' : `grid-column:${i === n - 2 ? 2 : 4} / span 2`) : '';
       return `<div class="ckd-card${p.soldOut ? ' so' : ''}" data-id="${esc(p.id)}" style="${col}">
-        <div class="ph">${p.photo ? `<img src="${esc(asset(p.photo))}" alt="" loading="lazy">` : ''}${p.textLabel ? `<span class="tl">${p.textOptional ? '可改' : '需填'}${esc(p.textLabel)}</span>` : ''}${p.soldOut ? '<span class="sob">售完</span>' : ''}</div>
+        <div class="ph">${p.photo ? `<img src="${esc(asset(p.photo))}" alt="" loading="lazy">` : ''}${p.textLabel ? `<span class="tl">${p.textOptional ? '可改' : '需填'}${esc(p.textLabel)}</span>` : ''}${p.soldOut ? '<span class="sob">售完</span>' : ''}${p.active === false ? '<span class="offtag">未上架</span>' : ''}</div>
         <div class="nm" style="--n:${[...p.name].length}">${esc(p.name)}</div><div class="pr">${money(p.price)}</div><div class="st"></div></div>`;
     }).join('') || '<p class="ckd-note">這個系列還沒有餅乾，敬請期待</p>'}</div>`;
   }
@@ -123,7 +123,9 @@
   function renderSeries(se) {
     document.title = `${se.name}｜N.T Cookie × N.T Canelé`; setPill(se.name);
     const ps = cat.products.filter((p) => p.series === se.id);
-    app.innerHTML = `${se.active ? '' : '<div class="ckd-adm">預覽：這個系列還沒上架，客人看不到。可以先下測試單確認。</div>'}
+    const off = ps.filter((p) => p.active === false).length;
+    app.innerHTML = `${!se.active ? '<div class="ckd-adm">預覽：這個系列還沒有上架的餅乾，客人看不到這一頁。到後台把餅乾「上架」，客人就看得到。</div>'
+      : off ? `<div class="ckd-adm">預覽：有 ${off} 款還沒上架（標「未上架」），客人看不到那幾款。</div>` : ''}
       <section class="ckd-banner">${banner(se)}</section>
       <img class="ckd-sec" src="assets/cookies/ui/section.webp" alt="單片選購">
       ${gridHtml(ps)}
@@ -166,18 +168,36 @@
       NTC.toast(ck < min ? `已加入 ${n} 片，再選 ${min - ck} 片就能結帳（${min} 片起訂）` : `已加入 ${n} 片到購物車 ♡`, 3200);
     };
     if (!needText.length) return done();
-    const allNames = needText.every((p) => /名字/.test(p.textLabel));
+    // 名字 and 日期 are asked separately; the date comes from a calendar and is written in 民國 style like the shop's cookies (115.03.23)
+    const has = (p, w) => (p.textLabel || '').includes(w);
+    const nameLabelRaw = (p) => p.textLabel.replace(/[＋+]\s*日期|日期\s*[＋+]|^日期$/, '').trim();
+    const nameLabel = (p) => nameLabelRaw(p) || '名字';
+    const kind = (p) => (has(p, '日期') ? (nameLabelRaw(p) ? 'nd' : 'd') : 'n'); // any label + 日期 → name field and calendar
+    const roc = (ymd) => { const [y, m, d] = ymd.split('-').map(Number); return `${y - 1911}.${String(m).padStart(2, '0')}.${String(d).padStart(2, '0')}`; };
+    const opt = (p) => (p.textOptional ? '（選填，不填就照圖上的字）' : '');
+    const field = (p) => {
+      const k = kind(p); const head = `<p class="tf-head">${esc(p.name)} × ${pick[p.id]}${opt(p)}</p>`;
+      const nameMax = k === 'nd' ? Math.max(2, (p.textMax || 16) - 10) : (p.textMax || 12);
+      const nameIn = `<label class="field"><span>${esc(k === 'n' ? p.textLabel : nameLabel(p))}（最多 ${nameMax} 字）</span><input data-id="${esc(p.id)}" data-part="name" maxlength="${nameMax}" placeholder="${has(p, '名字') ? '例：林羽澄' : '例：4 months'}" autocomplete="off"></label>`;
+      const dateIn = `<label class="field"><span>日期（點一下用日曆選）</span><input type="date" data-id="${esc(p.id)}" data-part="date"><small class="tf-hint" data-for="${esc(p.id)}">餅乾上會寫成民國日期，例如 115.03.23</small></label>`;
+      return `<div class="tf" data-id="${esc(p.id)}" data-kind="${k}" data-opt="${p.textOptional ? 1 : ''}">${head}${k !== 'd' ? nameIn : ''}${k !== 'n' ? dateIn : ''}</div>`;
+    };
+    const allNames = needText.every((p) => has(p, '名字'));
     const { el, close } = NTC.sheet(`<h2>${allNames ? '填寫寶寶名字' : '填寫餅乾上的字'}</h2><p class="sub">我們會照您填的內容手繪在餅乾上。每片要不同的字，請分次加入購物車。</p>
-      ${needText.map((p) => `<label class="field"><span>${esc(p.name)} × ${pick[p.id]}：${esc(p.textLabel)}${p.textOptional ? '（選填，不填就照圖上的字）' : ''}（最多 ${p.textMax || 12} 字）</span>
-        <input data-id="${esc(p.id)}" data-opt="${p.textOptional ? 1 : ''}" maxlength="${p.textMax || 12}" placeholder="${/日期/.test(p.textLabel) && !/名字/.test(p.textLabel) ? '例：115.03.23' : /名字/.test(p.textLabel) ? (/日期/.test(p.textLabel) ? '例：林羽澄 115.03.23' : '例：林羽澄') : '例：4 months'}" autocomplete="off"></label>`).join('')}
+      ${needText.map(field).join('')}
       <button class="btn block" id="ok">加入購物車</button>`);
-    el.querySelector('input').focus();
+    el.querySelectorAll('input[type=date]').forEach((i) => (i.onchange = () => { const h = el.querySelector(`.tf-hint[data-for="${CSS.escape(i.dataset.id)}"]`); if (h) h.textContent = i.value ? `餅乾上會寫成：${roc(i.value)}` : '餅乾上會寫成民國日期，例如 115.03.23'; }));
+    const first = el.querySelector('input[data-part="name"]'); if (first) first.focus();
     el.querySelector('#ok').onclick = () => {
       const texts = {};
-      for (const i of el.querySelectorAll('input')) {
-        const v = i.value.trim().replace(/\s+/g, ' ');
-        if (!v && !i.dataset.opt) { NTC.toast('請填寫餅乾上的字'); i.focus(); return; }
-        if (v) texts[i.dataset.id] = v;
+      for (const box of el.querySelectorAll('.tf')) {
+        const nameI = box.querySelector('[data-part="name"]'); const dateI = box.querySelector('[data-part="date"]');
+        const name = nameI ? nameI.value.trim().replace(/\s+/g, ' ') : ''; const date = dateI && dateI.value ? roc(dateI.value) : '';
+        const optional = !!box.dataset.opt;
+        if (nameI && !name && !optional) { NTC.toast(`請填寫${nameI.closest('label').querySelector('span').textContent.replace(/（.*/, '')}`); nameI.focus(); return; }
+        if (dateI && !date && !optional) { NTC.toast('請用日曆選日期'); dateI.focus(); return; }
+        const v = [name, date].filter(Boolean).join(' ');
+        if (v) texts[box.dataset.id] = v;
       }
       close(); done(texts);
     };
@@ -192,7 +212,7 @@
     if (q.get('preview') !== '1' && cat.settings.cookie) {
       const on = (cat.settings.cookie.series || []).filter((x) => x.active); const ids = new Set(on.map((x) => x.id));
       cat.settings.cookie = { ...cat.settings.cookie, series: on };
-      cat.products = cat.products.filter((p) => p.category !== 'cookie' || ids.has(p.series)); cat.byId = Object.fromEntries(cat.products.map((p) => [p.id, p]));
+      cat.products = cat.products.filter((p) => p.category !== 'cookie' || (ids.has(p.series) && p.active !== false)); cat.byId = Object.fromEntries(cat.products.map((p) => [p.id, p]));
     }
     render();
   }).catch((e) => { app.innerHTML = `<p class="ckd-note">${esc(e.message)}</p>`; });

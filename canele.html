@@ -13,7 +13,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
 <link rel="preload" as="image" href="assets/v2/01-canele/m-header.webp" type="image/webp">
-<link rel="stylesheet" href="css/app.css?v=1119w">
+<link rel="stylesheet" href="css/app.css?v=1119x">
 </head>
 <body class="cm-body">
 <!-- designer's mobile layout (nt-canele-mobile-ux-slices, 793 px wide): header art + live tabs, cards, notes and checkout bar -->
@@ -30,9 +30,9 @@
   <button type="button" class="nt-back" onclick="NTC.back()"><i aria-hidden="true"></i>返回上一頁</button>
 </main>
 <div class="cm-bar" id="bar"></div>
-<script src="js/config.js?v=1119w"></script>
-<script src="js/app.js?v=1119w"></script>
-<script src="js/shop.js?v=1119w"></script>
+<script src="js/config.js?v=1119x"></script>
+<script src="js/app.js?v=1119x"></script>
+<script src="js/shop.js?v=1119x"></script>
 <script>
 (function () {
   const { $, esc, money, asset } = NTC;
@@ -45,7 +45,8 @@
   let mode = 'single'; let chosen = []; // chosen flavours for an assorted box
 
   const modeOf = () => (mode === 'single' ? null : S.canele.modes.find((m) => m.id === mode));
-  const photo = (p) => { const k = PHOTO[p.id.replace(/^canele-/, '')]; return k ? `assets/v2/01-canele/m-photo-${k}.webp` : p.photo; };
+  // the designer's mobile photo for the 8 original flavours — unless the shop uploaded its own photo in the admin (that always wins)
+  const photo = (p) => { const k = PHOTO[p.id.replace(/^canele-/, '')]; const own = p.photo && !/^assets\/v2\/01-canele\/photo-/.test(p.photo); return own || !k ? p.photo : `assets/v2/01-canele/m-photo-${k}.webp`; };
 
   function renderTabs() {
     const tabs = [{ id: 'single', t: '單一口味' }, ...S.canele.modes.map((m) => ({ id: m.id, t: `${m.flavors} 種各 ${m.each} 顆` }))];

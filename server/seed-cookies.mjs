@@ -1,4 +1,4 @@
-// 造型餅乾系列（cookie-series.json，由設計師切圖產生）寫進資料表：新系列預設「未上架」＝只有管理員看得到；
+// 造型餅乾系列（cookie-series.json，由設計師切圖產生）寫進資料表：餅乾預設「未上架」（系列裡有餅乾上架，客人才看得到那個系列）；
 // 新餅乾價格先放 $250（店主在後台改）。已經有的系列／餅乾不覆蓋。用法：node seed-cookies.mjs ntcookie-dev
 import fs from 'node:fs';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
@@ -27,7 +27,7 @@ if (add.length) {
 console.log(`series: added ${add.length} (hidden from customers), already there ${SERIES.length - add.length}`);
 const now = new Date().toISOString(); let added = 0, kept = 0;
 for (const p of PIECES) {
-  try { await ddb.send(new PutCommand({ TableName: TABLE, Item: { pk: 'PRODUCT', sk: p.id, category: 'cookie', unit: '片', active: true, soldOut: false, createdAt: now, ...p }, ConditionExpression: 'attribute_not_exists(pk)' })); added++; }
+  try { await ddb.send(new PutCommand({ TableName: TABLE, Item: { pk: 'PRODUCT', sk: p.id, category: 'cookie', unit: '片', active: false, soldOut: false, createdAt: now, ...p }, ConditionExpression: 'attribute_not_exists(pk)' })); added++; }
   catch (e) { if (e.name === 'ConditionalCheckFailedException') kept++; else throw e; }
 }
 console.log(`pieces: added ${added}, already there ${kept}`);
