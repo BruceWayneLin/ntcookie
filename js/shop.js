@@ -115,7 +115,7 @@
     const { el, close } = NTC.sheet(`
       <h2>綜合口味禮盒 <span class="price" style="font-size:20px">${money(s.assortedPrice)} <small>/ 盒</small></span></h2>
       <p class="sub">手工製作，每種口味最低製作量為 6 顆，因此綜合禮盒設有最低訂購盒數。❄️ 冷凍宅配寄送。</p>
-      <div class="modes">${s.modes.map((m) => `<button type="button" class="opt" data-m="${m.id}"><span class="dot"></span><span class="t">任選 ${m.flavors} 種口味<small>每盒各 ${m.each} 顆・${m.minBoxes} 盒起訂</small></span></button>`).join('')}</div>
+      <div class="modes">${s.modes.map((m) => `<button type="button" class="opt" data-m="${m.id}"><span class="dot"></span><span class="t">任選 ${m.flavors} 種<small>每種口味 ${m.each} 顆，共 ${m.flavors * m.each} 顆・${m.minBoxes} 盒起訂</small></span></button>`).join('')}</div>
       <div class="row" style="margin:6px 0 8px"><b>選口味</b><span class="sp"></span><span class="note cnt"></span></div>
       <div class="chips fl">${fl.map((p) => `<button type="button" class="chip" data-id="${esc(p.id)}" ${p.soldOut ? 'disabled' : ''}>${p.icon ? `<img src="${esc(asset(p.icon))}" alt="">` : ''}${esc(p.name)}${p.soldOut ? '（售完）' : ''}</button>`).join('')}</div>
       <div class="row" style="margin:16px 0"><span style="font-weight:700">盒數</span><span class="note minnote"></span><span class="sp"></span><div class="qty"></div></div>
