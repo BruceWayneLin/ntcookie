@@ -54,7 +54,24 @@ function siteBase(candidate) {
 
 // ---------------------------------------------------------------- data
 const get = async (pk, sk) => (await ddb.send(new GetCommand({ TableName: TABLE, Key: { pk, sk } }))).Item;
-const put = (item) => ddb.send(new PutCommand({ TableName: TABLE, Item: item }));
+const putRaw = (item) => ddb.send(new PutCommand({ TableName: TABLE, Item: item }));
+// every settings save also keeps the admins' rich menu in step (see syncAdminMenus)
+const put = async (item) => { const r = await putRaw(item); if (item.pk === 'SETTINGS') await syncAdminMenus(item).catch(() => {}); return r; };
+// 管理員專用圖文選單（多一顆「店家後台」）：是管理員就掛上，被移除就拿掉。一般客人永遠是預設選單，看不到後台按鈕。
+// menuSubs 記錄目前掛著管理員選單的 LINE 帳號；只有名單有變動時才會呼叫 LINE。
+async function syncAdminMenus(s) {
+  const menu = env.ADMIN_RICHMENU_ID; if (!menu || !env.LINE_MESSAGING_TOKEN) return;
+  const real = (id) => /^U[0-9a-f]{32}$/.test(id || '');
+  const want = [...new Set([...OWNER_IDS, ...(s.admins || []).map((a) => a.sub)])].filter(real);
+  const have = (s.menuSubs || []).filter(real);
+  const add = want.filter((x) => !have.includes(x)); const drop = have.filter((x) => !want.includes(x));
+  if (!add.length && !drop.length) return;
+  const H = { authorization: `Bearer ${env.LINE_MESSAGING_TOKEN}` };
+  await Promise.all([...add.map((id) => fetch(`https://api.line.me/v2/bot/user/${id}/richmenu/${menu}`, { method: 'POST', headers: H })),
+    ...drop.map((id) => fetch(`https://api.line.me/v2/bot/user/${id}/richmenu`, { method: 'DELETE', headers: H }))]);
+  await ddb.send(new UpdateCommand({ TableName: TABLE, Key: { pk: 'SETTINGS', sk: 'main' }, UpdateExpression: 'SET menuSubs = :m', ExpressionAttributeValues: { ':m': want } }));
+  console.log(JSON.stringify({ adminMenu: { added: add.length, removed: drop.length } }));
+}
 const del = (pk, sk) => ddb.send(new DeleteCommand({ TableName: TABLE, Key: { pk, sk } }));
 async function queryAll(params) {
   const out = []; let ExclusiveStartKey;
@@ -181,7 +198,7 @@ const OWNER_IDS = new Set(String(env.OWNER_LINE_IDS || '').split(',').map((x) =>
 const ADMIN_URL = env.ADMIN_URL || 'https://liff.line.me/2012677349-KI6PM6Pz/admin.html';
 const adminLink = (no) => `${ADMIN_URL}?order=${no}`;
 const isOwnerOf = (s, u) => !!(u && (OWNER_IDS.has(u.sub) || (s.admins || []).some((a) => a.sub === u.sub && a.owner)));
-const adminView = (s) => ({ ...s, pk: undefined, sk: undefined, adminPass: undefined, sessionSecret: undefined, hasAdminPass: !!s.adminPass,
+const adminView = (s) => ({ ...s, pk: undefined, sk: undefined, adminPass: undefined, sessionSecret: undefined, menuSubs: undefined, hasAdminPass: !!s.adminPass,
   admins: [...(s.admins || []).map((a) => (OWNER_IDS.has(a.sub) ? { ...a, owner: true, fixed: true } : a)),
     ...[...OWNER_IDS].filter((id) => !(s.admins || []).some((a) => a.sub === id)).map((id) => ({ sub: id, name: '負責人（還沒登入過）', owner: true, fixed: true }))],
   adminPhones: [...(OWNER_PHONE ? [{ phone: OWNER_PHONE, label: '負責人', owner: true }] : []), ...(s.adminPhones || []).filter((p) => p.phone !== OWNER_PHONE)] });
