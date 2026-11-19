@@ -1,0 +1,161 @@
+/* Keep the illustrated header and cards, and size the shopping controls in CSS pixels. */
+.ckd .ckd-cart {
+  left: auto;
+  right: calc(32 * var(--u));
+}
+
+.ckd-grid {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: clamp(8px, 2vw, 12px);
+}
+
+.ckd-grid > .ckd-note {
+  grid-column: 1 / -1;
+}
+
+.ckd-card {
+  min-width: 0;
+  height: auto;
+  padding: 4px 4px 8px;
+}
+
+.ckd-card .ph {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 297 / 172;
+  flex-shrink: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.ckd-card button.ph:focus-visible {
+  outline-offset: -3px;
+}
+
+.ckd-card.so .ph {
+  cursor: default;
+}
+
+.ckd-card .nm {
+  width: 100%;
+  margin: 7px 0 0;
+  padding-inline: 2px;
+  overflow-wrap: anywhere;
+  white-space: normal;
+  text-align: center;
+  font: 700 clamp(.875rem, 3.5vw, 1rem)/1.35 var(--serif);
+  letter-spacing: .01em;
+}
+
+.ckd-card .pr {
+  margin: 4px 0 7px;
+  font: 800 clamp(.9375rem, 3.9vw, 1.125rem)/1.2 var(--sans);
+  font-variant-numeric: tabular-nums;
+}
+
+.ckd-card .st {
+  height: auto;
+  min-height: 44px;
+  margin: auto 0 0;
+}
+
+.ckd-card .stepper button {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+}
+
+.ckd-card .stepper button:focus-visible {
+  outline-offset: -3px;
+  border-radius: 999px;
+}
+
+.ckd-card .stepper output {
+  min-width: 28px;
+  font-variant-numeric: tabular-nums;
+}
+
+.ckd-card .tl {
+  top: 4px;
+  max-width: calc(100% - 8px);
+  padding: 2px 5px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.ckd-minimum-rule, .ckd-minimum-hint {
+  color: var(--ink2);
+  font: 500 .8125rem/1.45 var(--sans);
+  text-align: center;
+}
+
+.ckd-minimum-rule {
+  margin: 6px 14px 10px;
+}
+
+.ckd-minimum-rule b {
+  color: var(--brown);
+}
+
+.ckd-minimum-hint {
+  max-width: calc(100% - 28px);
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.ckd-bar {
+  gap: 5px;
+}
+
+.ckd-bar .ckd-chip {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  column-gap: 8px;
+  max-width: calc(100% - 28px);
+  text-align: center;
+}
+
+.ckd-bar .ckd-add, .ckd-bar .ckd-go {
+  min-height: 44px;
+}
+
+.ckd-has-bar .ckd {
+  padding-bottom: calc(148px + env(safe-area-inset-bottom, 0px));
+}
+
+.cookie-personalization .tf-label {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--ink2);
+  font-size: .875rem;
+  font-weight: 600;
+}
+
+.cookie-personalization input {
+  scroll-margin-block: 20px;
+}
+
+.cookie-personalization input[aria-invalid="true"] {
+  border-color: #a13b35;
+}
+
+.cookie-personalization .tf-error {
+  display: block;
+  margin-top: 5px;
+  color: #9b322f;
+  font-size: .8125rem;
+  font-weight: 600;
+}
+
+@media (min-width: 440px) {
+  .ckd-card:nth-child(3n + 1):last-child { grid-column: 3 / span 2; }
+  .ckd-card:nth-child(3n + 1):nth-last-child(2) { grid-column: 2 / span 2; }
+  .ckd-card:nth-child(3n + 2):last-child { grid-column: 4 / span 2; }
+}
+
+@media (max-width: 439px) {
+  .ckd-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .ckd-card:nth-child(odd):last-child { grid-column: 2 / span 2; }
+}

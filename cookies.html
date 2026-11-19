@@ -14,12 +14,13 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
 <link rel="preload" as="image" href="assets/cookies/ui/header.webp" type="image/webp">
 <link rel="stylesheet" href="css/app.css?v=1120a">
+<link rel="stylesheet" href="css/cookie-selection.css?v=1120b">
 </head>
 <body class="ckd-body">
 <main class="ckd" id="page">
   <!-- design 0–247: the designer's header (bear cookie, canelés, flowers, 線上購物); series name, back and cart are live -->
   <header class="ckd-head">
-    <button class="ckd-hot" id="back" aria-label="返回" style="left:0;top:0;width:calc(130*var(--u));height:max(calc(96*var(--u)),48px)"></button>
+    <button class="ckd-hot" id="back" aria-label="返回" style="left:0;top:0;width:max(calc(130*var(--u)),48px);height:max(calc(96*var(--u)),48px)"></button>
     <a class="ckd-cart" href="cart.html" aria-label="購物車"><svg viewBox="0 0 48 44"><path d="M3 5h7l6 24h22l5-17H13"/><circle cx="19" cy="37" r="3.3"/><circle cx="35" cy="37" r="3.3"/></svg><span class="badge" data-cart-count></span></a>
     <h1 class="ckd-pill" id="pill"></h1>
   </header>
@@ -28,7 +29,8 @@
   <img class="ckd-corner r" src="assets/cookies/ui/corner-right.webp" alt="">
 </main>
 <div class="ckd-bar" id="bar" hidden></div>
-<script src="js/config.js?v=1120a"></script>
+<p class="sr-only" id="cookie-selection-status" role="status"></p>
+<script src="js/config.js?v=1120b"></script>
 <script src="js/app.js?v=1120a"></script>
 <script src="js/shop.js?v=1120a"></script>
 <script>
@@ -46,11 +48,14 @@
       ${se.photo ? `<div class="ph"><img src="${esc(asset(se.photo))}" alt=""></div>` : ''}
       <div class="tx"><h2 style="--n:${[...se.name].length}"><i class="sp l"></i>${esc(se.name)}<i class="sp r"></i></h2><div class="hr"><span>♡</span></div>${(se.lines || []).map((l) => `<p>${esc(l)}</p>`).join('')}${extra}</div>`;
   const backBtn = '<button type="button" class="ckd-back" id="back2"><i aria-hidden="true"></i>返回上一頁</button>';
-  const rules = () => {
+  const minPieces = () => cat.settings.cookie.minPieces || 1;
+  const cartCookiePieces = (items) => items.filter((item) => cat.byId[item.productId]?.category === 'cookie').reduce((total, item) => total + item.qty, 0);
+  const minimumRule = () => `<p class="ckd-minimum-rule"><b>${minPieces()} 片起訂</b>，可跨系列搭配</p>`;
+  const shippingNote = () => {
     const c = cat.settings.cookie; const t = [...c.shipping.tiers].sort((a, b) => a.upTo - b.upTo);
-    const from = (i) => (i ? t[i - 1].upTo + 1 : Math.max(1, c.minPieces || 1));
+    const from = (i) => (i ? t[i - 1].upTo + 1 : minPieces());
     const ship = t.map((x, i) => (i === t.length - 1 && i > 0 ? `${from(i)} 片以上 ${money(x.fee)}` : from(i) >= x.upTo ? `${x.upTo} 片 ${money(x.fee)}` : `${from(i)}–${x.upTo} 片 ${money(x.fee)}`)).join('・');
-    return `<p class="ckd-note">造型餅乾 <b>${c.minPieces} 片起訂</b>，可跨系列搭配<br>🍪 ${esc(c.shipping.label)}：${ship}</p>`;
+    return `<p class="ckd-note">${esc(c.shipping.label)}：${ship}</p>`;
   };
 
   function render() {
@@ -74,27 +79,33 @@
   }
 
   function gridHtml(ps) {
-    const n = ps.length; const tail = n % 3;
-    return `<div class="ckd-grid">${ps.map((p, i) => {
-      const col = tail && i >= n - tail ? (tail === 1 ? 'grid-column:3 / span 2' : `grid-column:${i === n - 2 ? 2 : 4} / span 2`) : '';
-      return `<div class="ckd-card${p.soldOut ? ' so' : ''}" data-id="${esc(p.id)}" style="${col}">
-        <div class="ph">${p.photo ? `<img src="${esc(asset(p.photo))}" alt="" loading="lazy">` : ''}${p.textLabel ? `<span class="tl">${p.textOptional ? '可改' : '需填'}${esc(p.textLabel)}</span>` : ''}${p.soldOut ? '<span class="sob">售完</span>' : ''}${p.active === false ? '<span class="offtag">未上架</span>' : ''}</div>
-        <div class="nm" style="--n:${[...p.name].length}">${esc(p.name)}</div><div class="pr">${money(p.price)}</div><div class="st"></div></div>`;
+    return `<div class="ckd-grid">${ps.map((p) => {
+      const photo = `${p.photo ? `<img src="${esc(asset(p.photo))}" alt="" loading="lazy">` : ''}${p.textLabel ? `<span class="tl">${p.textOptional ? '可改' : '需填'}${esc(p.textLabel)}</span>` : ''}${p.soldOut ? '<span class="sob">售完</span>' : ''}${p.active === false ? '<span class="offtag">未上架</span>' : ''}`;
+      const photoControl = p.soldOut ? `<div class="ph">${photo}</div>`
+        : `<button type="button" class="ph" aria-label="選一片${esc(p.name)}">${photo}</button>`;
+      return `<div class="ckd-card${p.soldOut ? ' so' : ''}" data-id="${esc(p.id)}">
+        ${photoControl}<div class="nm">${esc(p.name)}</div><div class="pr">${money(p.price)}</div><div class="st"></div></div>`;
     }).join('') || '<p class="ckd-note">這個系列還沒有餅乾，敬請期待</p>'}</div>`;
   }
   function wireCards(root, ps, barPs) {
     root.querySelectorAll('.ckd-card').forEach((c) => {
       const p = ps.find((x) => x.id === c.dataset.id);
-      const st = NTC.stepper(c.querySelector('.st'), { value: pick[p.id] || 0, min: 0, max: p.soldOut ? 0 : 200, onChange: (v) => { pick[p.id] = v; c.classList.toggle('on', v > 0); paintBar(barPs); } });
+      const stepper = c.querySelector('.st');
+      const st = NTC.stepper(stepper, { value: pick[p.id] || 0, min: 0, max: p.soldOut ? 0 : 200, onChange: (v) => { pick[p.id] = v; c.classList.toggle('on', v > 0); paintBar(barPs); } });
+      const [minus, plus] = stepper.querySelectorAll('button');
+      minus.setAttribute('aria-label', `減少${p.name}的數量`);
+      plus.setAttribute('aria-label', `增加${p.name}的數量`);
+      stepper.querySelector('output').setAttribute('aria-live', 'off');
       c.classList.toggle('on', (pick[p.id] || 0) > 0);
-      c.querySelector('.ph').onclick = () => { if (!p.soldOut) st.set(st.value + 1); };
+      const photo = c.querySelector('button.ph');
+      if (photo) photo.onclick = () => st.set(st.value + 1);
     });
   }
 
   // 卡通・收涎 / 慶生: every series is a bar; tap one to open its cookies right below (only one open at a time)
   function renderGroup(list, g) {
     groupPs = cat.products.filter((p) => list.some((x) => x.id === p.series));
-    app.innerHTML = `<div class="ckd-acc-list">${list.map((x) => {
+    app.innerHTML = `${minimumRule()}<div class="ckd-acc-list">${list.map((x) => {
       const ps = cat.products.filter((p) => p.series === x.id); const lo = ps.length ? Math.min(...ps.map((p) => p.price)) : 0;
       return `<section class="ckd-acc" data-sid="${esc(x.id)}">
         <button type="button" class="ckd-acc-head" aria-expanded="false">
@@ -102,7 +113,7 @@
           <span class="t"><b style="--n:${[...x.name].length}">${esc(x.name)}</b><small>${ps.length} 款・單片 ${money(lo)} 起${x.active ? '' : '・<em>未上架</em>'}</small></span>
           <span class="cnt" hidden></span><span class="chev" aria-hidden="true"></span></button>
         <div class="ckd-acc-body" hidden></div></section>`;
-    }).join('')}</div>${rules()}<a class="ckd-custom" href="custom.html${g === 'birthday' ? '?for=慶生' : ''}">想要其他圖案？<b>客製詢問 ›</b></a>${backBtn}`;
+    }).join('')}</div>${shippingNote()}<a class="ckd-custom" href="custom.html${g === 'birthday' ? '?for=慶生' : ''}">想要其他圖案？<b>客製詢問 ›</b></a>${backBtn}`;
     $('#back2').onclick = NTC.back;
     const open = (sid, scroll) => {
       app.querySelectorAll('.ckd-acc').forEach((sec) => {
@@ -128,8 +139,8 @@
       : off ? `<div class="ckd-adm">預覽：有 ${off} 款還沒上架（標「未上架」），客人看不到那幾款。</div>` : ''}
       <section class="ckd-banner">${banner(se)}</section>
       <img class="ckd-sec" src="assets/cookies/ui/section.webp" alt="單片選購">
-      ${gridHtml(ps)}
-      ${rules()}<a class="ckd-custom" href="custom.html">系列裡沒有想要的圖案？<b>客製詢問 ›</b></a>${backBtn}`;
+      ${minimumRule()}${gridHtml(ps)}
+      ${shippingNote()}<a class="ckd-custom" href="custom.html">系列裡沒有想要的圖案？<b>客製詢問 ›</b></a>${backBtn}`;
     $('#back2').onclick = NTC.back;
     wireCards(app, ps, ps);
     document.body.classList.add('ckd-has-bar');
@@ -141,17 +152,30 @@
     app.querySelectorAll('.ckd-acc').forEach((sec) => { const k = cat.products.filter((p) => p.series === sec.dataset.sid).reduce((a, p) => a + (pick[p.id] || 0), 0); const c = sec.querySelector('.cnt'); c.hidden = !k; c.textContent = k ? `已選 ${k}` : ''; });
     const n = chosen.reduce((a, p) => a + pick[p.id], 0); const sum = chosen.reduce((a, p) => a + pick[p.id] * p.price, 0);
     const items = NTC.cart.items(); const inCart = items.reduce((a, i) => a + i.qty, 0);
+    const cartPieces = cartCookiePieces(items);
+    const min = minPieces();
+    const left = min - cartPieces - n;
+    const cartNote = cartPieces ? `購物車已有 ${cartPieces} 片・` : '';
+    const reached = cartPieces >= min ? `已達 ${min} 片起訂` : `加入後達 ${min} 片起訂`;
+    const minimumText = n
+      ? cartNote + (left > 0 ? `距 ${min} 片起訂還差 ${left} 片` : reached)
+      : cartPieces && left > 0 ? `${cartNote}還差 ${left} 片達起訂量` : '';
+    const minimumHint = minimumText ? `<p class="ckd-minimum-hint" id="cookie-minimum">${minimumText}</p>` : '';
+    const selectionStatus = $('#cookie-selection-status');
+    const announcement = n ? `本次已選 ${n} 片。${minimumText}` : '';
+    if (selectionStatus.textContent !== announcement) selectionStatus.textContent = announcement;
     const cartSum = inCart ? NTC.priceCart(items, cat).subtotal : 0;
     const CART = '<svg viewBox="0 0 48 44"><path d="M3 5h7l6 24h22l5-17H13"/><circle cx="19" cy="37" r="3.3"/><circle cx="35" cy="37" r="3.3"/></svg>';
     const listPage = !!app.querySelector('.ckd-acc');
     if (!n && !inCart && listPage) { bar.hidden = true; document.body.classList.remove('ckd-has-bar'); return; } // series list with nothing picked: no floating button over the text
     bar.hidden = false; document.body.classList.add('ckd-has-bar');
     if (n) { // picked something on this page → add it
-      bar.innerHTML = `<div class="ckd-chip">已選 <b>${n}</b> 片・${money(sum)}${inCart ? `　<a href="cart.html">購物車 ${inCart} 件 ›</a>` : ''}</div>
+      bar.innerHTML = `<div class="ckd-chip"><span data-cookie-selection>本次已選 <b>${n}</b> 片・${money(sum)}</span>${inCart ? `<a href="cart.html">購物車 ${inCart} 件 ›</a>` : ''}</div>
+        ${minimumHint}
         <button type="button" class="ckd-add" id="add" aria-label="加入購物車"><img src="assets/cookies/ui/add.webp" alt="加入購物車"></button>`;
       $('#add').onclick = () => add(chosen);
     } else if (inCart) { // nothing picked, cart has items → a real button to the cart
-      bar.innerHTML = `<a class="ckd-go" href="cart.html">${CART}<span>前往購物車結帳</span><small>${inCart} 件・${money(cartSum)}</small></a>`;
+      bar.innerHTML = `${minimumHint}<a class="ckd-go" href="cart.html">${CART}<span>前往購物車結帳</span><small>${inCart} 件・${money(cartSum)}</small></a>`;
     } else {
       bar.innerHTML = `<button type="button" class="ckd-add off" id="add" aria-label="加入購物車"><img src="assets/cookies/ui/add.webp" alt="加入購物車"></button>`;
       $('#add').onclick = () => NTC.toast('請先點 ＋ 選擇想要的餅乾');
@@ -164,7 +188,7 @@
       chosen.forEach((p) => NTC.cart.add({ type: 'product', productId: p.id, qty: pick[p.id], ...(texts[p.id] ? { text: texts[p.id] } : {}) }));
       const n = chosen.reduce((a, p) => a + pick[p.id], 0);
       pick = {}; render();
-      const ck = NTC.cart.items().filter((i) => cat.byId[i.productId]?.category === 'cookie').reduce((a, i) => a + i.qty, 0); const min = cat.settings.cookie.minPieces;
+      const ck = cartCookiePieces(NTC.cart.items()); const min = minPieces();
       NTC.toast(ck < min ? `已加入 ${n} 片，再選 ${min - ck} 片就能結帳（${min} 片起訂）` : `已加入 ${n} 片到購物車 ♡`, 3200);
     };
     if (!needText.length) return done();
@@ -174,31 +198,69 @@
     const nameLabel = (p) => nameLabelRaw(p) || '名字';
     const kind = (p) => (has(p, '日期') ? (nameLabelRaw(p) ? 'nd' : 'd') : 'n'); // any label + 日期 → name field and calendar
     const roc = (ymd) => { const [y, m, d] = ymd.split('-').map(Number); return `${y - 1911}.${String(m).padStart(2, '0')}.${String(d).padStart(2, '0')}`; };
-    const opt = (p) => (p.textOptional ? '（選填，不填就照圖上的字）' : '');
-    const field = (p) => {
+    const opt = (p) => (p.textOptional ? '（選填，不填就照圖上的字）' : '（必填）');
+    const field = (p, index) => {
       const k = kind(p); const head = `<p class="tf-head">${esc(p.name)} × ${pick[p.id]}${opt(p)}</p>`;
       const nameMax = k === 'nd' ? Math.max(2, (p.textMax || 16) - 10) : (p.textMax || 12);
-      const nameIn = `<label class="field"><span>${esc(k === 'n' ? p.textLabel : nameLabel(p))}（最多 ${nameMax} 字）</span><input data-id="${esc(p.id)}" data-part="name" maxlength="${nameMax}" placeholder="${has(p, '名字') ? '例：林羽澄' : '例：4 months'}" autocomplete="off"></label>`;
-      const dateIn = `<label class="field"><span>日期（點一下用日曆選）</span><input type="date" data-id="${esc(p.id)}" data-part="date"><small class="tf-hint" data-for="${esc(p.id)}">餅乾上會寫成民國日期，例如 115.03.23</small></label>`;
-      return `<div class="tf" data-id="${esc(p.id)}" data-kind="${k}" data-opt="${p.textOptional ? 1 : ''}">${head}${k !== 'd' ? nameIn : ''}${k !== 'n' ? dateIn : ''}</div>`;
+      const required = p.textOptional ? '' : 'required';
+      const label = esc(k === 'n' ? p.textLabel : nameLabel(p));
+      const nameId = `cookie-name-${index}`; const dateId = `cookie-date-${index}`;
+      const nameIn = `<div class="field">
+        <label class="tf-label" for="${nameId}">${label}（最多 ${nameMax} 字）</label>
+        <input id="${nameId}" data-part="name" maxlength="${nameMax}" placeholder="${has(p, '名字') ? '例：林羽澄' : '例：4 months'}" autocomplete="off" ${required}>
+        <small class="tf-error" id="${nameId}-error" hidden>請填寫${label}</small>
+        </div>`;
+      const dateIn = `<div class="field">
+        <label class="tf-label" for="${dateId}">日期（點一下用日曆選）</label>
+        <input id="${dateId}" type="date" data-part="date" aria-describedby="${dateId}-hint" ${required}>
+        <small class="tf-hint" id="${dateId}-hint">餅乾上會寫成民國日期，例如 115.03.23</small>
+        <small class="tf-error" id="${dateId}-error" hidden>請用日曆選日期</small>
+        </div>`;
+      return `<div class="tf" data-id="${esc(p.id)}">${head}${k !== 'd' ? nameIn : ''}${k !== 'n' ? dateIn : ''}</div>`;
     };
     const allNames = needText.every((p) => has(p, '名字'));
-    const { el, close } = NTC.sheet(`<h2>${allNames ? (needText.some((p) => has(p, '日期')) ? '填寫寶寶名字與日期' : '填寫寶寶名字') : '填寫餅乾上的字'}</h2><p class="sub">我們會照您填的內容手繪在餅乾上。每片要不同的字，請分次加入購物車。</p>
-      ${needText.map(field).join('')}
-      <button class="btn block" id="ok">加入購物車</button>`);
-    el.querySelectorAll('input[type=date]').forEach((i) => (i.onchange = () => { const h = el.querySelector(`.tf-hint[data-for="${CSS.escape(i.dataset.id)}"]`); if (h) h.textContent = i.value ? `餅乾上會寫成：${roc(i.value)}` : '餅乾上會寫成民國日期，例如 115.03.23'; }));
-    const first = el.querySelector('input[data-part="name"]'); if (first) first.focus();
-    el.querySelector('#ok').onclick = () => {
-      const texts = {};
-      for (const box of el.querySelectorAll('.tf')) {
-        const nameI = box.querySelector('[data-part="name"]'); const dateI = box.querySelector('[data-part="date"]');
-        const name = nameI ? nameI.value.trim().replace(/\s+/g, ' ') : ''; const date = dateI && dateI.value ? roc(dateI.value) : '';
-        const optional = !!box.dataset.opt;
-        if (nameI && !name && !optional) { NTC.toast(`請填寫${nameI.closest('label').querySelector('span').textContent.replace(/（.*/, '')}`); nameI.focus(); return; }
-        if (dateI && !date && !optional) { NTC.toast('請用日曆選日期'); dateI.focus(); return; }
-        const v = [name, date].filter(Boolean).join(' ');
-        if (v) texts[box.dataset.id] = v;
+    const { el, close } = NTC.sheet(`<h2 id="cookie-personalization-title">${allNames ? (needText.some((p) => has(p, '日期')) ? '填寫寶寶名字與日期' : '填寫寶寶名字') : '填寫餅乾上的字'}</h2>
+      <p class="sub">我們會照您填的內容手繪在餅乾上。每片要不同的字，請分次加入購物車。</p>
+      <form class="cookie-personalization" novalidate>
+        ${needText.map(field).join('')}
+        <button type="submit" class="btn block" id="ok">加入購物車</button>
+      </form>`);
+    el.setAttribute('aria-labelledby', 'cookie-personalization-title');
+    const form = el.querySelector('form');
+    const setError = (input, invalid) => {
+      const error = input.parentElement.querySelector('.tf-error');
+      const hint = input.parentElement.querySelector('.tf-hint');
+      const descriptions = [hint?.id, invalid ? error.id : ''].filter(Boolean).join(' ');
+      if (invalid) input.setAttribute('aria-invalid', 'true');
+      else input.removeAttribute('aria-invalid');
+      if (descriptions) input.setAttribute('aria-describedby', descriptions);
+      else input.removeAttribute('aria-describedby');
+      error.hidden = !invalid;
+    };
+    form.addEventListener('input', ({ target }) => {
+      if (target.dataset.part === 'date') {
+        target.parentElement.querySelector('.tf-hint').textContent = target.value
+          ? `餅乾上會寫成：${roc(target.value)}` : '餅乾上會寫成民國日期，例如 115.03.23';
       }
+      if (target.matches('input[aria-invalid]') && target.value.trim()) setError(target, false);
+    });
+    form.querySelector('input').focus();
+    form.onsubmit = (event) => {
+      event.preventDefault();
+      const texts = {};
+      let firstInvalid = null;
+      for (const box of form.querySelectorAll('.tf')) {
+        const parts = [];
+        for (const input of box.querySelectorAll('input')) {
+          const value = input.value.trim().replace(/\s+/g, ' ');
+          const invalid = input.required && !value;
+          setError(input, invalid);
+          if (invalid) firstInvalid ||= input;
+          if (value) parts.push(input.type === 'date' ? roc(value) : value);
+        }
+        if (parts.length) texts[box.dataset.id] = parts.join(' ');
+      }
+      if (firstInvalid) { firstInvalid.focus(); return; }
       close(); done(texts);
     };
   }

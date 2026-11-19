@@ -11,11 +11,12 @@
 <link rel="icon" href="assets/favicon.png">
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <link rel="preload" as="image" href="assets/v2/01-canele/m-header.webp" type="image/webp">
 <link rel="stylesheet" href="css/app.css?v=1120a">
+<link rel="stylesheet" href="css/canele-selection.css?v=1120b">
 </head>
-<body class="cm-body">
+<body class="cm-body canele-selection">
 <!-- designer's mobile layout (nt-canele-mobile-ux-slices, 793 px wide): header art + live tabs, cards, notes and checkout bar -->
 <main class="cm" id="page">
   <header class="cm-head">
@@ -23,117 +24,291 @@
     <a class="cm-cart" href="cart.html" aria-label="購物車"><svg viewBox="0 0 48 44"><path d="M3 5h7l6 24h22l5-17H13"/><circle cx="19" cy="37" r="3.3"/><circle cx="35" cy="37" r="3.3"/></svg><span class="badge" data-cart-count></span></a>
     <h1 class="sr-only">N.T Canelé 豪宅裡の可麗露・六入可麗露禮盒（每盒 6 顆・手工製作）</h1>
   </header>
-  <div class="cm-tabs" id="tabs" role="tablist"></div>
-  <p class="cm-strip" id="strip"></p>
-  <div class="cm-grid" id="grid"><div class="spinner"></div></div>
-  <details class="cm-notes" id="notes"><summary>訂購須知<i aria-hidden="true"></i></summary><div class="body" id="notes-body"></div></details>
-  <button type="button" class="nt-back" onclick="NTC.back()"><i aria-hidden="true"></i>返回上一頁</button>
+  <div class="cm-tabs" id="tabs" role="tablist" aria-label="禮盒種類" hidden></div>
+  <section id="flavor-panel" aria-busy="true">
+    <div class="cm-strip" id="strip" hidden></div>
+    <div class="cm-grid" id="grid"><div class="spinner" role="status"><span class="sr-only">載入口味中</span></div></div>
+    <p class="sr-only" id="flavor-status" role="status"></p>
+  </section>
+  <details class="cm-notes" id="notes" hidden><summary>訂購須知<i aria-hidden="true"></i></summary><div class="body" id="notes-body"></div></details>
+  <a class="cm-return" href="shop.html">返回線上商店</a>
 </main>
-<div class="cm-bar" id="bar"></div>
-<script src="js/config.js?v=1120a"></script>
+<div class="cm-bar" id="bar" hidden></div>
+<dialog id="box-quantity" class="cm-quantity" aria-labelledby="quantity-title"></dialog>
+<script src="js/config.js?v=1120b"></script>
 <script src="js/app.js?v=1120a"></script>
 <script src="js/shop.js?v=1120a"></script>
 <script>
 (function () {
   const { $, esc, money, asset } = NTC;
+  const tabs = $('#tabs');
+  const panel = $('#flavor-panel');
+  const grid = $('#grid');
+  const strip = $('#strip');
+  const bar = $('#bar');
+  const dialog = $('#box-quantity');
   $('#back').onclick = NTC.back;
-  const PHOTO = { original: '01-original', 'mixed-berries': '02-mixed-berries', 'honey-pistachio': '03-honey-pistachio', 'hazelnut-chocolate': '04-hazelnut-chocolate',
-    matcha: '05-matcha', 'thai-tea': '06-thai-tea', 'cinnamon-apple': '07-cinnamon-apple', 'salted-caramel': '08-salted-caramel' }; // the designer's mobile photos
-  const CART_PLUS = '<svg viewBox="0 0 32 28" aria-hidden="true"><path d="M2 3h4l4 15h14l3-10H8"/><circle cx="12" cy="23" r="2"/><circle cx="22" cy="23" r="2"/><path d="M23 1v8M19 5h8"/></svg>';
-  const CART = '<svg viewBox="0 0 48 44" aria-hidden="true"><path d="M3 5h7l6 24h22l5-17H13"/><circle cx="19" cy="37" r="3.3"/><circle cx="35" cy="37" r="3.3"/></svg>';
-  let cat, S, fl = [];
-  let mode = 'single'; let chosen = []; // chosen flavours for an assorted box
+  const PHOTO = {
+    original: '01-original', 'mixed-berries': '02-mixed-berries', 'honey-pistachio': '03-honey-pistachio',
+    'hazelnut-chocolate': '04-hazelnut-chocolate', matcha: '05-matcha', 'thai-tea': '06-thai-tea',
+    'cinnamon-apple': '07-cinnamon-apple', 'salted-caramel': '08-salted-caramel',
+  };
+  const CART_LIMIT = 200;
+  const selections = new Map();
+  let cat, S, flavors = [], available = 0, mode = 'single', dialogTrigger;
+  const chosen = () => selections.get(mode) || [];
+  const option = () => S.canele.modes.find((entry) => entry.id === mode);
+  const singleMinimum = () => S.canele.singleMinBoxes || 1;
+  const needed = (product) => Math.max(1, singleMinimum() - NTC.cart.qtyOf(product.id));
+  const price = (value) => 'NT' + money(value);
 
-  const modeOf = () => (mode === 'single' ? null : S.canele.modes.find((m) => m.id === mode));
-  // the designer's mobile photo for the 8 original flavours — unless the shop uploaded its own photo in the admin (that always wins)
-  const photo = (p) => { const k = PHOTO[p.id.replace(/^canele-/, '')]; const own = p.photo && !/^assets\/v2\/01-canele\/photo-/.test(p.photo); return own || !k ? p.photo : `assets/v2/01-canele/m-photo-${k}.webp`; };
+  function photo(product) {
+    const filename = PHOTO[product.id.replace(/^canele-/, '')];
+    const custom = product.photo && !product.photo.startsWith('assets/v2/01-canele/photo-');
+    return custom || !filename ? product.photo : `assets/v2/01-canele/m-photo-${filename}.webp`;
+  }
 
-  function renderTabs() {
-    const tabs = [{ id: 'single', t: '單一口味' }, ...S.canele.modes.map((m) => ({ id: m.id, t: `${m.flavors} 種各 ${m.each} 顆` }))];
-    $('#tabs').innerHTML = tabs.map((x) => `<button type="button" role="tab" aria-selected="${x.id === mode}" class="${x.id === mode ? 'on' : ''}" data-m="${x.id}">${x.t}</button>`).join('');
-    $('#tabs').querySelectorAll('button').forEach((b) => (b.onclick = () => { if (mode === b.dataset.m) return; mode = b.dataset.m; chosen = []; render(); }));
-    const m = modeOf();
-    $('#strip').innerHTML = m ? `任選 ${m.flavors} 種・每種 ${m.each} 顆<span>｜</span>${money(S.canele.assortedPrice)}／盒<span>｜</span>${m.minBoxes} 盒起訂`
-      : `單一口味 6 入<span>｜</span>${S.canele.singleMinBoxes || 1} 盒起訂`;
+  function announce(message) {
+    $('#flavor-status').textContent = message;
+  }
+
+  function mountTabs() {
+    const entries = [{ id: 'single', title: '單一口味' }, ...S.canele.modes.map((entry) => ({
+      id: entry.id, title: `${entry.flavors} 種各 ${entry.each} 顆`,
+    }))];
+    tabs.innerHTML = entries.map((entry, index) => `<button type="button" role="tab"
+      id="flavor-tab-${index}" data-m="${esc(entry.id)}" aria-controls="flavor-panel">${entry.title}</button>`).join('');
+    const buttons = [...tabs.querySelectorAll('button')];
+    tabs.addEventListener('click', (event) => {
+      const button = event.target.closest('[role="tab"]');
+      if (button && button.dataset.m !== mode) activate(button.dataset.m);
+    });
+    tabs.addEventListener('keydown', (event) => {
+      const focused = buttons.indexOf(event.target);
+      const action = { ArrowLeft: -1, ArrowRight: 1, Home: -focused, End: buttons.length - 1 - focused }[event.key];
+      if (focused < 0 || action === undefined) return;
+      event.preventDefault();
+      const target = buttons[(focused + action + buttons.length) % buttons.length];
+      target.focus();
+      if (mode !== target.dataset.m) activate(target.dataset.m);
+    });
+    tabs.hidden = false;
+  }
+
+  function activate(nextMode) {
+    mode = nextMode;
+    tabs.querySelectorAll('button').forEach((button) => {
+      const active = button.dataset.m === mode;
+      button.classList.toggle('on', active);
+      button.setAttribute('aria-selected', String(active));
+      button.tabIndex = active ? 0 : -1;
+      if (active) panel.setAttribute('aria-labelledby', button.id);
+    });
+    paintStrip();
+    renderGrid();
+    paintBar();
+    announce('');
+  }
+
+  function paintStrip() {
+    const assortment = option();
+    if (!assortment) {
+      strip.innerHTML = '<strong>每盒 6 顆同一口味</strong><span>・</span>' + singleMinimum() + ' 盒起訂';
+    } else {
+      const minimum = `<strong>${assortment.minBoxes} 盒起訂，最低 ${price(S.canele.assortedPrice * assortment.minBoxes)}</strong>`;
+      const description = `每盒任選 ${assortment.flavors} 種，每種 ${assortment.each} 顆・${price(S.canele.assortedPrice)}／盒`;
+      strip.innerHTML = `<div>${description}</div><div>${minimum} <small>運費另計</small></div>`;
+      if (available < assortment.flavors) {
+        strip.insertAdjacentHTML('beforeend', `<p class="cm-unavailable">目前可選 ${available} 種口味，未達這款禮盒所需的 ${assortment.flavors} 種。</p>`);
+      }
+    }
+    strip.hidden = false;
   }
 
   function renderGrid() {
-    const m = modeOf();
-    $('#grid').innerHTML = fl.map((p) => {
-      const sel = chosen.includes(p.id); const full = m && !sel && chosen.length >= m.flavors;
-      const btn = p.soldOut ? '<button type="button" class="cm-btn" disabled>售完</button>'
-        : !m ? `<button type="button" class="cm-btn" data-add="${esc(p.id)}">${CART_PLUS}<span>加入購物車</span></button>`
-        : `<button type="button" class="cm-btn pick${sel ? ' on' : ''}" data-pick="${esc(p.id)}" ${full ? 'disabled' : ''}>${sel ? '✓ 已選這個口味' : '選這個口味'}</button>`;
-      return `<article class="cm-card${sel ? ' on' : ''}${p.soldOut ? ' so' : ''}">
-        <div class="ph"><img src="${esc(asset(photo(p)))}" alt="" width="364" height="187" loading="lazy"></div>
-        <h2>${p.icon ? `<img src="${esc(asset(p.icon))}" alt="">` : ''}${esc(p.name)}</h2>
-        <p class="pr">${m ? `綜合禮盒 ${money(S.canele.assortedPrice)}<small>／盒</small>` : `NT${money(p.price)}<small>／盒</small>`}</p>${btn}</article>`;
-    }).join('') || '<p class="note">目前沒有上架的口味，敬請期待</p>';
-    $('#grid').querySelectorAll('[data-add]').forEach((b) => (b.onclick = () => addSingle(fl.find((p) => p.id === b.dataset.add))));
-    $('#grid').querySelectorAll('[data-pick]').forEach((b) => (b.onclick = () => {
-      const id = b.dataset.pick; chosen = chosen.includes(id) ? chosen.filter((x) => x !== id) : [...chosen, id];
-      renderGrid(); paintBar();
-    }));
+    const assortment = option();
+    grid.innerHTML = flavors.map((product) => {
+      const picture = photo(product);
+      const action = product.soldOut ? '<button type="button" class="cm-btn" disabled>售完</button>'
+        : assortment ? `<button type="button" class="cm-btn pick" data-pick="${esc(product.id)}"></button>`
+        : `<button type="button" class="cm-btn" data-add="${esc(product.id)}">${needed(product) > 1 ? '選盒數' : '加入購物車'}</button>`;
+      return `<article class="cm-card${product.soldOut ? ' so' : ''}">
+        <div class="ph">${picture ? `<img src="${esc(asset(picture))}" alt="" width="364" height="187" loading="lazy">` : ''}</div>
+        <h2>${product.icon ? `<img src="${esc(asset(product.icon))}" alt="">` : ''}<span>${esc(product.name)}</span></h2>
+        ${assortment ? '' : `<p class="pr">${price(product.price)}<small>／盒</small></p>`}
+        ${action}
+      </article>`;
+    }).join('') || '<p class="cm-grid-message">目前沒有上架的口味，敬請期待。</p>';
+    if (assortment) paintPicks();
   }
 
-  function addSingle(p) {
-    NTC.cart.add({ type: 'product', productId: p.id, qty: 1 });
-    const q = NTC.cart.qtyOf(p.id);
-    NTC.toast(`已加入「${p.name}」單一口味禮盒 1 盒${q > 1 ? `（購物車共 ${q} 盒）` : ''}`, 2600);
+  function paintPicks() {
+    const assortment = option();
+    const picked = chosen();
+    grid.querySelectorAll('[data-pick]').forEach((button) => {
+      const selected = picked.includes(button.dataset.pick);
+      button.disabled = available < assortment.flavors || (!selected && picked.length >= assortment.flavors);
+      button.setAttribute('aria-pressed', String(selected));
+      button.classList.toggle('on', selected);
+      button.closest('.cm-card').classList.toggle('on', selected);
+      button.textContent = selected ? '✓ 已選口味' : '選擇口味';
+    });
   }
 
-  function chooseBoxes() { // assorted box: flavours chosen → how many boxes
-    const m = modeOf(); const names = chosen.map((id) => fl.find((p) => p.id === id)?.name).filter(Boolean);
-    const { el, close } = NTC.sheet(`<h2>綜合口味禮盒（任選 ${m.flavors} 種）</h2>
-      <p class="sub">${esc(names.join('、'))}｜每種 ${m.each} 顆・每盒 6 顆<br>手工製作，每種口味最低製作量為 6 顆，因此 ${m.minBoxes} 盒起訂。</p>
-      <div class="row" style="margin:14px 0 16px"><span style="font-weight:700">盒數</span><span class="note" style="margin-left:6px">（${m.minBoxes} 盒起訂）</span><span class="sp"></span><div class="qty"></div></div>
-      <button class="btn block add">加入購物車・<span class="tt"></span></button>`);
-    const tt = el.querySelector('.tt');
-    const st = NTC.stepper(el.querySelector('.qty'), { value: m.minBoxes, min: m.minBoxes, onChange: (v) => (tt.textContent = money(v * S.canele.assortedPrice)) });
-    tt.textContent = money(st.value * S.canele.assortedPrice);
-    el.querySelector('.add').onclick = () => {
-      NTC.cart.add({ type: 'canele-assorted', mode: m.id, flavors: [...chosen], qty: st.value });
-      close(); NTC.toast(`已加入綜合口味禮盒 ${st.value} 盒`, 2600); chosen = []; renderGrid(); paintBar();
-    };
-  }
-
-  function paintBar() {
-    const m = modeOf(); const bar = $('#bar');
-    const items = NTC.cart.items(); const n = items.reduce((a, i) => a + i.qty, 0);
-    const pc = n ? NTC.priceCart(items, cat) : null;
-    const allBoxes = items.every((i) => i.type === 'canele-assorted' || cat.byId[i.productId]?.category === 'canele');
-    if (m && chosen.length) { // building an assorted box
-      const left = m.flavors - chosen.length;
-      bar.innerHTML = `<div class="sum"><span class="ico">${CART}</span><span class="t"><small>綜合禮盒・已選</small><b>${chosen.length} / ${m.flavors} 種</b></span></div>
-        <button type="button" class="go" id="next" ${left ? 'disabled' : ''}>${left ? `再選 ${left} 種` : '選盒數 ›'}</button>`;
-      $('#next').onclick = chooseBoxes;
+  grid.addEventListener('click', (event) => {
+    const button = event.target.closest('button');
+    if (!button || button.disabled) return;
+    if (button.dataset.add) {
+      addSingle(flavors.find((product) => product.id === button.dataset.add), button);
       return;
     }
-    bar.innerHTML = `<div class="sum"><span class="ico">${CART}</span><span class="t"><small>${n ? `${n} ${allBoxes ? '盒' : '件'}` : '購物車'}</small><b>${n ? `NT${money(pc.subtotal)}` : '還沒有商品'}</b></span></div>
-      <a class="go${n ? '' : ' off'}" href="${n ? 'cart.html' : '#'}">去結帳 ›</a>`;
-    if (!n) bar.querySelector('.go').onclick = (e) => { e.preventDefault(); NTC.toast(m ? `先選 ${m.flavors} 種口味` : '先點口味的「加入購物車」'); };
+    const id = button.dataset.pick;
+    if (!id) return;
+    const picked = chosen();
+    const updated = picked.includes(id) ? picked.filter((value) => value !== id) : [...picked, id];
+    selections.set(mode, updated);
+    paintPicks();
+    paintBar();
+    announce(`已選 ${updated.length} 種，共需 ${option().flavors} 種口味`);
+  });
+
+  function addSingle(product, button) {
+    const existing = NTC.cart.qtyOf(product.id);
+    const min = needed(product);
+    if (existing + min > CART_LIMIT) {
+      NTC.toast('這個口味已達購物車數量上限，可在購物車調整。');
+      return;
+    }
+    const add = (qty) => {
+      NTC.cart.add({ type: 'product', productId: product.id, qty });
+      const message = `已加入「${product.name}」${qty} 盒`;
+      announce(message);
+      NTC.toast(message);
+    };
+    if (min === 1) {
+      add(1);
+      return;
+    }
+    const description = existing
+      ? `購物車已有 ${existing} 盒，這次至少再加入 ${min} 盒。`
+      : `每盒 6 顆同一口味，${singleMinimum()} 盒起訂。`;
+    chooseQuantity({ title: product.name, description, unitPrice: product.price, min, max: CART_LIMIT - existing, add, trigger: button });
+  }
+
+  function chooseBoxes(trigger) {
+    const assortment = option();
+    const picked = [...chosen()];
+    if (!assortment || picked.length !== assortment.flavors) return;
+    const names = picked.map((id) => cat.byId[id].name);
+    const existing = NTC.cart.items().find((item) =>
+      item.type === 'canele-assorted' && item.mode === mode && item.flavors?.length === picked.length
+      && picked.every((id) => item.flavors.includes(id)))?.qty || 0;
+    const min = Math.max(1, assortment.minBoxes - existing);
+    if (existing + min > CART_LIMIT) {
+      NTC.toast('這組禮盒已達購物車數量上限，可在購物車調整。');
+      return;
+    }
+    chooseQuantity({
+      title: '綜合口味禮盒',
+      description: `${names.join('、')}。每盒 6 顆、每種 ${assortment.each} 顆。${existing ? `購物車已有 ${existing} 盒。` : `${assortment.minBoxes} 盒起訂。`}`,
+      unitPrice: S.canele.assortedPrice, min, max: CART_LIMIT - existing, trigger,
+      add(qty) {
+        NTC.cart.add({ type: 'canele-assorted', mode: assortment.id, flavors: picked, qty });
+        selections.delete(assortment.id);
+        paintPicks();
+        paintBar();
+        announce(`已加入綜合口味禮盒 ${qty} 盒`);
+        NTC.toast(`已加入綜合口味禮盒 ${qty} 盒`);
+      },
+    });
+  }
+
+  function chooseQuantity({ title, description, unitPrice, min, max, trigger, add }) {
+    dialogTrigger = trigger;
+    dialog.innerHTML = `<form method="dialog" class="cm-dialog">
+      <button type="submit" class="cm-dialog-close" aria-label="關閉">×</button>
+      <h2 tabindex="-1" id="quantity-title">${esc(title)}</h2>
+      <p>${esc(description)}</p>
+      <div class="cm-dialog-row"><strong>盒數</strong><div class="qty" role="group" aria-label="盒數"></div></div>
+      <button type="button" class="cm-primary add">加入購物車 <span class="tt"></span></button>
+    </form>`;
+    const total = dialog.querySelector('.tt');
+    const stepper = NTC.stepper(dialog.querySelector('.qty'), {
+      value: min, min, max, onChange: (value) => { total.textContent = price(value * unitPrice); },
+    });
+    total.textContent = price(stepper.value * unitPrice);
+    dialog.querySelector('.add').onclick = () => {
+      add(stepper.value);
+      dialog.close();
+    };
+    dialog.showModal();
+    $('#quantity-title').focus();
+  }
+
+  dialog.addEventListener('close', () => {
+    const target = dialogTrigger?.isConnected ? dialogTrigger : bar.querySelector('a') || tabs.querySelector('.on');
+    target?.focus({ preventScroll: true });
+  });
+  dialog.addEventListener('click', (event) => { if (event.target === dialog) dialog.close(); });
+
+  function paintBar() {
+    const assortment = option();
+    const picked = chosen();
+    const items = NTC.cart.items();
+    const count = items.reduce((sum, item) => sum + item.qty, 0);
+    const draft = assortment && available >= assortment.flavors && picked.length > 0;
+    bar.hidden = !draft && !count;
+    $('#page').classList.toggle('cm-has-bar', !bar.hidden);
+    if (draft) {
+      const remaining = assortment.flavors - picked.length;
+      bar.innerHTML = `<div class="sum"><div class="t"><small>綜合禮盒</small><b>已選 ${picked.length}／${assortment.flavors} 種</b></div></div>
+        <button type="button" class="go" id="next"${remaining ? ' disabled' : ''}>${remaining ? `再選 ${remaining} 種` : '選盒數'}</button>`;
+      $('#next').onclick = (event) => chooseBoxes(event.currentTarget);
+    } else if (count) {
+      const allBoxes = items.every((item) => item.type === 'canele-assorted' || cat.byId[item.productId]?.category === 'canele');
+      bar.innerHTML = `<div class="sum"><div class="t"><small>購物車・${count} ${allBoxes ? '盒' : '件'}</small><b>${price(NTC.priceCart(items, cat).subtotal)}</b></div></div>
+        <a class="go" href="cart.html">去結帳</a>`;
+    } else {
+      bar.innerHTML = '';
+    }
   }
 
   function renderNotes() {
     const t = [...S.shipping.frozen.tiers].sort((a, b) => a.upTo - b.upTo);
     const tiers = t.map((x, i) => `${i ? t[i - 1].upTo + 1 : 1}${x.upTo > (i ? t[i - 1].upTo + 1 : 1) ? `～${x.upTo}` : ''} 盒 ${money(x.fee)}`).join('、');
-    const single = fl.length ? [...new Set(fl.map((p) => p.price))].sort((a, b) => a - b).map((pr) => `${fl.filter((p) => p.price === pr).map((p) => p.name).join('、').slice(0, 24)}${fl.filter((p) => p.price === pr).length > 2 ? ' 等' : ''} ${money(pr)}`).join('；') : '';
+    const single = flavors.length ? [...new Set(flavors.map((product) => product.price))].sort((a, b) => a - b).map(price).join('・') : '';
     $('#notes-body').innerHTML = `<ul>
       <li>每盒 6 顆，全部手工製作。</li>
-      <li><b>單一口味禮盒</b>：每盒 6 顆同一口味，${S.canele.singleMinBoxes || 1} 盒起訂。${single ? `（${esc(single)}／盒）` : ''}</li>
+      <li><b>單一口味禮盒</b>：每盒 6 顆同一口味，${singleMinimum()} 盒起訂。${single ? `（${esc(single)}／盒）` : ''}</li>
       ${S.canele.modes.map((m) => `<li><b>綜合口味禮盒（任選 ${m.flavors} 種）</b>：每種 ${m.each} 顆，${money(S.canele.assortedPrice)}／盒，${m.minBoxes} 盒起訂。</li>`).join('')}
       <li>手工製作，每種口味最低製作量為 6 顆，因此綜合禮盒設有最低訂購盒數。</li>
       <li><b>${esc(S.shipping.frozen.label)}</b>：${tiers}；單件包裹最多 ${S.shipping.frozen.maxPerParcel} 盒，超過會分箱、各自計運費。</li>
       ${S.dateNote ? `<li>${esc(S.dateNote)}</li>` : ''}</ul>`;
   }
 
-  function render() { renderTabs(); renderGrid(); paintBar(); }
-  document.addEventListener('ntc:cart', () => { if (cat) paintBar(); });
-  NTC.refreshCart();
-  NTC.catalog().then((c) => {
-    cat = c; S = c.settings; fl = c.products.filter((p) => p.category === 'canele');
-    render(); renderNotes();
-  }).catch((e) => { $('#grid').innerHTML = `<p class="note">${esc(e.message)}</p>`; });
+  document.addEventListener('ntc:cart', () => {
+    if (!cat) return;
+    grid.querySelectorAll('[data-add]').forEach((button) => {
+      const product = cat.byId[button.dataset.add];
+      button.textContent = needed(product) > 1 ? '選盒數' : '加入購物車';
+    });
+    paintBar();
+  });
+  NTC.catalog().then((catalog) => {
+    cat = catalog;
+    S = catalog.settings;
+    flavors = catalog.products.filter((product) => product.category === 'canele');
+    available = flavors.filter((product) => !product.soldOut).length;
+    panel.setAttribute('role', 'tabpanel');
+    mountTabs();
+    activate('single');
+    renderNotes();
+    $('#notes').hidden = false;
+    NTC.refreshCart();
+  }).catch((error) => {
+    grid.innerHTML = `<div class="cm-grid-message"><p>${esc(error.message)}</p><button type="button" class="cm-primary" id="flavor-retry">重新載入</button></div>`;
+    $('#flavor-retry').onclick = () => location.reload();
+  }).finally(() => panel.setAttribute('aria-busy', 'false'));
 })();
 </script>
 </body>

@@ -3,52 +3,128 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#f8ede7">
+<meta name="theme-color" content="#faf4ed">
 <link rel="icon" href="assets/favicon.png">
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <link rel="stylesheet" href="css/app.css?v=1120a">
+<link rel="stylesheet" href="css/storefront.css?v=1120a">
+<link rel="stylesheet" href="css/reserve.css?v=1120b">
 <title>預約／訂購｜N.T Cookie × N.T Canelé</title>
-<meta name="description" content="選擇希望到貨的日期，再挑選可麗露禮盒、馬林糖一口酥，線上下單。">
+<meta name="description" content="選擇希望到貨的日期，再挑選可麗露禮盒、造型餅乾與馬林糖一口酥。">
 </head>
-<body>
-<header class="topbar"><button class="circle-btn" id="back" aria-label="返回"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button><h1>預約／訂購</h1><a class="circle-btn" href="cart.html" aria-label="購物車"><svg viewBox="0 0 24 24"><path d="M3 4h2.2l2.1 10.2a1.6 1.6 0 0 0 1.6 1.3h8.6a1.6 1.6 0 0 0 1.6-1.2L21 8H6.2"/><circle cx="9.5" cy="19.5" r="1.4"/><circle cx="17" cy="19.5" r="1.4"/></svg><span class="badge" data-cart-count></span></a></header>
-<main class="wrap" id="app"><div class="spinner"></div></main>
-<button type="button" class="nt-back" onclick="window.NTC && NTC.back ? NTC.back() : history.back()"><i aria-hidden="true"></i>返回上一頁</button>
-<script src="js/config.js?v=1120a"></script>
+<body class="storefront reserve-page">
+<header class="store-header">
+  <a class="store-back" id="back" href="index.html" aria-label="返回上一頁"><span aria-hidden="true"></span></a>
+  <p class="store-brand" lang="en">N.T Cookie</p>
+  <a class="store-orders reserve-cart" href="cart.html">購物車 <span class="badge" data-cart-count></span></a>
+</header>
+<main class="store-main reserve-main">
+  <section class="store-intro" aria-labelledby="reserve-title">
+    <p class="store-kicker">手作甜點・預訂商店</p>
+    <h1 id="reserve-title">預約／訂購</h1>
+  </section>
+  <div id="app" aria-busy="true"><p class="reserve-loading" role="status">正在查詢可預約日期…</p></div>
+</main>
+<script src="js/config.js?v=1120b"></script>
 <script src="js/app.js?v=1120a"></script>
 <script src="js/shop.js?v=1120a"></script>
 <script>
 (async function () {
   const { $, esc } = NTC;
-  $('#back').onclick = NTC.back;
+  $('#back').addEventListener('click', (event) => {
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    event.preventDefault();
+    NTC.back();
+  });
   const app = $('#app');
-  let cat; try { cat = await NTC.catalog(); } catch (e) { app.innerHTML = `<p class="err">${esc(e.message)}</p>`; return; }
-  const S = cat.settings;
-  let date = NTC.dateRules(S, cat.fullDates).ok(NTC.date.get()) ? NTC.date.get() : '';
   const askUrl = NTC.chatUrl('您好，我想預約／查詢檔期');
+  NTC.refreshCart();
+
+  const showStatus = (title, message, action) => {
+    app.innerHTML = `
+      <section class="reserve-card reserve-status" id="reserve-status" aria-labelledby="reserve-status-title">
+        <h2 id="reserve-status-title">${title}</h2>
+        <p>${esc(message)}</p>
+        ${action}
+        <a class="reserve-link" id="reserve-browse" href="shop.html">先逛逛甜點</a>
+      </section>`;
+  };
+  const contact = `<a class="reserve-primary" href="${askUrl}">用 LINE 詢問檔期</a>`;
+
+  let cat;
+  try {
+    cat = await NTC.catalog();
+  } catch (error) {
+    showStatus('暫時無法查詢日期', error.message,
+      '<button class="reserve-primary" id="reserve-retry" type="button">重新查詢</button>');
+    $('#reserve-retry').onclick = () => location.reload();
+    return;
+  } finally {
+    app.setAttribute('aria-busy', 'false');
+  }
+
+  const S = cat.settings;
+  if (S.pauseOrders) {
+    showStatus('目前暫停線上接單', S.notice || '歡迎先看看甜點，或用 LINE 向我們詢問檔期。', contact);
+    return;
+  }
+
+  const fullDates = cat.fullDates || [];
+  const rules = NTC.dateRules(S, fullDates);
+  let earliest = rules.min;
+  while (earliest <= rules.max && !rules.ok(earliest)) earliest = NTC.addDays(earliest, 1);
+  if (earliest > rules.max) {
+    showStatus('目前沒有可預約的日期', '這一輪的預約日期已額滿或未開放。歡迎用 LINE 詢問其他檔期。', contact);
+    return;
+  }
+
+  let date = NTC.date.get();
+  if (!rules.ok(date)) date = '';
   app.innerHTML = `
-    ${S.pauseOrders ? `<section class="panel" style="background:#fff6ec;text-align:center"><p style="font:900 17px var(--serif);margin:2px 0 6px">目前暫停線上接單 ♡</p>
-      <p class="note" style="margin:0 0 12px">${esc(S.notice || '想預約或查詢檔期，歡迎直接用 LINE 跟我們說。')}</p><a class="btn line block" href="${askUrl}">LINE 預約／查詢檔期</a></section>` : ''}
-    <section class="panel"><h2><span class="n">1</span>選擇${esc(S.dateLabel || '日期')}</h2>
-      <p class="note" style="margin:-4px 0 10px">${esc(S.dateNote || '每一份都是接單後手工製作。')}<br>最早可預約 <b>${NTC.fmtDate(NTC.dateRules(S).min)}</b>。</p>
-      <div id="cal"></div><p class="note" id="picked" style="margin:10px 0 0;text-align:center"></p></section>
-    <section class="panel" id="step2"><h2><span class="n">2</span>挑選甜點</h2>
-      <div class="cat-grid">
-        <a href="cookies.html?g=character"><img src="assets/v2/03-homepage/category-character-cookies.webp" alt="卡通・收涎 造型餅乾"></a>
-        <a href="cookies.html?g=birthday"><img src="assets/v2/03-homepage/category-birthday-cookies.webp" alt="慶生 造型餅乾"></a>
-        <a href="meringue.html"><img src="assets/v2/03-homepage/category-meringue-cookies.webp" alt="馬林糖一口酥・送禮小點"></a>
-        <a href="canele.html"><img src="assets/v2/03-homepage/category-canele.webp" alt="N.T Canelé 可麗露專區"></a></div>
+    <section class="reserve-card" aria-labelledby="date-title">
+      <h2 id="date-title">${esc(S.dateLabel || '希望到貨日期')}</h2>
+      <p class="reserve-earliest" id="reserve-earliest">最早可選 <strong>${NTC.fmtDate(earliest)}</strong></p>
+      <p class="reserve-date-note">${esc(S.dateNote || '每一份甜點都是接單後手工製作。')}</p>
+      <div id="cal"></div>
+      <div class="reserve-next">
+        <p id="picked" role="status"></p>
+        <a class="reserve-link" id="reserve-browse" href="shop.html">先逛逛甜點</a>
+      </div>
     </section>
-    <section class="panel"><h2><span class="n">3</span>留言・送出訂單</h2><p class="note" style="margin:0 0 12px">挑好後到購物車填收件資料、留言給店家，再選付款方式就完成了。</p>
-      <a class="btn block" href="cart.html">前往購物車</a></section>
-    <section class="panel"><h2>客製圖案・急件・其他問題</h2><p class="note" style="margin:0 0 12px">想要系列裡沒有的圖案，可以留言＋上傳參考照片，我們報價後再製作；急件或想先問檔期，也歡迎直接聊天。</p>
-      <a class="btn block" href="custom.html" style="margin-bottom:10px">客製詢問（留言＋上傳參考照片）</a>
-      <a class="btn ghost block" href="${askUrl}">LINE 詢問檔期</a></section>`;
-  const paint = () => { $('#picked').innerHTML = date ? `已選 <b>${NTC.fmtDate(date)}</b>，接著挑選甜點 ↓` : '請先點選日期'; };
-  NTC.calendar($('#cal'), { settings: S, fullDates: cat.fullDates, value: date, onChange: (d) => { date = d; NTC.date.set(d); paint(); NTC.refreshCart(); setTimeout(() => $('#step2').scrollIntoView({ behavior: 'smooth', block: 'start' }), 150); } });
-  paint(); NTC.refreshCart();
+    <footer class="reserve-help" aria-label="預約協助">
+      <a class="reserve-link" href="custom.html">客製詢問</a>
+      <a class="reserve-link" href="${askUrl}">LINE 詢問檔期</a>
+    </footer>`;
+
+  const calendar = $('#cal');
+  const browse = $('#reserve-browse');
+  const syncCalendarSelection = () => {
+    calendar.querySelectorAll('.days button:not(:disabled)').forEach((button) => {
+      button.setAttribute('aria-pressed', String(button.classList.contains('on')));
+    });
+  };
+  const paint = () => {
+    $('#picked').textContent = date ? `已選 ${NTC.fmtDate(date)}` : '選好日期，就能開始挑選甜點。';
+    browse.textContent = date ? '挑選甜點' : '先逛逛甜點';
+    browse.className = date ? 'reserve-primary' : 'reserve-link';
+    syncCalendarSelection();
+  };
+  NTC.calendar(calendar, { settings: S, fullDates, value: date, onChange: (d) => {
+    date = d;
+    NTC.date.set(d);
+    paint();
+    calendar.querySelector('.days button.on')?.focus({ preventScroll: true });
+  } });
+  calendar.addEventListener('click', (event) => {
+    const nav = event.target.closest('button[data-nav]');
+    if (!nav) return;
+    syncCalendarSelection();
+    const activeNav = calendar.querySelector(`button[data-nav="${nav.dataset.nav}"]:not(:disabled)`);
+    (activeNav || calendar.querySelector('.cal .hd button:not(:disabled)'))?.focus({ preventScroll: true });
+  });
+  paint();
 })();
 </script>
 </body>

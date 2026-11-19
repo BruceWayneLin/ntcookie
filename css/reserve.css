@@ -1,0 +1,176 @@
+.reserve-main {
+  padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+}
+
+.reserve-cart {
+  gap: 4px;
+}
+
+.reserve-cart .badge {
+  min-width: 20px;
+  padding: 3px 5px;
+  border-radius: 99px;
+  background: var(--store-accent);
+  color: #fff;
+  font-size: .75rem;
+  font-weight: 700;
+  line-height: 1.15;
+  text-align: center;
+}
+
+.reserve-cart .badge:empty {
+  display: none;
+}
+
+.reserve-loading {
+  margin: 24px 0;
+  color: var(--store-muted);
+  text-align: center;
+}
+
+.reserve-card {
+  max-width: 34rem;
+  margin: 12px auto 0;
+  padding: clamp(12px, 4vw, 24px);
+  border: 1px solid var(--store-rule);
+  border-radius: 14px;
+  background: #fffaf5;
+}
+
+.reserve-card h2 {
+  margin: 0 0 8px;
+  font: 700 clamp(1.125rem, 5vw, 1.4rem)/1.45 var(--serif);
+}
+
+.reserve-earliest {
+  margin: 0 0 4px;
+  font-size: .9375rem;
+  line-height: 1.5;
+}
+
+.reserve-earliest strong {
+  color: var(--store-accent);
+}
+
+.reserve-date-note,
+.reserve-status p,
+.reserve-next p {
+  margin: 0;
+  color: var(--store-muted);
+  font-size: .875rem;
+  line-height: 1.6;
+}
+
+.reserve-date-note {
+  margin-bottom: 16px;
+}
+
+.reserve-card .cal .hd button {
+  width: 44px;
+  height: 44px;
+  background: #f4e8dc;
+  color: var(--store-accent);
+}
+
+.reserve-card .cal .wk span {
+  color: var(--store-muted);
+}
+
+.reserve-card .cal .days {
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 2px;
+}
+
+.reserve-card .cal .days button {
+  min-height: 44px;
+  aspect-ratio: auto;
+  padding: 0;
+  border-radius: 8px;
+  background: #f9eee4;
+}
+
+.reserve-card .cal .days button[disabled] {
+  color: #826d63;
+  background: none;
+  box-shadow: none;
+}
+
+.reserve-card .cal .days button small {
+  color: var(--store-muted);
+  font-size: .625rem;
+}
+
+.reserve-card .cal .days button.on {
+  color: #fff;
+  background: var(--store-accent);
+}
+
+.reserve-next {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--store-rule);
+  text-align: center;
+}
+
+.reserve-next p {
+  min-height: 1.6em;
+  margin-bottom: 6px;
+}
+
+.reserve-primary,
+.reserve-link {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+}
+
+.reserve-primary {
+  width: min(100%, 19rem);
+  padding: 8px 16px;
+  border: 0;
+  border-radius: 9px;
+  background: var(--store-accent);
+  color: #fff;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.reserve-primary:active {
+  background: #692e18;
+}
+
+.reserve-link {
+  padding: 0 8px;
+  color: var(--store-accent);
+  font-size: .875rem;
+  text-underline-offset: .2em;
+}
+
+.reserve-status {
+  padding-block: clamp(22px, 7vw, 36px) 12px;
+  text-align: center;
+}
+
+.reserve-status p {
+  max-width: 26rem;
+  margin: 0 auto 18px;
+}
+
+.reserve-status .reserve-primary {
+  display: flex;
+  margin-inline: auto;
+}
+
+.reserve-status .reserve-link {
+  margin-top: 4px;
+}
+
+.reserve-help {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0 12px;
+  margin: 6px auto 0;
+}
