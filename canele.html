@@ -13,7 +13,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
 <link rel="preload" as="image" href="assets/v2/01-canele/m-header.webp" type="image/webp">
-<link rel="stylesheet" href="css/app.css?v=1119r">
+<link rel="stylesheet" href="css/app.css?v=1119t">
 </head>
 <body class="cm-body">
 <!-- designer's mobile layout (nt-canele-mobile-ux-slices, 793 px wide): header art + live tabs, cards, notes and checkout bar -->
@@ -30,9 +30,9 @@
   <button type="button" class="nt-back" onclick="NTC.back()"><i aria-hidden="true"></i>返回上一頁</button>
 </main>
 <div class="cm-bar" id="bar"></div>
-<script src="js/config.js?v=1119r"></script>
-<script src="js/app.js?v=1119r"></script>
-<script src="js/shop.js?v=1119r"></script>
+<script src="js/config.js?v=1119t"></script>
+<script src="js/app.js?v=1119t"></script>
+<script src="js/shop.js?v=1119t"></script>
 <script>
 (function () {
   const { $, esc, money, asset } = NTC;
@@ -64,7 +64,7 @@
         : !m ? `<button type="button" class="cm-btn" data-add="${esc(p.id)}">${CART_PLUS}<span>加入購物車</span></button>`
         : `<button type="button" class="cm-btn pick${sel ? ' on' : ''}" data-pick="${esc(p.id)}" ${full ? 'disabled' : ''}>${sel ? '✓ 已選這個口味' : '選這個口味'}</button>`;
       return `<article class="cm-card${sel ? ' on' : ''}${p.soldOut ? ' so' : ''}">
-        <div class="ph"><img src="${esc(asset(photo(p)))}" alt="" loading="lazy"></div>
+        <div class="ph"><img src="${esc(asset(photo(p)))}" alt="" width="364" height="187" loading="lazy"></div>
         <h2>${p.icon ? `<img src="${esc(asset(p.icon))}" alt="">` : ''}${esc(p.name)}</h2>
         <p class="pr">${m ? `綜合禮盒 ${money(S.canele.assortedPrice)}<small>／盒</small>` : `NT${money(p.price)}<small>／盒</small>`}</p>${btn}</article>`;
     }).join('') || '<p class="note">目前沒有上架的口味，敬請期待</p>';
