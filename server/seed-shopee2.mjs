@@ -9,7 +9,7 @@ const TABLE = process.argv[2];
 if (!/^ntcookie-(qa|dev)$/.test(TABLE || '')) { console.error('usage: node seed-shopee2.mjs ntcookie-qa|ntcookie-dev'); process.exit(2); }
 const ddb = DynamoDBDocumentClient.from(new DynamoDBClient({ region: 'ap-northeast-1' }));
 const D = 'assets/cookies/shopee2/';
-const T = { name: { textLabel: '寶寶名字', textMax: 6 }, namedate: { textLabel: '寶寶名字＋日期', textMax: 16 }, month: { textLabel: '月份文字', textMax: 12, textOptional: true }, words: { textLabel: '餅乾上的字', textMax: 12, textOptional: true }, cart: { textLabel: '推車上的字', textMax: 12, textOptional: true }, num: { textLabel: '數字', textMax: 2, textOptional: true } };
+const T = { name: { textLabel: '寶寶名字', textMax: 6 }, namedate: { textLabel: '寶寶名字＋日期', textMax: 16 }, month: { textLabel: '月份文字', textMax: 12, textOptional: true }, words: { textLabel: '餅乾上的字', textMax: 12, textOptional: true }, weightdate: { textLabel: '體重＋日期', textMax: 16 }, cart: { textLabel: '推車上的字', textMax: 12, textOptional: true }, num: { textLabel: '數字', textMax: 2, textOptional: true } };
 const SERIES = [ // id, name, groups, desc, price, pieces [slug, name, text]
   ['mcqueen', '閃電麥坤系列', ['character', 'birthday'], '閃電麥坤餅乾・慶生餅乾・車子', 250, [['mq-red', '閃電麥坤（紅）'], ['mq-blue', '閃電麥坤（藍）'], ['mq-yellow', '克魯茲（黃）'], ['mq-black', '暴風傑克森（黑）'], ['mq-rusteze', 'Rust-eze 圓牌'], ['mq-5', '數字 5', 'num']]],
   ['crybaby', 'Crybaby 系列（大片款）', ['birthday'], '泡泡瑪特 crybaby・大片款', 250, [['cb-bunny', '兔兔（粉紅）'], ['cb-bee', '小蜜蜂（咖啡）'], ['cb-frog', '青蛙（綠）'], ['cb-bear', '小熊（咖啡）'], ['cb-alice', '愛麗絲（藍）'], ['cb-duck', '小鴨（黃）']]],
@@ -25,6 +25,11 @@ const SERIES = [ // id, name, groups, desc, price, pieces [slug, name, text]
   ['teletubbies', '天線寶寶系列', ['character'], '天線寶寶收涎餅乾・丁丁・迪西・拉拉・小波', 280, [['tt-tinky-heart', '丁丁（愛心）', 'words'], ['tt-tinky-round', '丁丁（圓形）', 'words'],
     ['tt-dipsy', '迪西（愛心）'], ['tt-laalaa', '拉拉（圓形）', 'words'], ['tt-po-hi', '小波（愛心・Hi）'], ['tt-po-round', '小波（圓形）']]],
   ['moomin', '嚕嚕米系列', ['character'], '姆明嚕嚕米・嚕嚕米收涎餅乾・小不點', 0, []], // 烤網上分不出單片：只放封面
+  // 16:43 她說中國風少了兩個（匾額、中國風金飾那組）→ 早上建的那兩個草稿系列補上單片。金飾那組蝦皮 280～690，先放她最低的 280；匾額蝦皮 1,380
+  ['chinese', '中國風金飾收涎系列', ['chinese'], '新生兒喜氣・中國風金飾・傳統仿真收涎餅乾', 280, [['cn-goldlock', '富貴平安金鎖'], ['cn-lock', '長命鎖（項圈）'], ['cn-crown', '皇冠'],
+    ['cn-omamori', '平安御守'], ['cn-bag', '福袋'], ['cn-turtle', '壽龜'], ['cn-peach', '壽桃'], ['cn-horse', '小馬'], ['cn-feet', '小腳丫'], ['cn-shoes', '虎頭鞋'],
+    ['cn-stroller', '嬰兒車'], ['cn-birth', '出生紀念牌（體重＋日期）', 'weightdate']]],
+  ['plaque', '巨型匾額收涎', ['chinese'], '超大片匾額收涎餅乾（10×18 公分）', 1380, [['plaque-big', '巨型匾額（10×18 公分）', 'namedate']]],
   // 16:22 那批：文青少女、吉娃娃有單片；獨角獸／魷魚遊戲／阿奇／三眼怪在木頭或烤網上 → 只放封面；客製毛小孩＝聊聊附照片報價，只放她的範例照片
   ['girly', '文青少女繽紛收涎系列', ['character'], '文青少女・繽紛收涎餅乾', 220, [['gl-plaque', '名字牌', 'name'], ['gl-heart', '愛心日期牌', 'words'], ['gl-balloon', '熱氣球（4 months）', 'month'],
     ['gl-moon', '月亮'], ['gl-star', '星星'], ['gl-tutu', '芭蕾舞裙'], ['gl-horse', '搖搖馬'], ['gl-pacifier', '奶嘴'], ['gl-bottle', '奶瓶'], ['gl-bib', '圍兜'], ['gl-stroller', '嬰兒車', 'cart'], ['gl-omamori', '健康御守']]],
