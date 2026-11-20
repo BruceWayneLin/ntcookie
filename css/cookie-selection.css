@@ -4,9 +4,69 @@
   right: calc(32 * var(--u));
 }
 
+/* Give the series photo the full card width so its designs are recognizable. */
+.ckd-acc-list {
+  gap: clamp(12px, 3vw, 18px);
+}
+
+.ckd-acc-head {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas: "photo photo" "text chev";
+  align-items: center;
+  gap: clamp(10px, 2.8vw, 16px);
+  padding: clamp(8px, 2.3vw, 12px);
+}
+
+.ckd-acc-head .ph {
+  grid-area: photo;
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 4 / 3;
+  border-radius: clamp(11px, 3vw, 18px);
+}
+
+.ckd-acc-head .ph img {
+  display: block;
+  object-fit: cover;
+}
+
+.ckd-acc-head .t {
+  grid-area: text;
+  width: 100%;
+  gap: 3px;
+  padding: 0 0 2px clamp(4px, 1.5vw, 9px);
+}
+
+.ckd-acc-head b {
+  font-size: clamp(1.125rem, 5.2vw, 1.5rem);
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+}
+
+.ckd-acc-head small {
+  font-size: clamp(.875rem, 3.7vw, 1rem);
+}
+
+.ckd-acc-head .chev {
+  grid-area: chev;
+  margin-right: clamp(4px, 1.5vw, 10px);
+}
+
+.ckd-acc-head .cnt {
+  position: absolute;
+  top: clamp(15px, 4vw, 22px);
+  right: clamp(15px, 4vw, 22px);
+  font-size: .8125rem;
+  box-shadow: 0 0 0 2px #fffaf8;
+}
+
 .ckd-grid {
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: clamp(8px, 2vw, 12px);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(10px, 2.8vw, 16px);
 }
 
 .ckd-grid > .ckd-note {
@@ -14,6 +74,7 @@
 }
 
 .ckd-card {
+  grid-column: auto;
   min-width: 0;
   height: auto;
   padding: 4px 4px 8px;
@@ -22,11 +83,42 @@
 .ckd-card .ph {
   width: 100%;
   height: auto;
-  aspect-ratio: 297 / 172;
+  aspect-ratio: 1;
   flex-shrink: 0;
   margin: 0;
   padding: 0;
   border: 0;
+}
+
+.ckd-card .ph img {
+  display: block;
+  object-fit: contain;
+}
+
+.ckd-card .zoom-hint {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: rgba(59, 34, 22, .82);
+  color: #fffaf7;
+  font: 600 .75rem/1.2 var(--sans);
+}
+
+.ckd-view img {
+  max-height: calc(100dvh - 110px);
+}
+
+.ckd-view p {
+  position: absolute;
+  right: 24px;
+  bottom: calc(15px + env(safe-area-inset-bottom, 0px));
+  left: 24px;
+  margin: 0;
+  color: #fffaf7;
+  text-align: center;
+  font: 700 1rem/1.4 var(--sans);
 }
 
 .ckd-card button.ph:focus-visible {
@@ -147,15 +239,4 @@
   color: #9b322f;
   font-size: .8125rem;
   font-weight: 600;
-}
-
-@media (min-width: 440px) {
-  .ckd-card:nth-child(3n + 1):last-child { grid-column: 3 / span 2; }
-  .ckd-card:nth-child(3n + 1):nth-last-child(2) { grid-column: 2 / span 2; }
-  .ckd-card:nth-child(3n + 2):last-child { grid-column: 4 / span 2; }
-}
-
-@media (max-width: 439px) {
-  .ckd-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-  .ckd-card:nth-child(odd):last-child { grid-column: 2 / span 2; }
 }
