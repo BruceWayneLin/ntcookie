@@ -15,8 +15,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
 <link rel="preload" as="image" href="assets/cookies/ui/header.webp" type="image/webp">
-<link rel="stylesheet" href="css/app.css?v=1120j">
-<link rel="stylesheet" href="css/cookie-selection.css?v=1120j">
+<link rel="stylesheet" href="css/app.css?v=1120k">
+<link rel="stylesheet" href="css/cookie-selection.css?v=1120k">
 </head>
 <body class="ckd-body">
 <main class="ckd" id="page">
@@ -32,9 +32,9 @@
 </main>
 <div class="ckd-bar" id="bar" hidden></div>
 <p class="sr-only" id="cookie-selection-status" role="status"></p>
-<script src="js/config.js?v=1120j"></script>
-<script src="js/app.js?v=1120j"></script>
-<script src="js/shop.js?v=1120j"></script>
+<script src="js/config.js?v=1120k"></script>
+<script src="js/app.js?v=1120k"></script>
+<script src="js/shop.js?v=1120k"></script>
 <script>
 (function () {
   const { $, esc, money, asset } = NTC;
@@ -113,7 +113,7 @@
 
   function gridHtml(ps) {
     return `<div class="ckd-grid">${ps.map((p) => {
-      const photo = `${p.photo ? `<img src="${esc(asset(p.photo))}" alt="" loading="lazy">` : ''}${p.textLabel ? `<span class="tl">${p.textOptional ? '可改' : '需填'}${esc(p.textLabel)}</span>` : ''}${p.soldOut ? '<span class="sob">售完</span>' : ''}${p.active === false ? '<span class="offtag">未上架</span>' : ''}`;
+      const photo = `${p.photo ? `<img src="${esc(asset(p.photo))}" alt="" loading="lazy">` : ''}${p.soldOut ? '<span class="sob">售完</span>' : ''}${p.active === false ? '<span class="offtag">未上架</span>' : ''}`;
       const photoControl = p.soldOut ? `<div class="ph">${photo}</div>`
         : `<button type="button" class="ph" aria-label="選一片${esc(p.name)}">${photo}</button>`;
       return `<div class="ckd-card${p.soldOut ? ' so' : ''}" data-id="${esc(p.id)}">
