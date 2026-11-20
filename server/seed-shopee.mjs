@@ -29,7 +29,8 @@ let gAdded = 0;
 if (!groups.some((g) => g.id === 'chinese')) { groups.push({ id: 'chinese', name: '中國風' }); gAdded++; }
 const have = new Set(cookie.series.map((x) => x.id));
 let sort = Math.max(0, ...cookie.series.map((x) => x.sort || 0));
-const add = SERIES.filter(([id]) => !have.has(id)).map(([id, name, g, desc]) => ({ id, name, desc, lines: ['可單片選購・自由搭配'], photo: P(id)[0], photos: P(id), groups: g, sort: (sort += 10) }));
+const names = new Set(cookie.series.map((x) => x.name)); // the owner may already have made a series with the same name by hand
+const add = SERIES.filter(([id, name]) => !have.has(id) && !names.has(name)).map(([id, name, g, desc]) => ({ id, name, desc, lines: ['可單片選購・自由搭配'], photo: P(id)[0], photos: P(id), groups: g, sort: (sort += 10) }));
 if (add.length || gAdded || !cookie.groups) {
   cookie.groups = groups; cookie.series = [...cookie.series, ...add];
   await ddb.send(new UpdateCommand({ TableName: TABLE, Key: { pk: 'SETTINGS', sk: 'main' }, UpdateExpression: 'SET #c = :c', ExpressionAttributeNames: { '#c': 'cookie' }, ExpressionAttributeValues: { ':c': cookie } }));

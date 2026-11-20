@@ -11,7 +11,7 @@
 <link rel="icon" href="assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css?v=1120i">
+<link rel="stylesheet" href="css/app.css?v=1120j">
 <style>
   :root { --page: 760px; }
   .tabs { position: sticky; top: 63px; z-index: 20; display: flex; gap: 6px; max-width: var(--page); margin: 0 auto; padding: 8px 14px; background: rgba(248, 237, 231, .96); }
@@ -150,6 +150,13 @@
   .eo .o-more { flex: none; width: 36px; height: 36px; margin-left: auto; border: 0; border-radius: 999px; background: #f1e1d8; font: 900 17px/1 var(--sans); color: var(--ink); cursor: pointer; }
   .eo .o-tags { font: 600 12px/1.35 var(--sans); color: #9a4f08; }
   .eo .o-on { flex: none; flex-direction: column; gap: 4px; font-size: 12px; }
+  .sorow { display: flex; align-items: center; gap: 8px; padding: 6px 4px; border-bottom: 1px dashed #ead7cc; border-radius: 8px; }
+  .sorow.hl { background: #fff3e0; }
+  .sorow .n { flex: none; width: 20px; text-align: right; font: 700 12px var(--sans); color: var(--muted); }
+  .sorow img, .sorow i { flex: none; width: 38px; height: 38px; border-radius: 8px; object-fit: cover; background: #f3e4db; }
+  .sorow b { flex: 1; min-width: 0; font: 700 14.5px/1.3 var(--sans); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sorow button { flex: none; min-width: 40px; height: 38px; padding: 0 8px; border: 0; border-radius: 10px; background: #f1e1d8; font: 800 14px var(--sans); color: var(--ink); cursor: pointer; }
+  .sorow button[disabled] { opacity: .3; cursor: default; }
   .ed-more summary { cursor: pointer; font: 800 15px var(--sans); color: var(--ink2); }
   .ed-more[open] summary { margin-bottom: 12px; }
 </style>
@@ -164,8 +171,8 @@
 <div class="shopbar" id="shopbar" hidden></div>
 <main class="wrap" id="app"><div class="spinner"></div></main>
 <p class="note" id="ver" style="text-align:center;margin:0 0 24px;color:var(--muted)"></p>
-<script src="js/config.js?v=1120i"></script>
-<script src="js/app.js?v=1120i"></script>
+<script src="js/config.js?v=1120j"></script>
+<script src="js/app.js?v=1120j"></script>
 <script>
 (async function () {
   const { $, esc, money, asset } = NTC;
@@ -264,7 +271,7 @@
   $('#tabs').onclick = (e) => { const b = e.target.closest('button'); if (!b || b.dataset.t === tab) return;
     if (dirty && !confirm('設定有變更還沒儲存，要離開嗎？（離開後變更不會保留）')) return;
     setDirty(false); tab = b.dataset.t; $('#tabs').querySelectorAll('button').forEach((x) => x.classList.toggle('on', x === b)); show(); };
-  $('#reload').onclick = async () => { NTC.loading(true, '更新中…'); try { if (tab === 'orders') await loadOrders(); if (tab === 'inq') await loadInqs(); if (tab === 'products') products = (await NTC.api('/admin/products')).products; if (tab === 'settings') await loadSettings(); show(); } catch (e) { NTC.toast(e.message); } NTC.loading(false); };
+  $('#reload').onclick = async () => { NTC.loading(true, '更新中…'); try { if (tab === 'orders') await loadOrders(); if (tab === 'inq') await loadInqs(); if (tab === 'products') { products = (await NTC.api('/admin/products')).products; await loadSettings(); } if (tab === 'settings') await loadSettings(); show(); } catch (e) { NTC.toast(e.message); } NTC.loading(false); };
 
   // ---------- 開店接單／關閉接單 (one big switch at the top)
   function renderShopBar() {
@@ -440,7 +447,6 @@
 
   // ================= 商品 =================
   const CATS = { canele: 'N.T Canelé 可麗露（單一口味禮盒價格）', meringue: '馬林糖一口酥' };
-  const GROUP_NAMES = { character: '卡通・收涎', birthday: '慶生・抓週' };
   const prodRow = (p) => `<div class="prod" data-id="${esc(p.id)}">
         <img src="${esc(asset(p.photo || p.card))}" alt=""><div class="i"><b>${esc(p.name)}</b><span>${money(p.price)} / ${esc(p.unit || '')}${p.textLabel ? `・客人${p.textOptional ? '可填' : '要填'}：${esc(p.textLabel)}` : ''}</span></div>
         <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
@@ -535,7 +541,7 @@
       if (gs.some((g) => !g.name)) return NTC.toast('請填分類名稱');
       if (new Set(gs.map((g) => g.name)).size !== gs.length) return NTC.toast('有兩個分類同名');
       NTC.loading(true, '儲存中…');
-      try { settings = (await NTC.api('/admin/settings', { method: 'PUT', body: { cookie: { ...settings.cookie, groups: gs } } })).settings; close(); renderProducts(); NTC.toast('分類已儲存'); }
+      try { settings = (await NTC.api('/admin/settings', { method: 'PUT', body: { cookie: { ...settings.cookie, series: undefined, groups: gs } } })).settings; close(); renderProducts(); NTC.toast('分類已儲存'); }
       catch (e) { NTC.toast(e.message, 3500); } finally { NTC.loading(false); }
     };
   }
@@ -556,6 +562,16 @@
   const askRead = (el) => { const nOn = el.querySelector('#e-tn').checked; const dOn = el.querySelector('#e-td').checked; const lbl = el.querySelector('#e-tl').value.trim().replace(/日期/g, '') || '寶寶名字';
     const nMax = Math.min(30, Math.max(1, +el.querySelector('#e-tm').value || 6));
     return { textLabel: nOn && dOn ? `${lbl}＋日期` : nOn ? lbl : dOn ? '日期' : '', textMax: (nOn ? nMax : 0) + (dOn ? 10 : 0) || 12, textOptional: (nOn || dOn) && el.querySelector('#e-topt').checked }; };
+  // a small question sheet: LINE's in-app browser does not always support prompt()
+  const askSheet = (title, { value = '', number = false, hint = '', max = 40, ok = '確定' } = {}) => new Promise((resolve) => {
+    const { el, close } = NTC.sheet(`<h2>${esc(title)}</h2>${hint ? `<p class="note" style="margin:0 0 10px">${esc(hint)}</p>` : ''}
+      <form><label class="field"><input id="ask-v" ${number ? 'type="number" inputmode="numeric" min="1"' : `maxlength="${max}"`} value="${esc(value)}" autocomplete="off"></label><button class="btn block">${esc(ok)}</button></form>`);
+    let done = false; const fin = (v) => { if (done) return; done = true; resolve(v); close(); };
+    el.querySelector('form').onsubmit = (e) => { e.preventDefault(); fin(el.querySelector('#ask-v').value.trim()); };
+    el.querySelector('.close').addEventListener('click', () => fin(null));
+    el.previousElementSibling.addEventListener('click', () => fin(null)); // the mask behind the sheet
+    setTimeout(() => el.querySelector('#ask-v')?.focus(), 300);
+  });
   const uploadPhoto = async (file, max) => (await NTC.api('/admin/images', { method: 'POST', body: { dataUrl: await shrink(file, max) } })).url;
 
   // 整頁「編輯商品」：照片、名稱、描述、分類、選項（每一片）。按「更新」才一次存好，像蝦皮。
@@ -579,7 +595,7 @@
         </section>
         <section class="panel"><h3>分類 <b class="req">*</b> <small>可以選不只一個</small></h3><div class="gchips" id="ed-gs"></div></section>
         <section class="panel"><h3>選項 <small id="ed-cnt"></small></h3>
-          <div class="opt-tools"><button type="button" class="btn ghost small" id="ed-allprice">全部同一個價格</button><button type="button" class="btn ghost small" data-all="on">全部上架</button><button type="button" class="btn ghost small" data-all="off">全部下架</button></div>
+          <div class="opt-tools"><button type="button" class="btn ghost small" id="ed-order">調整順序</button><button type="button" class="btn ghost small" id="ed-allprice">全部同一個價格</button><button type="button" class="btn ghost small" data-all="on">全部上架</button><button type="button" class="btn ghost small" data-all="off">全部下架</button></div>
           <div id="ed-opts"></div>
           <button type="button" class="btn ghost block" id="ed-add" style="margin-top:12px">＋ 新增選項</button>
           <p class="note" style="margin:10px 0 0">一個選項＝一片餅乾，可以各自放照片和價格。有「上架」的選項客人才看得到；至少一片上架，這個商品才會出現在網站上。</p></section>
@@ -600,8 +616,8 @@
     history.pushState({ ntcEd: 1 }, '');
     const onPop = () => { if (dirty() && !confirm('還沒按「更新」，確定離開？剛剛改的不會存。')) { history.pushState({ ntcEd: 1 }, ''); return; } teardown(); };
     window.addEventListener('popstate', onPop);
-    const teardown = () => { window.removeEventListener('popstate', onPop); box.remove(); document.body.classList.remove('ed-open'); };
-    const shut = () => { teardown(); if (history.state?.ntcEd) history.back(); };
+    const teardown = () => { window.removeEventListener('popstate', onPop); document.querySelectorAll('.sheet .close').forEach((b) => b.click()); box.remove(); document.body.classList.remove('ed-open'); };
+    const shut = () => { teardown(); if (history.state?.ntcEd) { window.addEventListener('popstate', (e) => e.stopImmediatePropagation(), { capture: true, once: true }); history.back(); } }; // swallow our own back()
     q1('.ed-top button.ed-x').onclick = () => { if (dirty() && !confirm('還沒按「更新」，確定離開？剛剛改的不會存。')) return; shut(); };
 
     // --- 商品圖片
@@ -631,11 +647,14 @@
         + '<button type="button" class="add" id="ed-gnew">＋ 新增分類</button>';
       box.querySelectorAll('#ed-gs [data-g]').forEach((b) => (b.onclick = () => { const g = b.dataset.g; st.groups = st.groups.includes(g) ? st.groups.filter((y) => y !== g) : [...st.groups, g]; paintGs(); }));
       q1('#ed-gnew').onclick = async () => {
-        const name = (prompt('新分類的名稱（最多 12 個字），例如：中國風') || '').trim().slice(0, 12); if (!name) return;
-        if (groupsOf().some((g) => g.name === name)) { const g = groupsOf().find((y) => y.name === name); if (!st.groups.includes(g.id)) st.groups.push(g.id); return paintGs(); }
-        const g = { id: `g${Date.now().toString(36)}`, name };
+        const name = ((await askSheet('新增分類', { hint: '分類名稱最多 12 個字，例如：中國風', max: 12, ok: '新增' })) || '').slice(0, 12); if (!name) return;
         NTC.loading(true, '新增分類…');
-        try { settings = (await NTC.api('/admin/settings', { method: 'PUT', body: { cookie: { ...settings.cookie, groups: [...groupsOf(), g] } } })).settings; st.groups.push(g.id); paintGs(); NTC.toast(`已新增分類「${name}」`); }
+        try {
+          await loadSettings(); // someone else may have added a category meanwhile
+          let g = groupsOf().find((y) => y.name === name);
+          if (!g) { g = { id: `g${Date.now().toString(36)}`, name }; settings = (await NTC.api('/admin/settings', { method: 'PUT', body: { cookie: { ...settings.cookie, series: undefined, groups: [...groupsOf(), g] } } })).settings; NTC.toast(`已新增分類「${name}」`); }
+          if (!st.groups.includes(g.id)) st.groups.push(g.id); paintGs();
+        }
         catch (e) { NTC.toast(e.message, 3500); } finally { NTC.loading(false); }
       };
     };
@@ -684,9 +703,22 @@
       st.opts.push({ key: `n${Math.random().toString(36).slice(2)}`, name: '', price: st.opts.length ? st.opts[st.opts.length - 1].price : '', priceAuto: true, unit: '片', photo: '', active: true, soldOut: false });
       paintOpts(); const rows = box.querySelectorAll('#ed-opts .eo'); const last = rows[rows.length - 1]; last.scrollIntoView({ block: 'center', behavior: 'smooth' }); last.querySelector('.o-name').focus({ preventScroll: true });
     };
-    q1('#ed-allprice').onclick = () => {
+    // 調整順序：整串一起排（不用填數字；存檔時照這個順序重新編號）
+    q1('#ed-order').onclick = () => {
+      if (st.opts.length < 2) return NTC.toast('有兩個以上的選項才需要排順序');
+      const { el, close } = NTC.sheet(`<h2>調整順序</h2><p class="note" style="margin:0 0 8px">客人看到的順序就是這裡由上到下的順序。排好按「完成」，最後記得按「更新」。</p><div id="so-list"></div><button type="button" class="btn block" id="so-ok" style="margin-top:12px">完成</button>`);
+      const paint = (hl) => {
+        el.querySelector('#so-list').innerHTML = st.opts.map((o, i) => `<div class="sorow${o.key === hl ? ' hl' : ''}" data-i="${i}"><span class="n">${i + 1}</span>${o.photo ? `<img src="${esc(asset(o.photo))}" alt="">` : '<i></i>'}<b>${esc(o.name || '（還沒填名稱）')}</b>
+          <button type="button" data-m="top" ${i ? '' : 'disabled'}>最前</button><button type="button" data-m="up" aria-label="往前一格" ${i ? '' : 'disabled'}>↑</button><button type="button" data-m="dn" aria-label="往後一格" ${i < st.opts.length - 1 ? '' : 'disabled'}>↓</button></div>`).join('');
+        el.querySelectorAll('.sorow button').forEach((b) => (b.onclick = () => { const i = +b.closest('.sorow').dataset.i; const o = st.opts.splice(i, 1)[0]; st.opts.splice(b.dataset.m === 'top' ? 0 : b.dataset.m === 'up' ? i - 1 : i + 1, 0, o); paint(o.key); }));
+      };
+      paint();
+      el.querySelector('#so-ok').onclick = () => { close(); paintOpts(); };
+      el.querySelector('.close').addEventListener('click', () => paintOpts()); el.previousElementSibling.addEventListener('click', () => paintOpts()); // ✕ or tapping outside keeps the new order too
+    };
+    q1('#ed-allprice').onclick = async () => {
       if (!st.opts.length) return NTC.toast('還沒有選項');
-      const v = Math.round(+prompt(`${st.opts.length} 款全部改成多少錢？（之後還是可以一片一片改）`, st.opts[0].price || '')); if (!(v > 0)) return;
+      const v = Math.round(+(await askSheet(`${st.opts.length} 款全部改成多少錢？`, { number: true, value: st.opts[0].price || '', hint: '之後還是可以一片一片改。', ok: '套用' }))); if (!(v > 0)) return;
       st.opts.forEach((o) => { o.price = v; }); paintOpts(); NTC.toast(`${st.opts.length} 款都改成 ${money(v)}，按「更新」才會存`);
     };
     box.querySelectorAll('[data-all]').forEach((b) => (b.onclick = () => { const on = b.dataset.all === 'on'; st.opts.forEach((o) => { o.active = on; }); paintOpts(); }));
@@ -697,7 +729,9 @@
       if (isNew) { q1('#ed-b1').textContent = '儲存，先不上架'; q1('#ed-b2').textContent = '儲存並上架'; }
       else { q1('#ed-b1').textContent = anyOn ? '下架' : '上架'; q1('#ed-b2').textContent = '更新'; }
     }
+    let saving = false;
     const save = async (mode) => {
+      if (saving) return; // a second tap while the first save is on its way
       collect();
       if (!st.name) { NTC.toast('請填商品名稱'); q1('#ed-name').focus(); return; }
       if (!st.groups.length) { NTC.toast('請選至少一個分類'); q1('#ed-gs').scrollIntoView({ block: 'center', behavior: 'smooth' }); return; }
@@ -716,13 +750,13 @@
         products: st.opts.map(({ key, priceAuto, ...o }, i) => ({ ...o, name: String(o.name).trim(), price: +o.price, unit: o.unit || '片', sort: (i + 1) * 10, active: !!o.active, soldOut: !!o.soldOut })),
         remove: st.removed,
       };
-      NTC.loading(true, '儲存中…');
+      saving = true; NTC.loading(true, '儲存中…');
       try {
         const r = await NTC.api(`/admin/cookie-series/${sid}`, { method: 'PUT', body });
         settings = r.settings; products = r.products; shut(); renderProducts();
         const on = st.opts.filter((o) => o.active).length;
         NTC.toast(on ? `已${isNew ? '儲存並上架' : '更新'}「${st.name}」（${on} 款上架）` : st.opts.length ? `已儲存「${st.name}」，目前沒有上架，客人看不到` : `已儲存「${st.name}」，還沒有選項，客人暫時看不到`, 3500);
-      } catch (e) { NTC.toast(e.message, 4000); } finally { NTC.loading(false); }
+      } catch (e) { NTC.toast(e.message, 4000); } finally { saving = false; NTC.loading(false); }
     };
     q1('#ed-b1').onclick = () => {
       if (isNew) return save('off');
@@ -735,7 +769,7 @@
     if (del) del.onclick = async () => {
       if (!confirm(`確定刪除「${x.name}」？\n網站上就看不到這個商品（裡面 ${st.opts.length} 款的資料會留在下面「系列已刪除」，之後可以搬回來）。只想暫時不賣的話，按「下架」就好。`)) return;
       NTC.loading(true, '刪除中…');
-      try { settings = (await NTC.api('/admin/settings', { method: 'PUT', body: { cookie: { ...settings.cookie, series: settings.cookie.series.filter((y) => y.id !== x.id) } } })).settings; shut(); renderProducts(); NTC.toast('已刪除'); }
+      try { const r = await NTC.api(`/admin/cookie-series/${x.id}`, { method: 'DELETE' }); settings = r.settings; products = r.products; shut(); renderProducts(); NTC.toast('已刪除'); }
       catch (e) { NTC.toast(e.message, 3500); } finally { NTC.loading(false); }
     };
     paintPhs(); paintGs(); paintOpts();
@@ -744,7 +778,7 @@
   const CAT_TABS = [['canele', '可麗露'], ['meringue', '馬林糖'], ['cookie', '造型餅乾']];
   function renderProducts() {
     const cnt = (c) => { const l = products.filter((p) => p.category === c); return `${l.filter((p) => p.active).length}／${l.length} 上架`; };
-    const simple = (c) => `<section class="panel"><h2>${CATS[c]}</h2>${products.filter((p) => p.category === c).map(prodRow).join('') || '<p class="note">還沒有商品</p>'}
+    const simple = (c) => `<section class="panel"><h2>${CATS[c]}</h2>${products.filter((p) => p.category === c).sort(bySort).map(prodRow).join('') || '<p class="note">還沒有商品</p>'}
       <button class="btn ghost small add" data-c="${c}" style="margin-top:10px">＋ 新增${c === 'canele' ? '口味' : '商品'}</button></section>`;
     app.innerHTML = `<div class="seg">${CAT_TABS.map(([c, t]) => `<button type="button" data-cat="${c}" class="${prodCat === c ? 'on' : ''}">${t}<small>${cnt(c)}</small></button>`).join('')}</div>`
       + (prodCat === 'cookie' ? cookiePanels() : simple(prodCat))
@@ -898,7 +932,7 @@
       payments: { linepay: $('#s-p-lp').checked, ecpay: $('#s-p-ec').checked, transfer: $('#s-p-tr').checked },
       bank: { name: $('#s-bname').value.trim(), code: $('#s-bcode').value.trim(), account: $('#s-bacc').value.trim(), holder: $('#s-bholder').value.trim() },
       transferDays: +$('#s-tdays').value,
-      cookie: { ...s.cookie, minPieces: +$('#s-cmin').value, shipping: { label: $('#s-clabel').value.trim(), tiers: [...app.querySelectorAll('#s-ctiers [data-i]')].map((r) => ({ upTo: +r.querySelector('.tu').value, fee: +r.querySelector('.tf').value })) } },
+      cookie: { ...s.cookie, series: undefined, groups: undefined, minPieces: +$('#s-cmin').value, shipping: { label: $('#s-clabel').value.trim(), tiers: [...app.querySelectorAll('#s-ctiers [data-i]')].map((r) => ({ upTo: +r.querySelector('.tu').value, fee: +r.querySelector('.tf').value })) } },
       canele: { ...c, assortedPrice: +$('#s-aprice').value, singleMinBoxes: +$('#s-smin').value, modes: c.modes.map((m, i) => ({ ...m, minBoxes: +app.querySelector(`.s-mode[data-i="${i}"]`).value })) },
       notice: $('#s-notice').value.trim(),
       shopNotes: { over: Object.fromEntries([...app.querySelectorAll('.sn-over')].map((t) => [t.dataset.k, t.value.trim()]).filter(([, v]) => v)),

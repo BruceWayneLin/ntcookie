@@ -1103,6 +1103,11 @@ async function route(event) {
         for (const p of gone) await del('PRODUCT', p.id);
         return json(200, { settings: adminView(next), products: await listProducts() });
       }
+      if (method === 'DELETE' && seg[1] === 'cookie-series' && seg[2]) { // only this series; its cookies stay (listed as 系列已刪除) so they can be moved to another series
+        const next = { ...settings, cookie: { ...settings.cookie, series: (settings.cookie.series || []).filter((x) => x.id !== seg[2]) }, pk: 'SETTINGS', sk: 'main' };
+        await put(next);
+        return json(200, { settings: adminView(next), products: await listProducts() });
+      }
       if (method === 'DELETE' && seg[1] === 'products' && seg[2]) { await del('PRODUCT', seg[2]); return json(200, { ok: true }); }
       if (method === 'POST' && path === '/admin/images') return json(200, { url: await putImage(parseBody(event)) });
       if (method === 'GET' && path === '/admin/settings') {
@@ -1131,7 +1136,11 @@ async function route(event) {
           if (!groups.length) throw bad('至少要有一個分類');
           const groupIds = new Set(groups.map((g) => g.id));
           const ids = new Set();
-          const series = (Array.isArray(c.series) ? c.series : settings.cookie.series).slice(0, 80).map((x, i) => cleanSeries(x, i, groupIds));
+          let series = (Array.isArray(c.series) ? c.series : settings.cookie.series).slice(0, 80).map((x, i) => cleanSeries(x, i, groupIds));
+          if (Array.isArray(c.series)) { // an admin page opened before someone else added series sends a list without them: one save never drops more than one series
+            const sent = new Set(series.map((x) => x.id)); const gone = seriesOf(settings).filter((x) => !sent.has(x.id));
+            if (gone.length > 1) series = [...series, ...gone.map((x, i) => cleanSeries(x, series.length + i, groupIds))];
+          }
           for (const x of series) { if (!x.id || !x.name) throw bad('每個系列都要有名稱'); if (ids.has(x.id)) throw bad('系列代號重複'); ids.add(x.id); }
           next.cookie = { minPieces: Math.min(200, Math.max(1, int(c.minPieces ?? settings.cookie.minPieces, 1))), shipping: { label: str(cs.label, 30) || DEFAULT_SETTINGS.cookie.shipping.label, tiers }, groups, series };
         }

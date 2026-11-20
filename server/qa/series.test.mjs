@@ -12,21 +12,22 @@ const call = async (path, { method = 'GET', body, user } = {}) => {
   return { status: r.status, json, text };
 };
 const ADMIN = 'Uqa-admin|QA店長', BOB = 'Uqa-bob|Bob';
-const SID = `qa${Date.now().toString(36)}`;
+const SID = `qa${Date.now().toString(36)}`; const GID = `g${SID}`; // a test series and a test category of our own
+const canon = (v) => JSON.stringify(v, (k, x) => (x && typeof x === 'object' && !Array.isArray(x) ? Object.fromEntries(Object.keys(x).sort().map((y) => [y, x[y]])) : x)); // DynamoDB does not keep key order
 
 let r = await call('/admin/settings', { user: ADMIN });
 const before = r.json.settings;
-ok('settings has the two default categories', JSON.stringify(before.cookie.groups.map((g) => g.id)) === '["character","birthday"]', before.cookie.groups);
-r = await call('/catalog'); ok('public catalog sends the categories', r.json.settings.cookie.groups?.length === 2, r.json.settings.cookie.groups);
+ok('settings has the two homepage categories', ['character', 'birthday'].every((id) => before.cookie.groups.some((g) => g.id === id)), before.cookie.groups);
+r = await call('/catalog'); ok('public catalog sends the categories', canon(r.json.settings.cookie.groups) === canon(before.cookie.groups), r.json.settings.cookie.groups);
 
 // categories: add one, junk entries are dropped
-r = await call('/admin/settings', { method: 'PUT', user: ADMIN, body: { cookie: { ...before.cookie, groups: [...before.cookie.groups, { id: 'chinese', name: '中國風' }, { id: '', name: 'x' }, { id: 'nameless', name: '' }, { id: 'chinese', name: 'dup' }] } } });
-ok('add category 中國風', r.status === 200 && JSON.stringify(r.json.settings.cookie.groups) === JSON.stringify([...before.cookie.groups, { id: 'chinese', name: '中國風' }]), r.json?.settings?.cookie?.groups || r.text);
+r = await call('/admin/settings', { method: 'PUT', user: ADMIN, body: { cookie: { ...before.cookie, groups: [...before.cookie.groups, { id: GID, name: 'QA分類' }, { id: '', name: 'x' }, { id: 'nameless', name: '' }, { id: GID, name: 'dup' }] } } });
+ok('add a category (junk and duplicate ids dropped)', r.status === 200 && canon(r.json.settings.cookie.groups) === canon([...before.cookie.groups, { id: GID, name: 'QA分類' }]), r.json?.settings?.cookie?.groups || r.text);
 r = await call('/admin/settings', { method: 'PUT', user: ADMIN, body: { cookie: { ...before.cookie, groups: [] } } });
 ok('cannot remove every category', r.status === 400, r.status);
 
 // non-admins can't touch series
-r = await call(`/admin/cookie-series/${SID}`, { method: 'PUT', user: BOB, body: { series: { name: 'x', groups: ['chinese'] } } });
+r = await call(`/admin/cookie-series/${SID}`, { method: 'PUT', user: BOB, body: { series: { name: 'x', groups: [GID] } } });
 ok('non-admin → 403', r.status === 403, r.status);
 r = await call(`/admin/cookie-series/${SID}`, { method: 'PUT', body: { series: { name: 'x' } } });
 ok('no login → 401', r.status === 401, r.status);
@@ -34,35 +35,35 @@ ok('no login → 401', r.status === 401, r.status);
 // a new product (series) with two options, a bogus category and a bad photo url
 const ids = [`cookie-${SID}-a`, `cookie-${SID}-b`];
 r = await call(`/admin/cookie-series/${SID}`, { method: 'PUT', user: ADMIN, body: {
-  series: { name: '  QA 中國風系列 ', desc: '第一行\r\n第二行', photos: ['assets/cookies/shopee/chinese.webp', 'javascript:alert(1)', 'https://example.com/a.webp'], groups: ['chinese', 'bogus'] },
+  series: { name: '  QA 中國風系列 ', desc: '第一行\r\n第二行', photos: ['assets/cookies/shopee/chinese.webp', 'javascript:alert(1)', 'https://example.com/a.webp'], groups: [GID, 'bogus'] },
   products: [{ id: ids[0], name: '長命鎖', price: 280, active: true, photo: 'assets/cookies/shopee/chinese.webp' }, { id: ids[1], name: '平安符', price: 300, active: false }],
 } });
 let se = r.json?.settings?.cookie?.series?.find((x) => x.id === SID);
 ok('create → 200', r.status === 200, r.text);
 ok('name trimmed, desc keeps line breaks', se?.name === 'QA 中國風系列' && se?.desc === '第一行\n第二行', se);
 ok('bad photo url dropped, cover = first photo', JSON.stringify(se?.photos) === '["assets/cookies/shopee/chinese.webp","https://example.com/a.webp"]' && se?.photo === 'assets/cookies/shopee/chinese.webp', se);
-ok('unknown category dropped', JSON.stringify(se?.groups) === '["chinese"]', se?.groups);
+ok('unknown category dropped', JSON.stringify(se?.groups) === JSON.stringify([GID]), se?.groups);
 const mine = (ps) => ps.filter((p) => p.series === SID);
 ok('two options saved in order', JSON.stringify(mine(r.json.products).map((p) => [p.name, p.price, p.active, p.sort])) === '[["長命鎖",280,true,10],["平安符",300,false,20]]', mine(r.json.products));
 r = await call('/catalog');
 se = r.json.settings.cookie.series.find((x) => x.id === SID);
-ok('guest sees the new series (one option 上架) with photos/desc/groups', se?.active && se.photos.length === 2 && se.groups[0] === 'chinese' && se.desc.includes('\n'), se);
+ok('guest sees the new series (one option 上架) with photos/desc/groups', se?.active && se.photos.length === 2 && se.groups[0] === GID && se.desc.includes('\n'), se);
 ok('guest sees only the 上架 option', JSON.stringify(r.json.products.filter((p) => p.series === SID).map((p) => p.name)) === '["長命鎖"]', r.json.products.filter((p) => p.series === SID));
 
 // rename + reorder + edit price, keep the series' place
 r = await call('/admin/settings', { user: ADMIN }); const sortBefore = r.json.settings.cookie.series.find((x) => x.id === SID).sort;
 r = await call(`/admin/cookie-series/${SID}`, { method: 'PUT', user: ADMIN, body: {
-  series: { name: 'QA 改名了', groups: ['chinese', 'birthday'], photos: ['https://example.com/a.webp'] },
+  series: { name: 'QA 改名了', groups: [GID, 'birthday'], photos: ['https://example.com/a.webp'] },
   products: [{ id: ids[1], name: '平安符', price: 320, active: true }, { id: ids[0], name: '長命鎖', price: 280, active: true }],
 } });
 se = r.json?.settings?.cookie?.series?.find((x) => x.id === SID);
-ok('rename works', se?.name === 'QA 改名了' && JSON.stringify(se.groups) === '["chinese","birthday"]' && se.photo === 'https://example.com/a.webp', se);
+ok('rename works', se?.name === 'QA 改名了' && JSON.stringify(se.groups) === JSON.stringify([GID, 'birthday']) && se.photo === 'https://example.com/a.webp', se);
 ok('series keeps its sort', se?.sort === sortBefore, [se?.sort, sortBefore]);
 ok('options reordered and repriced', JSON.stringify(mine(r.json.products).map((p) => [p.name, p.price, p.sort])) === '[["平安符",320,10],["長命鎖",280,20]]', mine(r.json.products));
 ok('desc kept when not sent', se?.desc === '第一行\n第二行', se?.desc);
 
 // validation
-r = await call(`/admin/cookie-series/${SID}`, { method: 'PUT', user: ADMIN, body: { series: { name: 'QA 改名了', groups: ['chinese'] }, products: [{ id: `cookie-${SID}-c`, name: '沒價格', price: 0, active: true }] } });
+r = await call(`/admin/cookie-series/${SID}`, { method: 'PUT', user: ADMIN, body: { series: { name: 'QA 改名了', groups: [GID] }, products: [{ id: `cookie-${SID}-c`, name: '沒價格', price: 0, active: true }] } });
 ok('option without a price → 400 naming it', r.status === 400 && r.json.error.includes('沒價格'), r.text);
 r = await call('/admin/products', { user: ADMIN });
 ok('…and nothing was saved', !r.json.products.some((p) => p.id === `cookie-${SID}-c`), mine(r.json.products).length);
@@ -79,11 +80,27 @@ r = await call(`/admin/cookie-series/${SID}`, { method: 'PUT', user: ADMIN, body
 ok('remove → option deleted', r.status === 200 && JSON.stringify(mine(r.json.products).map((p) => p.id)) === JSON.stringify([ids[1]]), mine(r.json?.products || []));
 ok('remove ignores other series', r.json.products.some((p) => p.id === other.id), other.id);
 
+// a page that was opened before other series were added sends an old list: nothing but (at most) one series may disappear per save
+r = await call('/admin/settings', { user: ADMIN }); let cur = r.json.settings.cookie;
+r = await call('/admin/settings', { method: 'PUT', user: ADMIN, body: { cookie: { ...cur, series: cur.series.slice(0, cur.series.length - 3) } } });
+ok('old list missing 3 series → all kept', r.status === 200 && r.json.settings.cookie.series.length === cur.series.length, [r.json?.settings?.cookie?.series?.length, cur.series.length]);
+ok('…and their fields survive (name, photos, groups)', canon(r.json.settings.cookie.series.find((x) => x.id === SID)) === canon(cur.series.find((x) => x.id === SID)), r.json.settings.cookie.series.find((x) => x.id === SID));
+r = await call('/admin/settings', { method: 'PUT', user: ADMIN, body: { cookie: { ...cur, series: undefined, groups: undefined, minPieces: cur.minPieces } } });
+ok('saving 設定 without a series list keeps series and categories', r.status === 200 && r.json.settings.cookie.series.length === cur.series.length && r.json.settings.cookie.groups.length === cur.groups.length, [r.json?.settings?.cookie?.series?.length, r.json?.settings?.cookie?.groups]);
+
+// DELETE one series: only that one goes, its cookie stays (orphan), others untouched
+r = await call(`/admin/cookie-series/${SID}`, { method: 'DELETE', user: BOB }); ok('delete as non-admin → 403', r.status === 403, r.status);
+r = await call(`/admin/cookie-series/${SID}`, { method: 'DELETE', user: ADMIN });
+ok('delete series → only it is gone', r.status === 200 && !r.json.settings.cookie.series.some((x) => x.id === SID) && r.json.settings.cookie.series.length === cur.series.length - 1, r.json?.settings?.cookie?.series?.length);
+ok('its cookie is still there (can be moved to another series)', r.json.products.some((p) => p.id === ids[1] && p.series === SID), '');
+r = await call('/catalog'); ok('customers no longer see the deleted series or its cookie', !r.json.settings.cookie.series.some((x) => x.id === SID) && !r.json.products.some((p) => p.id === ids[1]), '');
+r = await call(`/admin/cookie-series/${SID}`, { method: 'PUT', user: ADMIN, body: { series: { name: 'QA 回來了', groups: [GID] } } }); // bring it back for the clean-up below
+
 // clean up: delete the series and its option, drop the test category
 r = await call(`/admin/products/${ids[1]}`, { method: 'DELETE', user: ADMIN });
 r = await call('/admin/settings', { user: ADMIN });
 r = await call('/admin/settings', { method: 'PUT', user: ADMIN, body: { cookie: { ...r.json.settings.cookie, groups: before.cookie.groups, series: r.json.settings.cookie.series.filter((x) => x.id !== SID) } } });
-ok('cleanup', r.status === 200 && !r.json.settings.cookie.series.some((x) => x.id === SID) && r.json.settings.cookie.groups.length === 2, r.text.slice(0, 200));
+ok('cleanup', r.status === 200 && !r.json.settings.cookie.series.some((x) => x.id === SID) && canon(r.json.settings.cookie.groups) === canon(before.cookie.groups), r.text.slice(0, 200));
 r = await call('/admin/settings', { user: ADMIN });
 ok('old series untouched (count back to before)', r.json.settings.cookie.series.length === before.cookie.series.length, [r.json.settings.cookie.series.length, before.cookie.series.length]);
 
