@@ -11,7 +11,7 @@
 <link rel="icon" href="assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css?v=1120m">
+<link rel="stylesheet" href="css/app.css?v=1121a">
 <style>
   :root { --page: 760px; }
   .tabs { position: sticky; top: 63px; z-index: 20; display: flex; gap: 6px; max-width: var(--page); margin: 0 auto; padding: 8px 14px; background: rgba(248, 237, 231, .96); }
@@ -107,8 +107,10 @@
   .grow small { flex: none; font: 600 12px var(--sans); color: var(--muted); }
   .grow button { flex: none; width: 36px; height: 36px; border: 0; border-radius: 10px; background: #f1e1d8; font: 800 15px var(--sans); color: var(--ink); cursor: pointer; }
   .grow button[disabled] { opacity: .3; cursor: default; }
-  body.ed-open { overflow: hidden; }
-  .ed { position: fixed; inset: 0; z-index: 46; display: flex; flex-direction: column; background: var(--bg, #f8ede7); }
+  /* 編輯商品是一般的頁面（打開時把後面的列表藏起來、整頁一起捲），不是固定在畫面上自己捲的一層：
+     iPhone 鍵盤收起後，固定層「畫的位置」跟「點得到的位置」會差一截 → 點價格點不到、換照片換到上面那一列 (11-21) */
+  body.ed-open > .topbar, body.ed-open > .tabs, body.ed-open > .shopbar, body.ed-open > main, body.ed-open > #ver { display: none !important; }
+  .ed { position: relative; z-index: 46; display: flex; flex-direction: column; min-height: 100vh; min-height: 100dvh; background: var(--bg, #f8ede7); }
   .ed-top { flex: none; display: flex; align-items: center; gap: 8px; padding: calc(8px + env(safe-area-inset-top, 0px)) 10px 8px; background: #fff; border-bottom: 1px solid #ecdcd2; }
   .ed-top h2 { flex: 1; margin: 0; text-align: center; font: 900 18px var(--serif); letter-spacing: .08em; }
   .ed-top .ed-x { flex: none; min-width: 74px; padding: 10px 6px; border: 0; background: none; color: var(--brown); font: 800 15px var(--sans); text-align: left; text-decoration: none; cursor: pointer; }
@@ -159,6 +161,15 @@
   .sorow button[disabled] { opacity: .3; cursor: default; }
   .ed-more summary { cursor: pointer; font: 800 15px var(--sans); color: var(--ink2); }
   .ed-more[open] summary { margin-bottom: 12px; }
+  .ed-top { position: sticky; top: 0; z-index: 3; }
+  .ed-body { overflow: visible; }
+  .ed-bar { position: sticky; bottom: 0; z-index: 3; }
+  .eo .o-pr { flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; cursor: text; }
+  .eo input.o-name, .eo input.o-price { min-height: 44px; }
+  .eo input.o-price { max-width: 132px; }
+  .spc.flash { animation: spcflash 2.6s ease-out; }
+  @keyframes spcflash { 0%, 55% { background: #fff3df; box-shadow: 0 0 0 3px #d9843f; } 100% { box-shadow: 0 0 0 0 rgba(217, 132, 63, 0); } }
+  .spc .dupe { display: inline-block; margin-left: 6px; padding: 2px 7px; border-radius: 999px; background: #fde4e1; color: #b3261e; font: 800 11.5px/1.3 var(--sans); letter-spacing: 0; vertical-align: 2px; }
 </style>
 </head>
 <body>
@@ -171,12 +182,13 @@
 <div class="shopbar" id="shopbar" hidden></div>
 <main class="wrap" id="app"><div class="spinner"></div></main>
 <p class="note" id="ver" style="text-align:center;margin:0 0 24px;color:var(--muted)"></p>
-<script src="js/config.js?v=1120m"></script>
-<script src="js/app.js?v=1120m"></script>
+<script src="js/config.js?v=1121a"></script>
+<script src="js/app.js?v=1121a"></script>
 <script>
 (async function () {
   const { $, esc, money, asset } = NTC;
   const app = $('#app');
+  try { history.scrollRestoration = 'manual'; } catch (e) { /* 舊瀏覽器沒有 */ } // 回到列表時捲到哪裡由這一頁自己決定
   $('#ver').textContent = '版本 ' + (NTC_CONFIG.version || '');
   const q = new URLSearchParams(location.search);
   const PAY = { linepay: 'LINE Pay', ecpay: '綠界', transfer: '轉帳' };
@@ -475,13 +487,14 @@
     if (!chips.some(([k]) => k === ckFilter)) ckFilter = 'all';
     const shown = all.filter((x) => ckFilter === 'all' || (ckFilter === 'off' ? !liveOf(x.id) : ckFilter === 'none' ? noGroup(x) : inGroup(x, ckFilter)));
     const gname = (x) => (x.groups || []).map((g) => groups.find((y) => y.id === g)?.name).filter(Boolean).join('、') || '未分類';
+    const dupName = (x) => all.filter((y) => (y.name || '').trim() === (x.name || '').trim()).length > 1; // 兩個商品同名：很容易改到另一個
     const orphans = products.filter((p) => p.category === 'cookie' && !all.some((x) => x.id === p.series));
     return `<label class="ck-search">${SEARCH_ICON}<input id="ck-q" type="search" enterkeyhint="search" placeholder="搜尋商品或餅乾名稱" value="${esc(ckQuery)}"></label>
       <div class="statusbar one" id="ck-f" style="margin-bottom:12px">${chips.map(([k, t]) => `<button type="button" data-f="${esc(k)}" class="${k === ckFilter ? 'on' : ''}">${esc(t)}</button>`).join('')}<button type="button" id="ck-order" class="gear">⇅ 排順序</button><button type="button" id="ck-groups" class="gear">⚙ 管理分類</button></div>
       <div id="ck-list">${shown.map((x) => { const ps = piecesOf(x.id); const on = liveOf(x.id); const so = ps.filter((p) => p.soldOut).length;
         return `<article class="spc" data-sid="${esc(x.id)}" data-q="${esc([x.name, ...ps.map((p) => p.name)].join(' ').toLowerCase())}">
           <button type="button" class="spc-top" data-edit><img src="${esc(asset(coverOf(x) || 'assets/favicon.png'))}" alt="" loading="lazy">
-            <span class="i"><b>${esc(x.name)}</b><span class="pr">${ps.length ? priceRange(ps) : '還沒有選項'}</span>
+            <span class="i"><b>${esc(x.name)}${dupName(x) ? '<span class="dupe">名稱重複</span>' : ''}</b><span class="pr">${ps.length ? priceRange(ps) : '還沒有選項'}</span>
               <span class="meta">${ps.length} 款${on && on < ps.length ? `（${on} 款上架）` : ''}${so ? `・${so} 款售完` : ''}${x.single ? '・1 片可訂' : ''}・${esc(gname(x))}</span></span>
             <span class="spc-st${on ? ' on' : ''}">${on ? '上架中' : '未上架'}</span></button>
           <div class="spc-acts"><button type="button" class="btn ghost small" data-bulk="${on ? 'off' : 'on'}">${on ? '下架' : '上架'}</button>
@@ -490,6 +503,14 @@
       ${orphans.length ? `<section class="panel"><h2>造型餅乾・（系列已刪除）</h2><p class="note" style="margin:0 0 8px">這些餅乾的系列被刪掉了，客人看不到。編輯後選一個系列就會回來。</p>${orphans.map(prodRow).join('')}</section>` : ''}
       <div style="height:80px"></div><div class="addbar"><button type="button" class="btn block" id="ck-new">＋ 新增商品</button></div>`;
   }
+  // 存完回到列表：捲到剛剛那個商品、閃一下（新商品排在最後面，不捲過去會以為沒存到）
+  const showCard = (sid) => {
+    const find = () => [...app.querySelectorAll('#ck-list .spc')].find((a) => a.dataset.sid === sid && !a.hidden);
+    let a = find(); if (!a) { ckFilter = 'all'; ckQuery = ''; renderProducts(); a = find(); }
+    if (!a) return; a.scrollIntoView({ block: 'center' }); a.classList.remove('flash'); void a.offsetWidth; a.classList.add('flash');
+  };
+  // 存不了的時候：要按過「知道了」才會消失（幾秒就不見的小字條容易沒看到，以為已經存了）
+  const stopSheet = (title, text) => { const { el, close } = NTC.sheet(`<h2>${esc(title)}</h2><p id="st-msg" style="margin:0 0 14px;font:600 15.5px/1.7 var(--sans);white-space:pre-line">${esc(text)}</p><button type="button" class="btn block" id="st-ok">知道了</button>`); el.classList.add('stop-sheet'); el.querySelector('#st-ok').onclick = close; };
   function wireCookies() {
     const qi = $('#ck-q');
     const applyQ = () => { const qq = ckQuery.trim().toLowerCase(); let n = 0;
@@ -648,7 +669,8 @@
         ${isNew ? '' : '<button type="button" class="btn ghost block" id="ed-del" style="color:var(--red)">刪除這個商品</button>'}
       </div>
       <footer class="ed-bar"><button type="button" class="btn ghost" id="ed-b1"></button><button type="button" class="btn" id="ed-b2"></button></footer>`;
-    document.body.appendChild(box); document.body.classList.add('ed-open');
+    const backY = window.scrollY; // 列表原本捲到哪裡：關掉編輯頁時回到那裡
+    document.body.appendChild(box); document.body.classList.add('ed-open'); window.scrollTo(0, 0);
     const q1 = (s) => box.querySelector(s);
     const collect = () => { st.name = q1('#ed-name').value.trim(); st.desc = q1('#ed-desc').value; st.lines = [q1('#ed-l1').value.trim(), q1('#ed-l2').value.trim()].filter(Boolean); st.single = q1('#ed-single').checked; };
     collect(); const start = snap();
@@ -657,7 +679,7 @@
     history.pushState({ ntcEd: 1 }, '');
     const onPop = () => { if (dirty() && !confirm('還沒按「更新」，確定離開？剛剛改的不會存。')) { history.pushState({ ntcEd: 1 }, ''); return; } teardown(); };
     window.addEventListener('popstate', onPop);
-    const teardown = () => { window.removeEventListener('popstate', onPop); document.querySelectorAll('.sheet .close').forEach((b) => b.click()); box.remove(); document.body.classList.remove('ed-open'); };
+    const teardown = () => { window.removeEventListener('popstate', onPop); document.querySelectorAll('.sheet .close').forEach((b) => b.click()); box.remove(); document.body.classList.remove('ed-open'); window.scrollTo(0, backY); };
     const shut = () => { teardown(); if (history.state?.ntcEd) { window.addEventListener('popstate', (e) => e.stopImmediatePropagation(), { capture: true, once: true }); history.back(); } }; // swallow our own back()
     q1('.ed-top button.ed-x').onclick = () => { if (dirty() && !confirm('還沒按「更新」，確定離開？剛剛改的不會存。')) return; shut(); };
 
@@ -704,7 +726,7 @@
       return `<div class="eo${o.active ? '' : ' off'}" data-i="${i}">
         <label class="o-ph${o.photo ? ' has' : ''}" aria-label="選項照片">${o.photo ? `<img src="${esc(asset(o.photo))}" alt="" loading="lazy">` : '＋照片'}<input type="file" accept="image/*" hidden></label>
         <div class="o-mid"><div class="o-line"><input class="o-name" maxlength="40" placeholder="名稱，例如：豬爸爸" value="${esc(o.name || '')}" aria-label="選項名稱"><button type="button" class="o-del" aria-label="刪除這個選項"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg></button></div>
-          <div class="o-line"><span>NT$</span><input class="o-price" type="number" inputmode="numeric" min="1" placeholder="價格" value="${esc(o.price || '')}" aria-label="價格"><button type="button" class="o-more" aria-label="更多設定">⋯</button></div>
+          <div class="o-line"><label class="o-pr"><span>NT$</span><input class="o-price" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off" enterkeyhint="done" placeholder="價格" value="${esc(o.price || '')}" aria-label="價格"></label><button type="button" class="o-more" aria-label="更多設定">⋯</button></div>
           ${tags ? `<div class="o-tags">${esc(tags)}</div>` : ''}</div>
         <label class="tg o-on">上架<input type="checkbox" ${o.active ? 'checked' : ''}></label></div>`; };
     const paintOpts = () => {
@@ -713,7 +735,9 @@
       q1('#ed-cnt').textContent = st.opts.length ? `${st.opts.length} 款・${on} 款上架` : '';
       box.querySelectorAll('#ed-opts .eo').forEach((r) => { const i = +r.dataset.i; const o = st.opts[i];
         r.querySelector('.o-name').oninput = (e) => { o.name = e.target.value; r.classList.remove('bad'); };
-        r.querySelector('.o-price').oninput = (e) => { o.price = e.target.value === '' ? '' : +e.target.value; o.priceAuto = false; r.classList.remove('bad'); };
+        const pi = r.querySelector('.o-price'); // 只收數字（全形也可以）；點一下就全選，直接打新的價格，不用先把舊的刪掉
+        pi.oninput = () => { const v = pi.value.replace(/[０-９]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 65248)).replace(/\D/g, '').replace(/^0+/, '').slice(0, 6); if (v !== pi.value) pi.value = v; o.price = v === '' ? '' : +v; o.priceAuto = false; r.classList.remove('bad'); };
+        pi.onfocus = () => setTimeout(() => { try { if (document.activeElement === pi) pi.setSelectionRange(0, pi.value.length); } catch (e) { /* 這個瀏覽器不能選 */ } }, 0);
         r.querySelector('.o-on input').onchange = (e) => { o.active = e.target.checked; r.classList.toggle('off', !o.active); q1('#ed-cnt').textContent = `${st.opts.length} 款・${st.opts.filter((y) => y.active).length} 款上架`; paintBar(); };
         r.querySelector('.o-ph input').onchange = async (e) => { const f = e.target.files[0]; e.target.value = ''; if (!f) return;
           NTC.loading(true, '上傳照片…'); try { o.photo = await uploadPhoto(f); paintOpts(); } catch (err) { NTC.toast(err.message || '照片上傳失敗', 3500); } finally { NTC.loading(false); } };
@@ -767,14 +791,17 @@
     const save = async (mode) => {
       if (saving) return; // a second tap while the first save is on its way
       collect();
-      if (!st.name) { NTC.toast('請填商品名稱'); q1('#ed-name').focus(); return; }
-      if (!st.groups.length) { NTC.toast('請選至少一個分類'); q1('#ed-gs').scrollIntoView({ block: 'center', behavior: 'smooth' }); return; }
+      const word = isNew ? '儲存' : '更新';
+      if (!st.name) { q1('#ed-name').scrollIntoView({ block: 'center' }); stopSheet('還沒有存', '請先填「商品名稱」，再按一次「' + word + '」。'); return; }
+      if (!st.groups.length) { q1('#ed-gs').scrollIntoView({ block: 'center' }); stopSheet('還沒有存', '請至少選一個「分類」，再按一次「' + word + '」。'); return; }
+      const twin = isNew || (x.name || '').trim() !== st.name ? seriesList().find((y) => y.id !== sid && (y.name || '').trim() === st.name) : null;
+      if (twin && !confirm(`已經有一個叫「${st.name}」的商品了（裡面 ${piecesOf(twin.id).length} 款）。\n\n按「確定」＝再存一個同名的，客人會看到兩個一樣名字的商品。\n按「取消」＝先不存：可以改個名字，或回列表去編輯原本那一個。`)) return;
       st.opts = st.opts.filter((o) => o.id || String(o.name || '').trim() || o.photo || (+o.price > 0 && !o.priceAuto)); // a new row left empty (its price was only copied from the row above) is dropped
       paintOpts();
       const badAt = st.opts.findIndex((o) => !String(o.name || '').trim() || !(+o.price > 0));
       if (badAt >= 0) {
-        const r = box.querySelectorAll('#ed-opts .eo')[badAt]; r.classList.add('bad'); r.scrollIntoView({ block: 'center', behavior: 'smooth' });
-        NTC.toast(!String(st.opts[badAt].name || '').trim() ? `第 ${badAt + 1} 個選項請填名稱` : `「${st.opts[badAt].name}」請填價格`, 3000); return;
+        const r = box.querySelectorAll('#ed-opts .eo')[badAt]; r.classList.add('bad'); r.scrollIntoView({ block: 'center' });
+        stopSheet('還沒有存', !String(st.opts[badAt].name || '').trim() ? `第 ${badAt + 1} 個選項沒有名稱（已經用紅框標出來）。\n\n填上名稱再按一次「${word}」；如果是不小心多出來的，按它右邊的垃圾桶刪掉。` : `「${st.opts[badAt].name}」沒有價格（已經用紅框標出來）。\n\n填上價格再按一次「${word}」。`); return;
       }
       if (mode) st.opts.forEach((o) => { o.active = mode === 'on'; });
       const stamp = Date.now().toString(36);
@@ -787,10 +814,10 @@
       saving = true; NTC.loading(true, '儲存中…');
       try {
         const r = await NTC.api(`/admin/cookie-series/${sid}`, { method: 'PUT', body });
-        settings = r.settings; products = r.products; shut(); renderProducts();
+        settings = r.settings; products = r.products; shut(); renderProducts(); showCard(sid);
         const on = st.opts.filter((o) => o.active).length;
         NTC.toast(on ? `已${isNew ? '儲存並上架' : '更新'}「${st.name}」（${on} 款上架）` : st.opts.length ? `已儲存「${st.name}」，目前沒有上架，客人看不到` : `已儲存「${st.name}」，還沒有選項，客人暫時看不到`, 3500);
-      } catch (e) { NTC.toast(e.message, 4000); } finally { saving = false; NTC.loading(false); }
+      } catch (e) { stopSheet('沒有存成功', `${e.message || '連線有問題'}\n\n剛剛改的都還在這一頁，請再按一次「${word}」。`); } finally { saving = false; NTC.loading(false); }
     };
     q1('#ed-b1').onclick = () => {
       if (isNew) return save('off');
