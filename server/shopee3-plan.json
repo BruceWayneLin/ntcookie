@@ -1,0 +1,2718 @@
+{
+ "new": [
+  {
+   "id": "cookie-sp-12519789309-00",
+   "series": "shinchan",
+   "name": "小新",
+   "price": 250,
+   "photo": "assets/cookies/sp/12519789309-00.webp",
+   "sort": 10
+  },
+  {
+   "id": "cookie-sp-12519789309-01",
+   "series": "shinchan",
+   "name": "親親小新",
+   "price": 250,
+   "photo": "assets/cookies/sp/12519789309-01.webp",
+   "sort": 20
+  },
+  {
+   "id": "cookie-sp-12519789309-02",
+   "series": "shinchan",
+   "name": "睡衣小新",
+   "price": 250,
+   "photo": "assets/cookies/sp/12519789309-02.webp",
+   "sort": 30
+  },
+  {
+   "id": "cookie-sp-12519789309-03",
+   "series": "shinchan",
+   "name": "動感超人小新",
+   "price": 280,
+   "photo": "assets/cookies/sp/12519789309-03.webp",
+   "sort": 40
+  },
+  {
+   "id": "cookie-sp-12519789309-04",
+   "series": "shinchan",
+   "name": "小新抱小白",
+   "price": 290,
+   "photo": "assets/cookies/sp/12519789309-04.webp",
+   "sort": 50
+  },
+  {
+   "id": "cookie-sp-12519789309-05",
+   "series": "shinchan",
+   "name": "小新恐龍裝",
+   "price": 250,
+   "photo": "assets/cookies/sp/12519789309-05.webp",
+   "sort": 60
+  },
+  {
+   "id": "cookie-sp-12519789309-06",
+   "series": "shinchan",
+   "name": "光屁屁外星人",
+   "price": 200,
+   "photo": "assets/cookies/sp/12519789309-06.webp",
+   "sort": 70
+  },
+  {
+   "id": "cookie-sp-12519789309-07",
+   "series": "shinchan",
+   "name": "肥嘟嘟左衛門",
+   "price": 220,
+   "photo": "assets/cookies/sp/12519789309-07.webp",
+   "sort": 80
+  },
+  {
+   "id": "cookie-sp-12519789309-08",
+   "series": "shinchan",
+   "name": "小葵",
+   "price": 250,
+   "photo": "assets/cookies/sp/12519789309-08.webp",
+   "sort": 90
+  },
+  {
+   "id": "cookie-sp-12519789309-09",
+   "series": "shinchan",
+   "name": "鴨鴨泳圈小新",
+   "price": 250,
+   "photo": "assets/cookies/sp/12519789309-09.webp",
+   "sort": 100
+  },
+  {
+   "id": "cookie-sp-12519789309-10",
+   "series": "shinchan",
+   "name": "小白",
+   "price": 150,
+   "photo": "assets/cookies/sp/12519789309-10.webp",
+   "sort": 110
+  },
+  {
+   "id": "cookie-sp-12519789309-11",
+   "series": "shinchan",
+   "name": "小葵毛帽",
+   "price": 250,
+   "photo": "assets/cookies/sp/12519789309-11.webp",
+   "sort": 120
+  },
+  {
+   "id": "cookie-sp-12519789309-12",
+   "series": "shinchan",
+   "name": "小新嬰兒車",
+   "price": 280,
+   "photo": "assets/cookies/sp/12519789309-12.webp",
+   "sort": 130,
+   "textLabel": "推車上的字",
+   "textMax": 12,
+   "textOptional": true
+  },
+  {
+   "id": "cookie-sp-12519789309-13",
+   "series": "shinchan",
+   "name": "小新嘴嘴",
+   "price": 250,
+   "photo": "assets/cookies/sp/12519789309-13.webp",
+   "sort": 140
+  },
+  {
+   "id": "cookie-sp-12519789309-14",
+   "series": "shinchan",
+   "name": "小白包屁衣",
+   "price": 280,
+   "photo": "assets/cookies/sp/12519789309-14.webp",
+   "sort": 150
+  },
+  {
+   "id": "cookie-sp-12519789309-15",
+   "series": "shinchan",
+   "name": "小白圍兜兜",
+   "price": 250,
+   "photo": "assets/cookies/sp/12519789309-15.webp",
+   "sort": 160
+  },
+  {
+   "id": "cookie-sp-12519789309-16",
+   "series": "shinchan",
+   "name": "動感超人包屁衣",
+   "price": 250,
+   "photo": "assets/cookies/sp/12519789309-16.webp",
+   "sort": 170
+  },
+  {
+   "id": "cookie-sp-12519789309-17",
+   "series": "shinchan",
+   "name": "恐龍",
+   "price": 230,
+   "photo": "assets/cookies/sp/12519789309-17.webp",
+   "sort": 180
+  },
+  {
+   "id": "cookie-sp-12519789309-18",
+   "series": "shinchan",
+   "name": "寶寶名字",
+   "price": 250,
+   "photo": "assets/cookies/sp/12519789309-18.webp",
+   "sort": 190,
+   "textLabel": "寶寶名字",
+   "textMax": 6
+  },
+  {
+   "id": "cookie-sp-2282565325-00",
+   "series": "snoopy",
+   "name": "史努比",
+   "price": 220,
+   "photo": "assets/cookies/sp/2282565325-00.webp",
+   "sort": 10
+  },
+  {
+   "id": "cookie-sp-2282565325-01",
+   "series": "snoopy",
+   "name": "墨鏡史努比",
+   "price": 220,
+   "photo": "assets/cookies/sp/2282565325-01.webp",
+   "sort": 20
+  },
+  {
+   "id": "cookie-sp-2282565325-02",
+   "series": "snoopy",
+   "name": "趴睡史努比",
+   "price": 220,
+   "photo": "assets/cookies/sp/2282565325-02.webp",
+   "sort": 30
+  },
+  {
+   "id": "cookie-sp-2282565325-03",
+   "series": "snoopy",
+   "name": "史努比坐著",
+   "price": 250,
+   "photo": "assets/cookies/sp/2282565325-03.webp",
+   "sort": 40
+  },
+  {
+   "id": "cookie-sp-2282565325-04",
+   "series": "snoopy",
+   "name": "史努比狗窩",
+   "price": 250,
+   "photo": "assets/cookies/sp/2282565325-04.webp",
+   "sort": 50
+  },
+  {
+   "id": "cookie-sp-2282565325-05",
+   "series": "snoopy",
+   "name": "查理布朗",
+   "price": 250,
+   "photo": "assets/cookies/sp/2282565325-05.webp",
+   "sort": 60
+  },
+  {
+   "id": "cookie-sp-2282565325-06",
+   "series": "snoopy",
+   "name": "糊塗塔克",
+   "price": 120,
+   "photo": "assets/cookies/sp/2282565325-06.webp",
+   "sort": 70
+  },
+  {
+   "id": "cookie-sp-2282565325-07",
+   "series": "snoopy",
+   "name": "奶嘴",
+   "price": 250,
+   "photo": "assets/cookies/sp/2282565325-07.webp",
+   "sort": 80
+  },
+  {
+   "id": "cookie-sp-2282565325-08",
+   "series": "snoopy",
+   "name": "奶瓶",
+   "price": 250,
+   "photo": "assets/cookies/sp/2282565325-08.webp",
+   "sort": 90
+  },
+  {
+   "id": "cookie-sp-2282565325-09",
+   "series": "snoopy",
+   "name": "圍兜兜",
+   "price": 220,
+   "photo": "assets/cookies/sp/2282565325-09.webp",
+   "sort": 100
+  },
+  {
+   "id": "cookie-sp-2282565325-10",
+   "series": "snoopy",
+   "name": "嬰兒車",
+   "price": 250,
+   "photo": "assets/cookies/sp/2282565325-10.webp",
+   "sort": 110,
+   "textLabel": "推車上的字",
+   "textMax": 12,
+   "textOptional": true
+  },
+  {
+   "id": "cookie-sp-2282565325-11",
+   "series": "snoopy",
+   "name": "狗窩",
+   "price": 250,
+   "photo": "assets/cookies/sp/2282565325-11.webp",
+   "sort": 120
+  },
+  {
+   "id": "cookie-sp-2282565325-12",
+   "series": "snoopy",
+   "name": "狗骨頭",
+   "price": 220,
+   "photo": "assets/cookies/sp/2282565325-12.webp",
+   "sort": 130
+  },
+  {
+   "id": "cookie-sp-2282565325-13",
+   "series": "snoopy",
+   "name": "寶寶名字",
+   "price": 250,
+   "photo": "assets/cookies/sp/2282565325-13.webp",
+   "sort": 140,
+   "textLabel": "寶寶名字",
+   "textMax": 6
+  },
+  {
+   "id": "cookie-sp-3754422901-00",
+   "series": "kimetsu",
+   "name": "竈門炭治郎",
+   "price": 280,
+   "photo": "assets/cookies/sp/3754422901-00.webp",
+   "sort": 10
+  },
+  {
+   "id": "cookie-sp-3754422901-01",
+   "series": "kimetsu",
+   "name": "竈門禰豆子",
+   "price": 280,
+   "photo": "assets/cookies/sp/3754422901-01.webp",
+   "sort": 20
+  },
+  {
+   "id": "cookie-sp-3754422901-02",
+   "series": "kimetsu",
+   "name": "嘴平伊之助",
+   "price": 280,
+   "photo": "assets/cookies/sp/3754422901-02.webp",
+   "sort": 30
+  },
+  {
+   "id": "cookie-sp-3754422901-03",
+   "series": "kimetsu",
+   "name": "我妻善逸",
+   "price": 280,
+   "photo": "assets/cookies/sp/3754422901-03.webp",
+   "sort": 40
+  },
+  {
+   "id": "cookie-sp-3754422901-04",
+   "series": "kimetsu",
+   "name": "冨岡義勇",
+   "price": 280,
+   "photo": "assets/cookies/sp/3754422901-04.webp",
+   "sort": 50
+  },
+  {
+   "id": "cookie-sp-3754422901-05",
+   "series": "kimetsu",
+   "name": "胡蝶忍",
+   "price": 280,
+   "photo": "assets/cookies/sp/3754422901-05.webp",
+   "sort": 60
+  },
+  {
+   "id": "cookie-sp-3754422901-06",
+   "series": "kimetsu",
+   "name": "栗花落香奈乎",
+   "price": 280,
+   "photo": "assets/cookies/sp/3754422901-06.webp",
+   "sort": 70
+  },
+  {
+   "id": "cookie-sp-3754422901-07",
+   "series": "kimetsu",
+   "name": "炎柱煉獄杏壽郎",
+   "price": 290,
+   "photo": "assets/cookies/sp/3754422901-07.webp",
+   "sort": 80
+  },
+  {
+   "id": "cookie-sp-3754422901-08",
+   "series": "kimetsu",
+   "name": "蛇柱伊黑小芭內",
+   "price": 290,
+   "photo": "assets/cookies/sp/3754422901-08.webp",
+   "sort": 90
+  },
+  {
+   "id": "cookie-sp-3754422901-09",
+   "series": "kimetsu",
+   "name": "甘露寺蜜璃",
+   "price": 290,
+   "photo": "assets/cookies/sp/3754422901-09.webp",
+   "sort": 100
+  },
+  {
+   "id": "cookie-sp-3754422901-10",
+   "series": "kimetsu",
+   "name": "伊之助無面",
+   "price": 290,
+   "photo": "assets/cookies/sp/3754422901-10.webp",
+   "sort": 110
+  },
+  {
+   "id": "cookie-sp-3754422901-11",
+   "series": "kimetsu",
+   "name": "時透無一郎",
+   "price": 290,
+   "photo": "assets/cookies/sp/3754422901-11.webp",
+   "sort": 120
+  },
+  {
+   "id": "cookie-sp-3754422901-12",
+   "series": "kimetsu",
+   "name": "悲鳴嶼行冥",
+   "price": 320,
+   "photo": "assets/cookies/sp/3754422901-12.webp",
+   "sort": 130
+  },
+  {
+   "id": "cookie-sp-3754422901-13",
+   "series": "kimetsu",
+   "name": "宇隨天元",
+   "price": 320,
+   "photo": "assets/cookies/sp/3754422901-13.webp",
+   "sort": 140
+  },
+  {
+   "id": "cookie-sp-3754422901-14",
+   "series": "kimetsu",
+   "name": "不死川實彌",
+   "price": 320,
+   "photo": "assets/cookies/sp/3754422901-14.webp",
+   "sort": 150
+  },
+  {
+   "id": "cookie-sp-3754422901-15",
+   "series": "kimetsu",
+   "name": "不死川玄彌",
+   "price": 320,
+   "photo": "assets/cookies/sp/3754422901-15.webp",
+   "sort": 160
+  },
+  {
+   "id": "cookie-sp-3754422901-16",
+   "series": "kimetsu",
+   "name": "炭治郎（衣服升級圖一款）",
+   "price": 290,
+   "photo": "assets/cookies/sp/3754422901-16.webp",
+   "sort": 170
+  },
+  {
+   "id": "cookie-sp-3754422901-17",
+   "series": "kimetsu",
+   "name": "富岡義勇（衣服升級圖一款）",
+   "price": 290,
+   "photo": "assets/cookies/sp/3754422901-17.webp",
+   "sort": 180
+  },
+  {
+   "id": "cookie-sp-3754422901-18",
+   "series": "kimetsu",
+   "name": "富岡義勇衣服（名字）",
+   "price": 290,
+   "photo": "assets/cookies/sp/3754422901-18.webp",
+   "sort": 190,
+   "textLabel": "寶寶名字",
+   "textMax": 6
+  },
+  {
+   "id": "cookie-sp-3754422901-19",
+   "series": "kimetsu",
+   "name": "炎柱衣服（名字）",
+   "price": 250,
+   "photo": "assets/cookies/sp/3754422901-19.webp",
+   "sort": 200,
+   "textLabel": "寶寶名字",
+   "textMax": 6
+  },
+  {
+   "id": "cookie-sp-7058935413-00",
+   "series": "kimetsu",
+   "name": "竈門禰豆子（大頭款）",
+   "price": 250,
+   "photo": "assets/cookies/sp/7058935413-00.webp",
+   "sort": 210
+  },
+  {
+   "id": "cookie-sp-7058935413-01",
+   "series": "kimetsu",
+   "name": "竈門炭治郎（大頭款）",
+   "price": 250,
+   "photo": "assets/cookies/sp/7058935413-01.webp",
+   "sort": 220
+  },
+  {
+   "id": "cookie-sp-7058935413-02",
+   "series": "kimetsu",
+   "name": "嘴平伊之助（大頭款）",
+   "price": 250,
+   "photo": "assets/cookies/sp/7058935413-02.webp",
+   "sort": 230
+  },
+  {
+   "id": "cookie-sp-7058935413-03",
+   "series": "kimetsu",
+   "name": "我妻善逸（大頭款）",
+   "price": 250,
+   "photo": "assets/cookies/sp/7058935413-03.webp",
+   "sort": 240
+  },
+  {
+   "id": "cookie-sp-7058935413-04",
+   "series": "kimetsu",
+   "name": "冨岡義勇（大頭款）",
+   "price": 250,
+   "photo": "assets/cookies/sp/7058935413-04.webp",
+   "sort": 250
+  },
+  {
+   "id": "cookie-sp-7058935413-05",
+   "series": "kimetsu",
+   "name": "胡蝶忍（大頭款）",
+   "price": 250,
+   "photo": "assets/cookies/sp/7058935413-05.webp",
+   "sort": 260
+  },
+  {
+   "id": "cookie-sp-7058935413-06",
+   "series": "kimetsu",
+   "name": "炎柱（大頭款）",
+   "price": 250,
+   "photo": "assets/cookies/sp/7058935413-06.webp",
+   "sort": 270
+  },
+  {
+   "id": "cookie-sp-7058935413-07",
+   "series": "kimetsu",
+   "name": "栗花落香奈乎（大頭款）",
+   "price": 250,
+   "photo": "assets/cookies/sp/7058935413-07.webp",
+   "sort": 280
+  },
+  {
+   "id": "cookie-sp-13459956322-00",
+   "series": "dino",
+   "name": "暴龍",
+   "price": 250,
+   "photo": "assets/cookies/sp/13459956322-00.webp",
+   "sort": 10
+  },
+  {
+   "id": "cookie-sp-13459956322-01",
+   "series": "dino",
+   "name": "三角龍",
+   "price": 250,
+   "photo": "assets/cookies/sp/13459956322-01.webp",
+   "sort": 20
+  },
+  {
+   "id": "cookie-sp-13459956322-02",
+   "series": "dino",
+   "name": "腕龍",
+   "price": 250,
+   "photo": "assets/cookies/sp/13459956322-02.webp",
+   "sort": 30
+  },
+  {
+   "id": "cookie-sp-13459956322-03",
+   "series": "dino",
+   "name": "翼龍",
+   "price": 250,
+   "photo": "assets/cookies/sp/13459956322-03.webp",
+   "sort": 40
+  },
+  {
+   "id": "cookie-sp-13459956322-04",
+   "series": "dino",
+   "name": "劍龍",
+   "price": 250,
+   "photo": "assets/cookies/sp/13459956322-04.webp",
+   "sort": 50
+  },
+  {
+   "id": "cookie-sp-13459956322-05",
+   "series": "dino",
+   "name": "雷龍",
+   "price": 250,
+   "photo": "assets/cookies/sp/13459956322-05.webp",
+   "sort": 60
+  },
+  {
+   "id": "cookie-sp-13459956322-06",
+   "series": "dino",
+   "name": "泡泡龍",
+   "price": 250,
+   "photo": "assets/cookies/sp/13459956322-06.webp",
+   "sort": 70
+  },
+  {
+   "id": "cookie-sp-13459956322-07",
+   "series": "dino",
+   "name": "梁龍",
+   "price": 250,
+   "photo": "assets/cookies/sp/13459956322-07.webp",
+   "sort": 80
+  },
+  {
+   "id": "cookie-sp-13459956322-08",
+   "series": "dino",
+   "name": "沱江龍",
+   "price": 250,
+   "photo": "assets/cookies/sp/13459956322-08.webp",
+   "sort": 90
+  },
+  {
+   "id": "cookie-sp-13459956322-09",
+   "series": "dino",
+   "name": "腱龍寶寶",
+   "price": 250,
+   "photo": "assets/cookies/sp/13459956322-09.webp",
+   "sort": 100
+  },
+  {
+   "id": "cookie-sp-13459956322-10",
+   "series": "dino",
+   "name": "龍爪",
+   "price": 250,
+   "photo": "assets/cookies/sp/13459956322-10.webp",
+   "sort": 110
+  },
+  {
+   "id": "cookie-sp-13459956322-11",
+   "series": "dino",
+   "name": "恐龍蛋（寶寶名）",
+   "price": 250,
+   "photo": "assets/cookies/sp/13459956322-11.webp",
+   "sort": 120,
+   "textLabel": "寶寶名字",
+   "textMax": 6
+  },
+  {
+   "id": "cookie-sp-43462363913-00",
+   "series": "animal",
+   "name": "長頸鹿",
+   "price": 220,
+   "photo": "assets/cookies/sp/43462363913-00.webp",
+   "sort": 10
+  },
+  {
+   "id": "cookie-sp-43462363913-01",
+   "series": "animal",
+   "name": "獅子",
+   "price": 220,
+   "photo": "assets/cookies/sp/43462363913-01.webp",
+   "sort": 20
+  },
+  {
+   "id": "cookie-sp-43462363913-02",
+   "series": "animal",
+   "name": "熊",
+   "price": 220,
+   "photo": "assets/cookies/sp/43462363913-02.webp",
+   "sort": 30
+  },
+  {
+   "id": "cookie-sp-43462363913-03",
+   "series": "animal",
+   "name": "氣球",
+   "price": 220,
+   "photo": "assets/cookies/sp/43462363913-03.webp",
+   "sort": 40
+  },
+  {
+   "id": "cookie-sp-43462363913-04",
+   "series": "animal",
+   "name": "蛋糕",
+   "price": 220,
+   "photo": "assets/cookies/sp/43462363913-04.webp",
+   "sort": 50
+  },
+  {
+   "id": "cookie-sp-43462363913-05",
+   "series": "animal",
+   "name": "慶生帽",
+   "price": 200,
+   "photo": "assets/cookies/sp/43462363913-05.webp",
+   "sort": 60
+  },
+  {
+   "id": "cookie-sp-43462363913-06",
+   "series": "animal",
+   "name": "數字大號",
+   "price": 180,
+   "photo": "assets/cookies/sp/43462363913-06.webp",
+   "sort": 70
+  },
+  {
+   "id": "cookie-sp-43462363913-07",
+   "series": "animal",
+   "name": "造型數字",
+   "price": 220,
+   "photo": "assets/cookies/sp/43462363913-07.webp",
+   "sort": 80
+  },
+  {
+   "id": "cookie-sp-43462363913-08",
+   "series": "animal",
+   "name": "愛心",
+   "price": 190,
+   "photo": "assets/cookies/sp/43462363913-08.webp",
+   "sort": 90
+  },
+  {
+   "id": "cookie-sp-43462363913-09",
+   "series": "animal",
+   "name": "名字",
+   "price": 220,
+   "photo": "assets/cookies/sp/43462363913-09.webp",
+   "sort": 100,
+   "textLabel": "寶寶名字",
+   "textMax": 6
+  },
+  {
+   "id": "cookie-sp-175505212-00",
+   "series": "totoro",
+   "name": "龍貓正面",
+   "price": 250,
+   "photo": "assets/cookies/sp/175505212-00.webp",
+   "sort": 10
+  },
+  {
+   "id": "cookie-sp-175505212-01",
+   "series": "totoro",
+   "name": "龍貓側身",
+   "price": 250,
+   "photo": "assets/cookies/sp/175505212-01.webp",
+   "sort": 20
+  },
+  {
+   "id": "cookie-sp-175505212-02",
+   "series": "totoro",
+   "name": "龍貓公車",
+   "price": 290,
+   "photo": "assets/cookies/sp/175505212-02.webp",
+   "sort": 30
+  },
+  {
+   "id": "cookie-sp-175505212-03",
+   "series": "totoro",
+   "name": "藍色龍貓",
+   "price": 220,
+   "photo": "assets/cookies/sp/175505212-03.webp",
+   "sort": 40
+  },
+  {
+   "id": "cookie-sp-175505212-04",
+   "series": "totoro",
+   "name": "小梅",
+   "price": 290,
+   "photo": "assets/cookies/sp/175505212-04.webp",
+   "sort": 50
+  },
+  {
+   "id": "cookie-sp-175505212-05",
+   "series": "totoro",
+   "name": "灰塵精靈",
+   "price": 190,
+   "photo": "assets/cookies/sp/175505212-05.webp",
+   "sort": 60
+  },
+  {
+   "id": "cookie-sp-175505212-06",
+   "series": "totoro",
+   "name": "小白龍貓",
+   "price": 90,
+   "photo": "assets/cookies/sp/175505212-06.webp",
+   "sort": 70
+  },
+  {
+   "id": "cookie-sp-175505212-07",
+   "series": "totoro",
+   "name": "龍貓兜兜",
+   "price": 220,
+   "photo": "assets/cookies/sp/175505212-07.webp",
+   "sort": 80
+  },
+  {
+   "id": "cookie-sp-175505212-08",
+   "series": "totoro",
+   "name": "奶嘴",
+   "price": 220,
+   "photo": "assets/cookies/sp/175505212-08.webp",
+   "sort": 90
+  },
+  {
+   "id": "cookie-sp-175505212-09",
+   "series": "totoro",
+   "name": "黑炭嬰兒車",
+   "price": 250,
+   "photo": "assets/cookies/sp/175505212-09.webp",
+   "sort": 100,
+   "textLabel": "推車上的字",
+   "textMax": 12,
+   "textOptional": true
+  },
+  {
+   "id": "cookie-sp-175505212-10",
+   "series": "totoro",
+   "name": "龍貓包屁衣",
+   "price": 250,
+   "photo": "assets/cookies/sp/175505212-10.webp",
+   "sort": 110
+  },
+  {
+   "id": "cookie-sp-175505212-11",
+   "series": "totoro",
+   "name": "公車站牌",
+   "price": 280,
+   "photo": "assets/cookies/sp/175505212-11.webp",
+   "sort": 120
+  },
+  {
+   "id": "cookie-sp-175505212-12",
+   "series": "totoro",
+   "name": "寶寶名字",
+   "price": 220,
+   "photo": "assets/cookies/sp/175505212-12.webp",
+   "sort": 130,
+   "textLabel": "寶寶名字",
+   "textMax": 6
+  },
+  {
+   "id": "cookie-sp-16001141240-00",
+   "series": "moomin",
+   "name": "嚕嚕米",
+   "price": 230,
+   "photo": "assets/cookies/sp/16001141240-00.webp",
+   "sort": 10
+  },
+  {
+   "id": "cookie-sp-16001141240-01",
+   "series": "moomin",
+   "name": "姆明媽媽",
+   "price": 230,
+   "photo": "assets/cookies/sp/16001141240-01.webp",
+   "sort": 20
+  },
+  {
+   "id": "cookie-sp-16001141240-02",
+   "series": "moomin",
+   "name": "姆明爸爸",
+   "price": 230,
+   "photo": "assets/cookies/sp/16001141240-02.webp",
+   "sort": 30
+  },
+  {
+   "id": "cookie-sp-16001141240-03",
+   "series": "moomin",
+   "name": "姆明&歌妮",
+   "price": 250,
+   "photo": "assets/cookies/sp/16001141240-03.webp",
+   "sort": 40
+  },
+  {
+   "id": "cookie-sp-16001141240-04",
+   "series": "moomin",
+   "name": "史力奇",
+   "price": 250,
+   "photo": "assets/cookies/sp/16001141240-04.webp",
+   "sort": 50
+  },
+  {
+   "id": "cookie-sp-16001141240-05",
+   "series": "moomin",
+   "name": "小不點",
+   "price": 220,
+   "photo": "assets/cookies/sp/16001141240-05.webp",
+   "sort": 60
+  },
+  {
+   "id": "cookie-sp-16001141240-06",
+   "series": "moomin",
+   "name": "姆明圍兜兜",
+   "price": 230,
+   "photo": "assets/cookies/sp/16001141240-06.webp",
+   "sort": 70
+  },
+  {
+   "id": "cookie-sp-16001141240-07",
+   "series": "moomin",
+   "name": "姆明奶嘴",
+   "price": 230,
+   "photo": "assets/cookies/sp/16001141240-07.webp",
+   "sort": 80
+  },
+  {
+   "id": "cookie-sp-16001141240-08",
+   "series": "moomin",
+   "name": "姆明奶瓶",
+   "price": 230,
+   "photo": "assets/cookies/sp/16001141240-08.webp",
+   "sort": 90
+  },
+  {
+   "id": "cookie-sp-16001141240-09",
+   "series": "moomin",
+   "name": "姆明吊帶褲",
+   "price": 230,
+   "photo": "assets/cookies/sp/16001141240-09.webp",
+   "sort": 100
+  },
+  {
+   "id": "cookie-sp-16001141240-10",
+   "series": "moomin",
+   "name": "小不點嬰兒車",
+   "price": 250,
+   "photo": "assets/cookies/sp/16001141240-10.webp",
+   "sort": 110,
+   "textLabel": "推車上的字",
+   "textMax": 12,
+   "textOptional": true
+  },
+  {
+   "id": "cookie-sp-16001141240-11",
+   "series": "moomin",
+   "name": "寶寶名字",
+   "price": 200,
+   "photo": "assets/cookies/sp/16001141240-11.webp",
+   "sort": 120,
+   "textLabel": "寶寶名字",
+   "textMax": 6
+  },
+  {
+   "id": "cookie-sp-1926145450-00",
+   "series": "unicorn",
+   "name": "大獨角獸",
+   "price": 220,
+   "photo": "assets/cookies/sp/1926145450-00.webp",
+   "sort": 10
+  },
+  {
+   "id": "cookie-sp-1926145450-01",
+   "series": "unicorn",
+   "name": "獨角獸頭A",
+   "price": 220,
+   "photo": "assets/cookies/sp/1926145450-01.webp",
+   "sort": 20
+  },
+  {
+   "id": "cookie-sp-1926145450-02",
+   "series": "unicorn",
+   "name": "獨角獸頭B",
+   "price": 220,
+   "photo": "assets/cookies/sp/1926145450-02.webp",
+   "sort": 30
+  },
+  {
+   "id": "cookie-sp-1926145450-03",
+   "series": "unicorn",
+   "name": "獨角獸頭C",
+   "price": 220,
+   "photo": "assets/cookies/sp/1926145450-03.webp",
+   "sort": 40
+  },
+  {
+   "id": "cookie-sp-1926145450-04",
+   "series": "unicorn",
+   "name": "獨角獸坐著",
+   "price": 220,
+   "photo": "assets/cookies/sp/1926145450-04.webp",
+   "sort": 50
+  },
+  {
+   "id": "cookie-sp-1926145450-05",
+   "series": "unicorn",
+   "name": "獨角獸奶嘴",
+   "price": 220,
+   "photo": "assets/cookies/sp/1926145450-05.webp",
+   "sort": 60
+  },
+  {
+   "id": "cookie-sp-1926145450-06",
+   "series": "unicorn",
+   "name": "獨角獸蛋糕",
+   "price": 220,
+   "photo": "assets/cookies/sp/1926145450-06.webp",
+   "sort": 70
+  },
+  {
+   "id": "cookie-sp-1926145450-07",
+   "series": "unicorn",
+   "name": "奶瓶",
+   "price": 220,
+   "photo": "assets/cookies/sp/1926145450-07.webp",
+   "sort": 80
+  },
+  {
+   "id": "cookie-sp-1926145450-08",
+   "series": "unicorn",
+   "name": "圍兜兜",
+   "price": 220,
+   "photo": "assets/cookies/sp/1926145450-08.webp",
+   "sort": 90
+  },
+  {
+   "id": "cookie-sp-1926145450-09",
+   "series": "unicorn",
+   "name": "平安福（健康）",
+   "price": 220,
+   "photo": "assets/cookies/sp/1926145450-09.webp",
+   "sort": 100
+  },
+  {
+   "id": "cookie-sp-1926145450-10",
+   "series": "unicorn",
+   "name": "平安福（平安）",
+   "price": 220,
+   "photo": "assets/cookies/sp/1926145450-10.webp",
+   "sort": 110
+  },
+  {
+   "id": "cookie-sp-1926145450-11",
+   "series": "unicorn",
+   "name": "平安福（智慧）",
+   "price": 220,
+   "photo": "assets/cookies/sp/1926145450-11.webp",
+   "sort": 120
+  },
+  {
+   "id": "cookie-sp-1926145450-12",
+   "series": "unicorn",
+   "name": "雲朵彩虹",
+   "price": 220,
+   "photo": "assets/cookies/sp/1926145450-12.webp",
+   "sort": 130
+  },
+  {
+   "id": "cookie-sp-1926145450-13",
+   "series": "unicorn",
+   "name": "星星彩虹",
+   "price": 220,
+   "photo": "assets/cookies/sp/1926145450-13.webp",
+   "sort": 140
+  },
+  {
+   "id": "cookie-sp-1926145450-14",
+   "series": "unicorn",
+   "name": "4個月勛章",
+   "price": 220,
+   "photo": "assets/cookies/sp/1926145450-14.webp",
+   "sort": 150,
+   "textLabel": "月份文字",
+   "textMax": 12,
+   "textOptional": true
+  },
+  {
+   "id": "cookie-sp-1926145450-15",
+   "series": "unicorn",
+   "name": "寶寶名字",
+   "price": 220,
+   "photo": "assets/cookies/sp/1926145450-15.webp",
+   "sort": 160,
+   "textLabel": "寶寶名字",
+   "textMax": 6
+  },
+  {
+   "id": "cookie-sp-12242613935-00",
+   "series": "squid",
+   "name": "木頭人娃娃",
+   "price": 290,
+   "photo": "assets/cookies/sp/12242613935-00.webp",
+   "sort": 10
+  },
+  {
+   "id": "cookie-sp-12242613935-01",
+   "series": "squid",
+   "name": "紅士兵（正方型）",
+   "price": 220,
+   "photo": "assets/cookies/sp/12242613935-01.webp",
+   "sort": 20
+  },
+  {
+   "id": "cookie-sp-12242613935-02",
+   "series": "squid",
+   "name": "紅士兵（三角形）",
+   "price": 220,
+   "photo": "assets/cookies/sp/12242613935-02.webp",
+   "sort": 30
+  },
+  {
+   "id": "cookie-sp-12242613935-03",
+   "series": "squid",
+   "name": "紅士兵（圓形）",
+   "price": 220,
+   "photo": "assets/cookies/sp/12242613935-03.webp",
+   "sort": 40
+  },
+  {
+   "id": "cookie-sp-12242613935-04",
+   "series": "squid",
+   "name": "椪糖（雨傘）",
+   "price": 180,
+   "photo": "assets/cookies/sp/12242613935-04.webp",
+   "sort": 50
+  },
+  {
+   "id": "cookie-sp-12242613935-05",
+   "series": "squid",
+   "name": "椪糖（星星）",
+   "price": 180,
+   "photo": "assets/cookies/sp/12242613935-05.webp",
+   "sort": 60
+  },
+  {
+   "id": "cookie-sp-12242613935-06",
+   "series": "squid",
+   "name": "椪糖（圓型）",
+   "price": 180,
+   "photo": "assets/cookies/sp/12242613935-06.webp",
+   "sort": 70
+  },
+  {
+   "id": "cookie-sp-12242613935-07",
+   "series": "squid",
+   "name": "椪糖（三角形）",
+   "price": 180,
+   "photo": "assets/cookies/sp/12242613935-07.webp",
+   "sort": 80
+  },
+  {
+   "id": "cookie-sp-12242613935-08",
+   "series": "squid",
+   "name": "椪糖（正方形）",
+   "price": 180,
+   "photo": "assets/cookies/sp/12242613935-08.webp",
+   "sort": 90
+  },
+  {
+   "id": "cookie-sp-12242613935-09",
+   "series": "squid",
+   "name": "綠制服",
+   "price": 220,
+   "photo": "assets/cookies/sp/12242613935-09.webp",
+   "sort": 100
+  },
+  {
+   "id": "cookie-sp-12242613935-10",
+   "series": "squid",
+   "name": "名片",
+   "price": 220,
+   "photo": "assets/cookies/sp/12242613935-10.webp",
+   "sort": 110
+  },
+  {
+   "id": "cookie-sp-12242613935-11",
+   "series": "squid",
+   "name": "棺材禮盒",
+   "price": 220,
+   "photo": "assets/cookies/sp/12242613935-11.webp",
+   "sort": 120
+  },
+  {
+   "id": "cookie-sp-26304474866-00",
+   "series": "aliens",
+   "name": "三眼怪",
+   "price": 280,
+   "photo": "assets/cookies/sp/26304474866-00.webp",
+   "sort": 10
+  },
+  {
+   "id": "cookie-sp-26304474866-01",
+   "series": "aliens",
+   "name": "平安福",
+   "price": 250,
+   "photo": "assets/cookies/sp/26304474866-01.webp",
+   "sort": 20
+  },
+  {
+   "id": "cookie-sp-26304474866-02",
+   "series": "aliens",
+   "name": "奶嘴",
+   "price": 250,
+   "photo": "assets/cookies/sp/26304474866-02.webp",
+   "sort": 30
+  },
+  {
+   "id": "cookie-sp-26304474866-03",
+   "series": "aliens",
+   "name": "奶瓶",
+   "price": 250,
+   "photo": "assets/cookies/sp/26304474866-03.webp",
+   "sort": 40
+  },
+  {
+   "id": "cookie-sp-26304474866-04",
+   "series": "aliens",
+   "name": "平安勳章",
+   "price": 250,
+   "photo": "assets/cookies/sp/26304474866-04.webp",
+   "sort": 50
+  },
+  {
+   "id": "cookie-sp-26304474866-05",
+   "series": "aliens",
+   "name": "嬰兒帽",
+   "price": 280,
+   "photo": "assets/cookies/sp/26304474866-05.webp",
+   "sort": 60
+  },
+  {
+   "id": "cookie-sp-26304474866-06",
+   "series": "aliens",
+   "name": "火箭",
+   "price": 250,
+   "photo": "assets/cookies/sp/26304474866-06.webp",
+   "sort": 70
+  },
+  {
+   "id": "cookie-sp-26304474866-07",
+   "series": "aliens",
+   "name": "飛碟",
+   "price": 280,
+   "photo": "assets/cookies/sp/26304474866-07.webp",
+   "sort": 80
+  },
+  {
+   "id": "cookie-sp-26304474866-08",
+   "series": "aliens",
+   "name": "圍兜兜",
+   "price": 250,
+   "photo": "assets/cookies/sp/26304474866-08.webp",
+   "sort": 90
+  },
+  {
+   "id": "cookie-sp-26304474866-09",
+   "series": "aliens",
+   "name": "包屁衣",
+   "price": 280,
+   "photo": "assets/cookies/sp/26304474866-09.webp",
+   "sort": 100
+  },
+  {
+   "id": "cookie-sp-26304474866-10",
+   "series": "aliens",
+   "name": "嬰兒車",
+   "price": 280,
+   "photo": "assets/cookies/sp/26304474866-10.webp",
+   "sort": 110,
+   "textLabel": "推車上的字",
+   "textMax": 12,
+   "textOptional": true
+  },
+  {
+   "id": "cookie-sp-26304474866-11",
+   "series": "aliens",
+   "name": "寶寶名字",
+   "price": 250,
+   "photo": "assets/cookies/sp/26304474866-11.webp",
+   "sort": 120,
+   "textLabel": "寶寶名字",
+   "textMax": 6
+  },
+  {
+   "id": "cookie-sp-9585475961-00",
+   "series": "onepiece",
+   "name": "魯夫",
+   "price": 250,
+   "photo": "assets/cookies/sp/9585475961-00.webp",
+   "sort": 10
+  },
+  {
+   "id": "cookie-sp-9585475961-01",
+   "series": "onepiece",
+   "name": "索隆",
+   "price": 250,
+   "photo": "assets/cookies/sp/9585475961-01.webp",
+   "sort": 20
+  },
+  {
+   "id": "cookie-sp-9585475961-02",
+   "series": "onepiece",
+   "name": "娜美",
+   "price": 250,
+   "photo": "assets/cookies/sp/9585475961-02.webp",
+   "sort": 30
+  },
+  {
+   "id": "cookie-sp-9585475961-03",
+   "series": "onepiece",
+   "name": "香吉士",
+   "price": 250,
+   "photo": "assets/cookies/sp/9585475961-03.webp",
+   "sort": 40
+  },
+  {
+   "id": "cookie-sp-9585475961-04",
+   "series": "onepiece",
+   "name": "騙人布",
+   "price": 250,
+   "photo": "assets/cookies/sp/9585475961-04.webp",
+   "sort": 50
+  },
+  {
+   "id": "cookie-sp-9585475961-05",
+   "series": "onepiece",
+   "name": "喬巴",
+   "price": 250,
+   "photo": "assets/cookies/sp/9585475961-05.webp",
+   "sort": 60
+  },
+  {
+   "id": "cookie-sp-9585475961-06",
+   "series": "onepiece",
+   "name": "布魯克",
+   "price": 250,
+   "photo": "assets/cookies/sp/9585475961-06.webp",
+   "sort": 70
+  },
+  {
+   "id": "cookie-sp-9585475961-07",
+   "series": "onepiece",
+   "name": "羅賓",
+   "price": 250,
+   "photo": "assets/cookies/sp/9585475961-07.webp",
+   "sort": 80
+  },
+  {
+   "id": "cookie-sp-9585475961-08",
+   "series": "onepiece",
+   "name": "佛朗基",
+   "price": 250,
+   "photo": "assets/cookies/sp/9585475961-08.webp",
+   "sort": 90
+  },
+  {
+   "id": "cookie-sp-9585475961-09",
+   "series": "onepiece",
+   "name": "圍兜兜",
+   "price": 250,
+   "photo": "assets/cookies/sp/9585475961-09.webp",
+   "sort": 100
+  },
+  {
+   "id": "cookie-sp-9585475961-10",
+   "series": "onepiece",
+   "name": "奶瓶",
+   "price": 250,
+   "photo": "assets/cookies/sp/9585475961-10.webp",
+   "sort": 110
+  },
+  {
+   "id": "cookie-sp-9585475961-11",
+   "series": "onepiece",
+   "name": "嬰兒車",
+   "price": 280,
+   "photo": "assets/cookies/sp/9585475961-11.webp",
+   "sort": 120,
+   "textLabel": "推車上的字",
+   "textMax": 12,
+   "textOptional": true
+  },
+  {
+   "id": "cookie-sp-24029192034-00",
+   "series": "duggee",
+   "name": "阿奇",
+   "price": 220,
+   "photo": "assets/cookies/sp/24029192034-00.webp",
+   "sort": 10
+  },
+  {
+   "id": "cookie-sp-24029192034-01",
+   "series": "duggee",
+   "name": "塔格",
+   "price": 190,
+   "photo": "assets/cookies/sp/24029192034-01.webp",
+   "sort": 20
+  },
+  {
+   "id": "cookie-sp-24029192034-02",
+   "series": "duggee",
+   "name": "羅利",
+   "price": 190,
+   "photo": "assets/cookies/sp/24029192034-02.webp",
+   "sort": 30
+  },
+  {
+   "id": "cookie-sp-24029192034-03",
+   "series": "duggee",
+   "name": "諾麗",
+   "price": 190,
+   "photo": "assets/cookies/sp/24029192034-03.webp",
+   "sort": 40
+  },
+  {
+   "id": "cookie-sp-24029192034-04",
+   "series": "duggee",
+   "name": "海皮",
+   "price": 190,
+   "photo": "assets/cookies/sp/24029192034-04.webp",
+   "sort": 50
+  },
+  {
+   "id": "cookie-sp-24029192034-05",
+   "series": "duggee",
+   "name": "貝蒂",
+   "price": 190,
+   "photo": "assets/cookies/sp/24029192034-05.webp",
+   "sort": 60
+  },
+  {
+   "id": "cookie-sp-2716846227-00",
+   "series": "tsum",
+   "name": "艾莎公主",
+   "price": 200,
+   "photo": "assets/cookies/sp/2716846227-00.webp",
+   "sort": 10
+  },
+  {
+   "id": "cookie-sp-2716846227-01",
+   "series": "tsum",
+   "name": "安娜公主",
+   "price": 200,
+   "photo": "assets/cookies/sp/2716846227-01.webp",
+   "sort": 20
+  },
+  {
+   "id": "cookie-sp-2716846227-02",
+   "series": "tsum",
+   "name": "愛麗絲",
+   "price": 200,
+   "photo": "assets/cookies/sp/2716846227-02.webp",
+   "sort": 30
+  },
+  {
+   "id": "cookie-sp-2716846227-03",
+   "series": "tsum",
+   "name": "小美人魚",
+   "price": 200,
+   "photo": "assets/cookies/sp/2716846227-03.webp",
+   "sort": 40
+  },
+  {
+   "id": "cookie-sp-2716846227-04",
+   "series": "tsum",
+   "name": "貝兒",
+   "price": 200,
+   "photo": "assets/cookies/sp/2716846227-04.webp",
+   "sort": 50
+  },
+  {
+   "id": "cookie-sp-2716846227-05",
+   "series": "tsum",
+   "name": "仙度瑞拉",
+   "price": 200,
+   "photo": "assets/cookies/sp/2716846227-05.webp",
+   "sort": 60
+  },
+  {
+   "id": "cookie-sp-2716846227-06",
+   "series": "tsum",
+   "name": "長髮公主",
+   "price": 200,
+   "photo": "assets/cookies/sp/2716846227-06.webp",
+   "sort": 70
+  },
+  {
+   "id": "cookie-sp-2716846227-07",
+   "series": "tsum",
+   "name": "茉莉公主",
+   "price": 200,
+   "photo": "assets/cookies/sp/2716846227-07.webp",
+   "sort": 80
+  },
+  {
+   "id": "cookie-sp-2716846227-08",
+   "series": "tsum",
+   "name": "白雪公主",
+   "price": 200,
+   "photo": "assets/cookies/sp/2716846227-08.webp",
+   "sort": 90
+  },
+  {
+   "id": "cookie-sp-2716846227-09",
+   "series": "tsum",
+   "name": "寶寶名字",
+   "price": 200,
+   "photo": "assets/cookies/sp/2716846227-09.webp",
+   "sort": 100,
+   "textLabel": "寶寶名字",
+   "textMax": 6
+  },
+  {
+   "id": "cookie-sp-2716846227-10",
+   "series": "tsum",
+   "name": "4months",
+   "price": 200,
+   "photo": "assets/cookies/sp/2716846227-10.webp",
+   "sort": 110,
+   "textLabel": "月份文字",
+   "textMax": 12,
+   "textOptional": true
+  },
+  {
+   "id": "cookie-sp-2716846227-11",
+   "series": "tsum",
+   "name": "小愛心",
+   "price": 150,
+   "photo": "assets/cookies/sp/2716846227-11.webp",
+   "sort": 120
+  },
+  {
+   "id": "cookie-sp-5477781912-00",
+   "series": "mario",
+   "name": "瑪利歐（紅帽）",
+   "price": 250,
+   "photo": "assets/cookies/sp/5477781912-00.webp",
+   "sort": 0.5
+  },
+  {
+   "id": "cookie-sp-5477781912-01",
+   "series": "mario",
+   "name": "路易奇（綠帽）",
+   "price": 250,
+   "photo": "assets/cookies/sp/5477781912-01.webp",
+   "sort": 1.0
+  },
+  {
+   "id": "cookie-sp-5477781912-02",
+   "series": "mario",
+   "name": "瑪利歐（全身）",
+   "price": 250,
+   "photo": "assets/cookies/sp/5477781912-02.webp",
+   "sort": 1.5
+  },
+  {
+   "id": "cookie-sp-5477781912-03",
+   "series": "mario",
+   "name": "路易奇（全身）",
+   "price": 250,
+   "photo": "assets/cookies/sp/5477781912-03.webp",
+   "sort": 2.0
+  },
+  {
+   "id": "cookie-sp-5477781912-04",
+   "series": "mario",
+   "name": "壁姬公主",
+   "price": 280,
+   "photo": "assets/cookies/sp/5477781912-04.webp",
+   "sort": 2.5
+  },
+  {
+   "id": "cookie-sp-5477781912-06",
+   "series": "mario",
+   "name": "奇諾比奧",
+   "price": 200,
+   "photo": "assets/cookies/sp/5477781912-06.webp",
+   "sort": 3.0
+  },
+  {
+   "id": "cookie-sp-5477781912-07",
+   "series": "mario",
+   "name": "蘑姑人",
+   "price": 180,
+   "photo": "assets/cookies/sp/5477781912-07.webp",
+   "sort": 3.5
+  },
+  {
+   "id": "cookie-sp-5477781912-08",
+   "series": "mario",
+   "name": "庫巴",
+   "price": 250,
+   "photo": "assets/cookies/sp/5477781912-08.webp",
+   "sort": 4.0
+  },
+  {
+   "id": "cookie-sp-5477781912-09",
+   "series": "mario",
+   "name": "庫巴二世",
+   "price": 250,
+   "photo": "assets/cookies/sp/5477781912-09.webp",
+   "sort": 4.5
+  },
+  {
+   "id": "cookie-sp-5477781912-10",
+   "series": "mario",
+   "name": "布布王",
+   "price": 220,
+   "photo": "assets/cookies/sp/5477781912-10.webp",
+   "sort": 5.0
+  },
+  {
+   "id": "cookie-sp-5477781912-11",
+   "series": "mario",
+   "name": "泡泡魚",
+   "price": 190,
+   "photo": "assets/cookies/sp/5477781912-11.webp",
+   "sort": 5.5
+  },
+  {
+   "id": "cookie-sp-5477781912-12",
+   "series": "mario",
+   "name": "綠蘑菇",
+   "price": 150,
+   "photo": "assets/cookies/sp/5477781912-12.webp",
+   "sort": 6.0
+  },
+  {
+   "id": "cookie-sp-5477781912-13",
+   "series": "mario",
+   "name": "紅蘑菇",
+   "price": 150,
+   "photo": "assets/cookies/sp/5477781912-13.webp",
+   "sort": 6.5
+  },
+  {
+   "id": "cookie-sp-5477781912-14",
+   "series": "mario",
+   "name": "無敵星星",
+   "price": 120,
+   "photo": "assets/cookies/sp/5477781912-14.webp",
+   "sort": 7.0
+  },
+  {
+   "id": "cookie-sp-5477781912-15",
+   "series": "mario",
+   "name": "問號磁磚",
+   "price": 180,
+   "photo": "assets/cookies/sp/5477781912-15.webp",
+   "sort": 7.5
+  },
+  {
+   "id": "cookie-sp-5477781912-16",
+   "series": "mario",
+   "name": "食人花",
+   "price": 190,
+   "photo": "assets/cookies/sp/5477781912-16.webp",
+   "sort": 8.0
+  },
+  {
+   "id": "cookie-sp-5477781912-17",
+   "series": "mario",
+   "name": "瑪利歐衣服",
+   "price": 220,
+   "photo": "assets/cookies/sp/5477781912-17.webp",
+   "sort": 8.5
+  },
+  {
+   "id": "cookie-sp-5477781912-18",
+   "series": "mario",
+   "name": "Switch 名字牌（瑪利歐）",
+   "price": 250,
+   "photo": "assets/cookies/sp/5477781912-18.webp",
+   "sort": 9.0,
+   "textLabel": "寶寶名字",
+   "textMax": 6
+  },
+  {
+   "id": "cookie-rilakkuma-rk-rila",
+   "series": "rilakkuma",
+   "name": "拉拉熊全身（咖）",
+   "price": 220,
+   "photo": "assets/cookies/sp/rk-rila.webp",
+   "sort": 10
+  },
+  {
+   "id": "cookie-rilakkuma-rk-kori",
+   "series": "rilakkuma",
+   "name": "拉拉熊全身（米）",
+   "price": 220,
+   "photo": "assets/cookies/sp/rk-kori.webp",
+   "sort": 20
+  },
+  {
+   "id": "cookie-rilakkuma-rk-head",
+   "series": "rilakkuma",
+   "name": "拉拉熊大頭（咖）",
+   "price": 200,
+   "photo": "assets/cookies/sp/rk-head.webp",
+   "sort": 30
+  },
+  {
+   "id": "cookie-rilakkuma-rk-cake",
+   "series": "rilakkuma",
+   "name": "蛋糕",
+   "price": 220,
+   "photo": "assets/cookies/sp/rk-cake.webp",
+   "sort": 40
+  },
+  {
+   "id": "cookie-rilakkuma-rk-balloons",
+   "series": "rilakkuma",
+   "name": "汽球",
+   "price": 220,
+   "photo": "assets/cookies/sp/rk-balloons.webp",
+   "sort": 50
+  },
+  {
+   "id": "cookie-rilakkuma-rk-baseball",
+   "series": "rilakkuma",
+   "name": "棒球",
+   "price": 220,
+   "photo": "assets/cookies/sp/rk-baseball.webp",
+   "sort": 60
+  },
+  {
+   "id": "cookie-rilakkuma-rk-gift",
+   "series": "rilakkuma",
+   "name": "生日賀卡",
+   "price": 250,
+   "photo": "assets/cookies/sp/rk-gift.webp",
+   "sort": 70
+  },
+  {
+   "id": "cookie-rilakkuma-rk-jersey",
+   "series": "rilakkuma",
+   "name": "棒球衣",
+   "price": 220,
+   "photo": "assets/cookies/sp/rk-jersey.webp",
+   "sort": 80
+  },
+  {
+   "id": "cookie-sakura-sk-kero",
+   "series": "sakura",
+   "name": "小可",
+   "price": 250,
+   "photo": "assets/cookies/sp/sk-kero.webp",
+   "sort": 10
+  },
+  {
+   "id": "cookie-sakura-sk-wand",
+   "series": "sakura",
+   "name": "法杖",
+   "price": 250,
+   "photo": "assets/cookies/sp/sk-wand.webp",
+   "sort": 20
+  },
+  {
+   "id": "cookie-sakura-sk-circle",
+   "series": "sakura",
+   "name": "庫洛魔法陣",
+   "price": 290,
+   "photo": "assets/cookies/sp/sk-circle.webp",
+   "sort": 30
+  },
+  {
+   "id": "cookie-sakura-sk-blossom",
+   "series": "sakura",
+   "name": "櫻花",
+   "price": 220,
+   "photo": "assets/cookies/sp/sk-blossom.webp",
+   "sort": 40
+  },
+  {
+   "id": "cookie-sakura-sk-bow",
+   "series": "sakura",
+   "name": "蝴蝶結",
+   "price": 200,
+   "photo": "assets/cookies/sp/sk-bow.webp",
+   "sort": 50
+  },
+  {
+   "id": "cookie-sakura-sk-name",
+   "series": "sakura",
+   "name": "名字",
+   "price": 200,
+   "photo": "assets/cookies/sp/sk-name.webp",
+   "sort": 60,
+   "textLabel": "寶寶名字",
+   "textMax": 6
+  },
+  {
+   "id": "cookie-marimekko-mk-black",
+   "series": "marimekko",
+   "name": "罌粟花（黑）",
+   "price": 220,
+   "photo": "assets/cookies/sp/mk-black.webp",
+   "sort": 10
+  },
+  {
+   "id": "cookie-marimekko-mk-red",
+   "series": "marimekko",
+   "name": "罌粟花（紅）",
+   "price": 220,
+   "photo": "assets/cookies/sp/mk-red.webp",
+   "sort": 20
+  },
+  {
+   "id": "cookie-marimekko-mk-blue",
+   "series": "marimekko",
+   "name": "罌粟花（藍）",
+   "price": 220,
+   "photo": "assets/cookies/sp/mk-blue.webp",
+   "sort": 30
+  },
+  {
+   "id": "cookie-marimekko-mk-purple",
+   "series": "marimekko",
+   "name": "罌粟花（紫）",
+   "price": 220,
+   "photo": "assets/cookies/sp/mk-purple.webp",
+   "sort": 40
+  },
+  {
+   "id": "cookie-marimekko-mk-beige",
+   "series": "marimekko",
+   "name": "罌粟花（奶茶）",
+   "price": 220,
+   "photo": "assets/cookies/sp/mk-beige.webp",
+   "sort": 50
+  },
+  {
+   "id": "cookie-marimekko-mk-cream",
+   "series": "marimekko",
+   "name": "罌粟花（米白）",
+   "price": 220,
+   "photo": "assets/cookies/sp/mk-cream.webp",
+   "sort": 60
+  }
+ ],
+ "update": [
+  {
+   "id": "cookie-sanrio-boy-hy-wave",
+   "series": "sanrio-boy",
+   "expect": {
+    "name": "漢頓（揮手）",
+    "price": 250,
+    "photo": "assets/cookies/sanrio-boy/hy-wave.webp"
+   },
+   "set": {
+    "name": "漢頓",
+    "price": 280,
+    "photo": "assets/cookies/sp/43636553742-00.webp"
+   }
+  },
+  {
+   "id": "cookie-sanrio-boy-hy-tongue",
+   "series": "sanrio-boy",
+   "expect": {
+    "name": "漢頓（吐舌頭）",
+    "price": 250,
+    "photo": "assets/cookies/sanrio-boy/hy-tongue.webp"
+   },
+   "set": {
+    "name": "吐舌漢頓",
+    "price": 280,
+    "photo": "assets/cookies/sp/43636553742-01.webp"
+   }
+  },
+  {
+   "id": "cookie-sanrio-boy-hy-octopus",
+   "series": "sanrio-boy",
+   "expect": {
+    "name": "漢頓（抱章魚）",
+    "price": 250,
+    "photo": "assets/cookies/sanrio-boy/hy-octopus.webp"
+   },
+   "set": {
+    "name": "漢頓背章魚",
+    "price": 280,
+    "photo": "assets/cookies/sp/43636553742-02.webp"
+   }
+  },
+  {
+   "id": "cookie-sanrio-boy-hy-pacifier",
+   "series": "sanrio-boy",
+   "expect": {
+    "name": "漢頓奶嘴（日期）",
+    "price": 250,
+    "photo": "assets/cookies/sanrio-boy/hy-pacifier.webp"
+   },
+   "set": {
+    "name": "漢頓奶嘴",
+    "price": 280,
+    "photo": "assets/cookies/sp/43636553742-03.webp"
+   }
+  },
+  {
+   "id": "cookie-sanrio-boy-hy-bottle",
+   "series": "sanrio-boy",
+   "expect": {
+    "name": "漢頓奶瓶",
+    "price": 250,
+    "photo": "assets/cookies/sanrio-boy/hy-bottle.webp"
+   },
+   "set": {
+    "name": "章魚奶瓶",
+    "price": 280,
+    "photo": "assets/cookies/sp/43636553742-04.webp"
+   }
+  },
+  {
+   "id": "cookie-sanrio-boy-hy-bib",
+   "series": "sanrio-boy",
+   "expect": {
+    "name": "圍兜",
+    "price": 250,
+    "photo": "assets/cookies/sanrio-boy/hy-bib.webp"
+   },
+   "set": {
+    "name": "漢頓圍兜兜",
+    "price": 280,
+    "photo": "assets/cookies/sp/43636553742-05.webp"
+   }
+  },
+  {
+   "id": "cookie-sanrio-boy-hy-omamori",
+   "series": "sanrio-boy",
+   "expect": {
+    "name": "健康御守",
+    "price": 250,
+    "photo": "assets/cookies/sanrio-boy/hy-omamori.webp"
+   },
+   "set": {
+    "name": "漢頓平安福",
+    "price": 280,
+    "photo": "assets/cookies/sp/43636553742-06.webp"
+   }
+  },
+  {
+   "id": "cookie-sanrio-boy-hy-hat",
+   "series": "sanrio-boy",
+   "expect": {
+    "name": "漢頓毛帽（4 months）",
+    "price": 250,
+    "photo": "assets/cookies/sanrio-boy/hy-hat.webp"
+   },
+   "set": {
+    "name": "漢頓嬰兒帽",
+    "price": 280,
+    "photo": "assets/cookies/sp/43636553742-07.webp"
+   }
+  },
+  {
+   "id": "cookie-sanrio-boy-hy-medal",
+   "series": "sanrio-boy",
+   "expect": {
+    "name": "平安獎牌",
+    "price": 250,
+    "photo": "assets/cookies/sanrio-boy/hy-medal.webp"
+   },
+   "set": {
+    "name": "漢頓平安勳章",
+    "price": 280,
+    "photo": "assets/cookies/sp/43636553742-08.webp"
+   }
+  },
+  {
+   "id": "cookie-sanrio-boy-hy-stroller",
+   "series": "sanrio-boy",
+   "expect": {
+    "name": "漢頓嬰兒車",
+    "price": 250,
+    "photo": "assets/cookies/sanrio-boy/hy-stroller.webp"
+   },
+   "set": {
+    "name": "漢頓嬰兒車",
+    "price": 280,
+    "photo": "assets/cookies/sp/43636553742-09.webp"
+   }
+  },
+  {
+   "id": "cookie-sanrio-boy-hy-onesie",
+   "series": "sanrio-boy",
+   "expect": {
+    "name": "包屁衣",
+    "price": 250,
+    "photo": "assets/cookies/sanrio-boy/hy-onesie.webp"
+   },
+   "set": {
+    "name": "章魚包屁衣",
+    "price": 280,
+    "photo": "assets/cookies/sp/43636553742-10.webp"
+   }
+  },
+  {
+   "id": "cookie-sanrio-boy-hy-plaque",
+   "series": "sanrio-boy",
+   "expect": {
+    "name": "名字牌（雲朵）",
+    "price": 250,
+    "photo": "assets/cookies/sanrio-boy/hy-plaque.webp"
+   },
+   "set": {
+    "name": "寶寶名字（漢頓）",
+    "price": 250,
+    "photo": "assets/cookies/sp/43636553742-11.webp"
+   }
+  },
+  {
+   "id": "cookie-sanrio-boy-bs-badtz",
+   "series": "sanrio-boy",
+   "expect": {
+    "name": "酷企鵝",
+    "price": 250,
+    "photo": "assets/cookies/sanrio-boy/bs-badtz.webp"
+   },
+   "set": {
+    "name": "酷企鵝",
+    "price": 250,
+    "photo": "assets/cookies/sp/49666436070-00.webp"
+   }
+  },
+  {
+   "id": "cookie-sanrio-boy-bs-hangyodon",
+   "series": "sanrio-boy",
+   "expect": {
+    "name": "漢頓（全身）",
+    "price": 250,
+    "photo": "assets/cookies/sanrio-boy/bs-hangyodon.webp"
+   },
+   "set": {
+    "name": "人魚漢頓",
+    "price": 280,
+    "photo": "assets/cookies/sp/49666436070-01.webp"
+   }
+  },
+  {
+   "id": "cookie-sanrio-boy-twin-stars",
+   "series": "sanrio-boy",
+   "expect": {
+    "name": "雙子星",
+    "price": 250,
+    "photo": "assets/cookies/sanrio-boy/twin-stars.webp"
+   },
+   "set": {
+    "name": "雙子星",
+    "price": 320,
+    "photo": "assets/cookies/sp/49666436070-02.webp"
+   }
+  },
+  {
+   "id": "cookie-sanrio-boy-twin-star-4m",
+   "series": "sanrio-boy",
+   "expect": {
+    "name": "雙子星（4 months 星星）",
+    "price": 250,
+    "photo": "assets/cookies/sanrio-boy/twin-star-4m.webp"
+   },
+   "set": {
+    "name": "4個月雙子星",
+    "price": 290,
+    "photo": "assets/cookies/sp/49666436070-03.webp"
+   }
+  },
+  {
+   "id": "cookie-sanrio-boy-bs-pacifier",
+   "series": "sanrio-boy",
+   "expect": {
+    "name": "酷企鵝奶嘴（日期）",
+    "price": 250,
+    "photo": "assets/cookies/sanrio-boy/bs-pacifier.webp"
+   },
+   "set": {
+    "name": "酷企鵝奶嘴",
+    "price": 250,
+    "photo": "assets/cookies/sp/49666436070-04.webp"
+   }
+  },
+  {
+   "id": "cookie-sanrio-boy-bs-bottle",
+   "series": "sanrio-boy",
+   "expect": {
+    "name": "雙子星奶瓶",
+    "price": 250,
+    "photo": "assets/cookies/sanrio-boy/bs-bottle.webp"
+   },
+   "set": {
+    "name": "雙子星奶瓶",
+    "price": 280,
+    "photo": "assets/cookies/sp/49666436070-06.webp"
+   }
+  },
+  {
+   "id": "cookie-sanrio-boy-bs-plaque",
+   "series": "sanrio-boy",
+   "expect": {
+    "name": "酷企鵝名字牌",
+    "price": 250,
+    "photo": "assets/cookies/sanrio-boy/bs-plaque.webp"
+   },
+   "set": {
+    "name": "寶寶名字（酷企鵝）",
+    "price": 280,
+    "photo": "assets/cookies/sp/49666436070-07.webp"
+   }
+  },
+  {
+   "id": "cookie-sanrio-twin-stars",
+   "series": "sanrio",
+   "expect": {
+    "name": "雙子星",
+    "price": 250,
+    "photo": "assets/cookies/sanrio-boy/twin-stars.webp"
+   },
+   "set": {
+    "name": "雙子星",
+    "price": 320,
+    "photo": "assets/cookies/sp/49666436070-02.webp"
+   }
+  },
+  {
+   "id": "cookie-sanrio-twin-star-4m",
+   "series": "sanrio",
+   "expect": {
+    "name": "雙子星（4 months 星星）",
+    "price": 250,
+    "photo": "assets/cookies/sanrio-boy/twin-star-4m.webp"
+   },
+   "set": {
+    "name": "4個月雙子星",
+    "price": 290,
+    "photo": "assets/cookies/sp/49666436070-03.webp"
+   }
+  },
+  {
+   "id": "cookie-crybaby-cb-alice",
+   "series": "crybaby",
+   "expect": {
+    "name": "愛麗絲（藍）",
+    "price": 250,
+    "photo": "assets/cookies/shopee2/cb-alice.webp"
+   },
+   "set": {
+    "name": "愛麗絲",
+    "price": 250,
+    "photo": "assets/cookies/sp/40504500160-00.webp"
+   }
+  },
+  {
+   "id": "cookie-crybaby-cb-bunny",
+   "series": "crybaby",
+   "expect": {
+    "name": "兔兔（粉紅）",
+    "price": 250,
+    "photo": "assets/cookies/shopee2/cb-bunny.webp"
+   },
+   "set": {
+    "name": "哭哭兔",
+    "price": 250,
+    "photo": "assets/cookies/sp/40504500160-01.webp"
+   }
+  },
+  {
+   "id": "cookie-crybaby-cb-bear",
+   "series": "crybaby",
+   "expect": {
+    "name": "小熊（咖啡）",
+    "price": 250,
+    "photo": "assets/cookies/shopee2/cb-bear.webp"
+   },
+   "set": {
+    "name": "哭哭熊",
+    "price": 250,
+    "photo": "assets/cookies/sp/40504500160-02.webp"
+   }
+  },
+  {
+   "id": "cookie-crybaby-cb-duck",
+   "series": "crybaby",
+   "expect": {
+    "name": "小鴨（黃）",
+    "price": 250,
+    "photo": "assets/cookies/shopee2/cb-duck.webp"
+   },
+   "set": {
+    "name": "哭鴨哭鴨",
+    "price": 250,
+    "photo": "assets/cookies/sp/40504500160-03.webp"
+   }
+  },
+  {
+   "id": "cookie-crybaby-cb-bee",
+   "series": "crybaby",
+   "expect": {
+    "name": "小蜜蜂（咖啡）",
+    "price": 250,
+    "photo": "assets/cookies/shopee2/cb-bee.webp"
+   },
+   "set": {
+    "name": "哭哭蜜蜂",
+    "price": 250,
+    "photo": "assets/cookies/sp/40504500160-04.webp"
+   }
+  },
+  {
+   "id": "cookie-crybaby-cb-frog",
+   "series": "crybaby",
+   "expect": {
+    "name": "青蛙（綠）",
+    "price": 250,
+    "photo": "assets/cookies/shopee2/cb-frog.webp"
+   },
+   "set": {
+    "name": "哭蛙哭蛙",
+    "price": 250,
+    "photo": "assets/cookies/sp/40504500160-05.webp"
+   }
+  },
+  {
+   "id": "cookie-chinese-cn-goldlock",
+   "series": "chinese",
+   "expect": {
+    "name": "富貴平安金鎖",
+    "price": 690,
+    "photo": "assets/cookies/shopee2/cn-goldlock.webp"
+   },
+   "set": {
+    "name": "大片金飾長命鎖（12cm）",
+    "price": 690,
+    "photo": "assets/cookies/sp/48520013387-00.webp"
+   }
+  },
+  {
+   "id": "cookie-chinese-cn-lock",
+   "series": "chinese",
+   "expect": {
+    "name": "金飾手鏈",
+    "price": 280,
+    "photo": "assets/cookies/shopee2/cn-lock.webp"
+   },
+   "set": {
+    "name": "金飾手鐲",
+    "price": 450,
+    "photo": "assets/cookies/sp/48520013387-01.webp"
+   }
+  },
+  {
+   "id": "cookie-chinese-cn-turtle",
+   "series": "chinese",
+   "expect": {
+    "name": "壽龜",
+    "price": 280,
+    "photo": "assets/cookies/shopee2/cn-turtle.webp"
+   },
+   "set": {
+    "name": "紅龜糕",
+    "price": 320,
+    "photo": "assets/cookies/sp/48520013387-02.webp"
+   }
+  },
+  {
+   "id": "cookie-chinese-cn-horse",
+   "series": "chinese",
+   "expect": {
+    "name": "小馬",
+    "price": 280,
+    "photo": "assets/cookies/shopee2/cn-horse.webp"
+   },
+   "set": {
+    "name": "小馬兒",
+    "price": 320,
+    "photo": "assets/cookies/sp/48520013387-03.webp"
+   }
+  },
+  {
+   "id": "cookie-chinese-cn-bag",
+   "series": "chinese",
+   "expect": {
+    "name": "福袋",
+    "price": 280,
+    "photo": "assets/cookies/shopee2/cn-bag.webp"
+   },
+   "set": {
+    "name": "金福袋",
+    "price": 290,
+    "photo": "assets/cookies/sp/48520013387-04.webp"
+   }
+  },
+  {
+   "id": "cookie-chinese-cn-omamori",
+   "series": "chinese",
+   "expect": {
+    "name": "平安御守",
+    "price": 280,
+    "photo": "assets/cookies/shopee2/cn-omamori.webp"
+   },
+   "set": {
+    "name": "平安福",
+    "price": 290,
+    "photo": "assets/cookies/sp/48520013387-05.webp"
+   }
+  },
+  {
+   "id": "cookie-chinese-cn-stroller",
+   "series": "chinese",
+   "expect": {
+    "name": "嬰兒車",
+    "price": 390,
+    "photo": "assets/cookies/shopee2/cn-stroller.webp"
+   },
+   "set": {
+    "name": "竹編嬰兒車",
+    "price": 390,
+    "photo": "assets/cookies/sp/48520013387-06.webp"
+   }
+  },
+  {
+   "id": "cookie-chinese-cn-peach",
+   "series": "chinese",
+   "expect": {
+    "name": "壽桃",
+    "price": 280,
+    "photo": "assets/cookies/shopee2/cn-peach.webp"
+   },
+   "set": {
+    "name": "壽桃",
+    "price": 290,
+    "photo": "assets/cookies/sp/48520013387-07.webp"
+   }
+  },
+  {
+   "id": "cookie-chinese-cn-crown",
+   "series": "chinese",
+   "expect": {
+    "name": "皇冠",
+    "price": 280,
+    "photo": "assets/cookies/shopee2/cn-crown.webp"
+   },
+   "set": {
+    "name": "金皇冠",
+    "price": 350,
+    "photo": "assets/cookies/sp/48520013387-08.webp"
+   }
+  },
+  {
+   "id": "cookie-chinese-cn-feet",
+   "series": "chinese",
+   "expect": {
+    "name": "小腳丫",
+    "price": 280,
+    "photo": "assets/cookies/shopee2/cn-feet.webp"
+   },
+   "set": {
+    "name": "嬰兒腳腳",
+    "price": 280,
+    "photo": "assets/cookies/sp/48520013387-09.webp"
+   }
+  },
+  {
+   "id": "cookie-chinese-cn-birth",
+   "series": "chinese",
+   "expect": {
+    "name": "出生紀念牌（體重＋日期）",
+    "price": 590,
+    "photo": "assets/cookies/shopee2/cn-birth.webp"
+   },
+   "set": {
+    "name": "超音波",
+    "price": 590,
+    "photo": "assets/cookies/sp/48520013387-10.webp"
+   }
+  },
+  {
+   "id": "cookie-mario-yo-yoshi",
+   "series": "mario",
+   "expect": {
+    "name": "耀西",
+    "price": 250,
+    "photo": "assets/cookies/shopee2/yo-yoshi.webp"
+   },
+   "set": {
+    "name": "耀西",
+    "price": 220,
+    "photo": "assets/cookies/sp/29969112411-00.webp"
+   }
+  },
+  {
+   "id": "cookie-mario-yo-pacifier",
+   "series": "mario",
+   "expect": {
+    "name": "耀西奶嘴",
+    "price": 250,
+    "photo": "assets/cookies/shopee2/yo-pacifier.webp"
+   },
+   "set": {
+    "name": "耀西奶嘴",
+    "price": 250,
+    "photo": "assets/cookies/sp/29969112411-01.webp"
+   }
+  },
+  {
+   "id": "cookie-mario-yo-bottle",
+   "series": "mario",
+   "expect": {
+    "name": "耀西奶瓶",
+    "price": 250,
+    "photo": "assets/cookies/shopee2/yo-bottle.webp"
+   },
+   "set": {
+    "name": "耀西奶瓶",
+    "price": 280,
+    "photo": "assets/cookies/sp/29969112411-02.webp"
+   }
+  },
+  {
+   "id": "cookie-mario-yo-hat",
+   "series": "mario",
+   "expect": {
+    "name": "耀西毛帽（4 months）",
+    "price": 250,
+    "photo": "assets/cookies/shopee2/yo-hat.webp"
+   },
+   "set": {
+    "name": "耀西帽子",
+    "price": 280,
+    "photo": "assets/cookies/sp/29969112411-03.webp"
+   }
+  },
+  {
+   "id": "cookie-mario-yo-bib",
+   "series": "mario",
+   "expect": {
+    "name": "耀西圍兜",
+    "price": 250,
+    "photo": "assets/cookies/shopee2/yo-bib.webp"
+   },
+   "set": {
+    "name": "耀西圍兜兜",
+    "price": 280,
+    "photo": "assets/cookies/sp/29969112411-04.webp"
+   }
+  },
+  {
+   "id": "cookie-mario-yo-medal",
+   "series": "mario",
+   "expect": {
+    "name": "耀西平安獎牌",
+    "price": 250,
+    "photo": "assets/cookies/shopee2/yo-medal.webp"
+   },
+   "set": {
+    "name": "耀西勳章",
+    "price": 280,
+    "photo": "assets/cookies/sp/29969112411-05.webp"
+   }
+  },
+  {
+   "id": "cookie-mario-yo-onesie",
+   "series": "mario",
+   "expect": {
+    "name": "耀西包屁衣",
+    "price": 250,
+    "photo": "assets/cookies/shopee2/yo-onesie.webp"
+   },
+   "set": {
+    "name": "耀西包屁衣",
+    "price": 280,
+    "photo": "assets/cookies/sp/29969112411-06.webp"
+   }
+  },
+  {
+   "id": "cookie-mario-yo-stroller",
+   "series": "mario",
+   "expect": {
+    "name": "耀西嬰兒車",
+    "price": 250,
+    "photo": "assets/cookies/shopee2/yo-stroller.webp"
+   },
+   "set": {
+    "name": "耀西嬰兒車",
+    "price": 280,
+    "photo": "assets/cookies/sp/29969112411-07.webp"
+   }
+  },
+  {
+   "id": "cookie-mario-yo-plaque",
+   "series": "mario",
+   "expect": {
+    "name": "名字牌（Switch・耀西）",
+    "price": 250,
+    "photo": "assets/cookies/shopee2/yo-plaque.webp"
+   },
+   "set": {
+    "name": "Switch 名字牌（耀西）",
+    "price": 250,
+    "photo": "assets/cookies/sp/29969112411-08.webp"
+   }
+  },
+  {
+   "id": "cookie-teletubbies-tt-tinky-heart",
+   "series": "teletubbies",
+   "expect": {
+    "name": "丁丁（愛心）",
+    "price": 280,
+    "photo": "assets/cookies/shopee2/tt-tinky-heart.webp"
+   },
+   "set": {
+    "name": "丁丁（愛心）",
+    "price": 280,
+    "photo": "assets/cookies/sp/28168870841-00.webp"
+   }
+  },
+  {
+   "id": "cookie-teletubbies-tt-tinky-round",
+   "series": "teletubbies",
+   "expect": {
+    "name": "丁丁（圓形）",
+    "price": 280,
+    "photo": "assets/cookies/shopee2/tt-tinky-round.webp"
+   },
+   "set": {
+    "name": "丁丁（圓型）",
+    "price": 280,
+    "photo": "assets/cookies/sp/28168870841-01.webp"
+   }
+  },
+  {
+   "id": "cookie-teletubbies-tt-po-hi",
+   "series": "teletubbies",
+   "expect": {
+    "name": "小波（愛心・Hi）",
+    "price": 280,
+    "photo": "assets/cookies/shopee2/tt-po-hi.webp"
+   },
+   "set": {
+    "name": "小波（愛心）",
+    "price": 280,
+    "photo": "assets/cookies/sp/28168870841-02.webp"
+   }
+  },
+  {
+   "id": "cookie-teletubbies-tt-po-round",
+   "series": "teletubbies",
+   "expect": {
+    "name": "小波（圓形）",
+    "price": 280,
+    "photo": "assets/cookies/shopee2/tt-po-round.webp"
+   },
+   "set": {
+    "name": "小波（圓型）",
+    "price": 280,
+    "photo": "assets/cookies/sp/28168870841-03.webp"
+   }
+  },
+  {
+   "id": "cookie-teletubbies-tt-laalaa",
+   "series": "teletubbies",
+   "expect": {
+    "name": "拉拉（圓形）",
+    "price": 280,
+    "photo": "assets/cookies/shopee2/tt-laalaa.webp"
+   },
+   "set": {
+    "name": "拉拉（圓型）",
+    "price": 280,
+    "photo": "assets/cookies/sp/28168870841-04.webp"
+   }
+  },
+  {
+   "id": "cookie-teletubbies-tt-dipsy",
+   "series": "teletubbies",
+   "expect": {
+    "name": "迪西（愛心）",
+    "price": 280,
+    "photo": "assets/cookies/shopee2/tt-dipsy.webp"
+   },
+   "set": {
+    "name": "迪西（愛心）",
+    "price": 280,
+    "photo": "assets/cookies/sp/28168870841-05.webp"
+   }
+  },
+  {
+   "id": "cookie-chihuahua-ch-square-shout",
+   "series": "chihuahua",
+   "expect": {
+    "name": "吉娃娃（方・大叫）",
+    "price": 220,
+    "photo": "assets/cookies/shopee2/ch-square-shout.webp"
+   },
+   "set": {
+    "name": "目瞪口吉",
+    "price": 220,
+    "photo": "assets/cookies/sp/28833749030-00.webp"
+   }
+  },
+  {
+   "id": "cookie-chihuahua-ch-round-pink",
+   "series": "chihuahua",
+   "expect": {
+    "name": "吉娃娃（圓・粉）",
+    "price": 220,
+    "photo": "assets/cookies/shopee2/ch-round-pink.webp"
+   },
+   "set": {
+    "name": "喜憨吉了",
+    "price": 220,
+    "photo": "assets/cookies/sp/28833749030-01.webp"
+   }
+  },
+  {
+   "id": "cookie-chihuahua-ch-square-yellow",
+   "series": "chihuahua",
+   "expect": {
+    "name": "吉娃娃（方・黃）",
+    "price": 220,
+    "photo": "assets/cookies/shopee2/ch-square-yellow.webp"
+   },
+   "set": {
+    "name": "吉氣",
+    "price": 220,
+    "photo": "assets/cookies/sp/28833749030-02.webp"
+   }
+  },
+  {
+   "id": "cookie-chihuahua-ch-round-yellow",
+   "series": "chihuahua",
+   "expect": {
+    "name": "吉娃娃（圓・黃）",
+    "price": 220,
+    "photo": "assets/cookies/shopee2/ch-round-yellow.webp"
+   },
+   "set": {
+    "name": "吉需思考",
+    "price": 220,
+    "photo": "assets/cookies/sp/28833749030-03.webp"
+   }
+  },
+  {
+   "id": "cookie-chihuahua-ch-square-cap",
+   "series": "chihuahua",
+   "expect": {
+    "name": "吉娃娃（方・浴帽）",
+    "price": 220,
+    "photo": "assets/cookies/shopee2/ch-square-cap.webp"
+   },
+   "set": {
+    "name": "想睡吉了",
+    "price": 220,
+    "photo": "assets/cookies/sp/28833749030-04.webp"
+   }
+  },
+  {
+   "id": "cookie-chihuahua-ch-round-blue",
+   "series": "chihuahua",
+   "expect": {
+    "name": "吉娃娃（圓・藍）",
+    "price": 220,
+    "photo": "assets/cookies/shopee2/ch-round-blue.webp"
+   },
+   "set": {
+    "name": "吉嗨森",
+    "price": 220,
+    "photo": "assets/cookies/sp/28833749030-05.webp"
+   }
+  },
+  {
+   "id": "cookie-party-pt-bra",
+   "series": "party",
+   "expect": {
+    "name": "內衣",
+    "price": 150,
+    "photo": "assets/cookies/shopee2/pt-bra.webp"
+   },
+   "set": {
+    "photo": "assets/cookies/sp/pt-bra.webp"
+   }
+  },
+  {
+   "id": "cookie-party-pt-pants",
+   "series": "party",
+   "expect": {
+    "name": "內褲",
+    "price": 150,
+    "photo": "assets/cookies/shopee2/pt-pants.webp"
+   },
+   "set": {
+    "photo": "assets/cookies/sp/pt-pants.webp"
+   }
+  },
+  {
+   "id": "cookie-party-pt-ding",
+   "series": "party",
+   "expect": {
+    "name": "丁丁",
+    "price": 150,
+    "photo": "assets/cookies/shopee2/pt-ding.webp"
+   },
+   "set": {
+    "photo": "assets/cookies/sp/pt-ding.webp"
+   }
+  },
+  {
+   "id": "cookie-mcqueen-mq-red",
+   "series": "mcqueen",
+   "expect": {
+    "name": "閃電麥坤（紅）",
+    "price": 250,
+    "photo": "assets/cookies/shopee2/mq-red.webp"
+   },
+   "set": {
+    "price": 280
+   }
+  },
+  {
+   "id": "cookie-mcqueen-mq-yellow",
+   "series": "mcqueen",
+   "expect": {
+    "name": "克魯茲（黃）",
+    "price": 250,
+    "photo": "assets/cookies/shopee2/mq-yellow.webp"
+   },
+   "set": {
+    "price": 280
+   }
+  },
+  {
+   "id": "cookie-mcqueen-mq-blue",
+   "series": "mcqueen",
+   "expect": {
+    "name": "閃電麥坤（藍）",
+    "price": 250,
+    "photo": "assets/cookies/shopee2/mq-blue.webp"
+   },
+   "set": {
+    "price": 280
+   }
+  },
+  {
+   "id": "cookie-mcqueen-mq-black",
+   "series": "mcqueen",
+   "expect": {
+    "name": "暴風傑克森（黑）",
+    "price": 250,
+    "photo": "assets/cookies/shopee2/mq-black.webp"
+   },
+   "set": {
+    "price": 280
+   }
+  },
+  {
+   "id": "cookie-mcqueen-mq-rusteze",
+   "series": "mcqueen",
+   "expect": {
+    "name": "Rust-eze 圓牌",
+    "price": 250,
+    "photo": "assets/cookies/shopee2/mq-rusteze.webp"
+   },
+   "set": {
+    "price": 250
+   }
+  },
+  {
+   "id": "cookie-mcqueen-mq-5",
+   "series": "mcqueen",
+   "expect": {
+    "name": "數字 5",
+    "price": 250,
+    "photo": "assets/cookies/shopee2/mq-5.webp"
+   },
+   "set": {
+    "price": 200
+   }
+  }
+ ]
+}
