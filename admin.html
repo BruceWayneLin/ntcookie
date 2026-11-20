@@ -11,7 +11,7 @@
 <link rel="icon" href="assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css?v=1120k">
+<link rel="stylesheet" href="css/app.css?v=1120l">
 <style>
   :root { --page: 760px; }
   .tabs { position: sticky; top: 63px; z-index: 20; display: flex; gap: 6px; max-width: var(--page); margin: 0 auto; padding: 8px 14px; background: rgba(248, 237, 231, .96); }
@@ -171,8 +171,8 @@
 <div class="shopbar" id="shopbar" hidden></div>
 <main class="wrap" id="app"><div class="spinner"></div></main>
 <p class="note" id="ver" style="text-align:center;margin:0 0 24px;color:var(--muted)"></p>
-<script src="js/config.js?v=1120k"></script>
-<script src="js/app.js?v=1120k"></script>
+<script src="js/config.js?v=1120l"></script>
+<script src="js/app.js?v=1120l"></script>
 <script>
 (async function () {
   const { $, esc, money, asset } = NTC;
@@ -477,7 +477,7 @@
     const gname = (x) => (x.groups || []).map((g) => groups.find((y) => y.id === g)?.name).filter(Boolean).join('、') || '未分類';
     const orphans = products.filter((p) => p.category === 'cookie' && !all.some((x) => x.id === p.series));
     return `<label class="ck-search">${SEARCH_ICON}<input id="ck-q" type="search" enterkeyhint="search" placeholder="搜尋商品或餅乾名稱" value="${esc(ckQuery)}"></label>
-      <div class="statusbar one" id="ck-f" style="margin-bottom:12px">${chips.map(([k, t]) => `<button type="button" data-f="${esc(k)}" class="${k === ckFilter ? 'on' : ''}">${esc(t)}</button>`).join('')}<button type="button" id="ck-groups" class="gear">⚙ 管理分類</button></div>
+      <div class="statusbar one" id="ck-f" style="margin-bottom:12px">${chips.map(([k, t]) => `<button type="button" data-f="${esc(k)}" class="${k === ckFilter ? 'on' : ''}">${esc(t)}</button>`).join('')}<button type="button" id="ck-order" class="gear">⇅ 排順序</button><button type="button" id="ck-groups" class="gear">⚙ 管理分類</button></div>
       <div id="ck-list">${shown.map((x) => { const ps = piecesOf(x.id); const on = liveOf(x.id); const so = ps.filter((p) => p.soldOut).length;
         return `<article class="spc" data-sid="${esc(x.id)}" data-q="${esc([x.name, ...ps.map((p) => p.name)].join(' ').toLowerCase())}">
           <button type="button" class="spc-top" data-edit><img src="${esc(asset(coverOf(x) || 'assets/favicon.png'))}" alt="" loading="lazy">
@@ -499,6 +499,7 @@
     applyQ();
     app.querySelectorAll('#ck-f [data-f]').forEach((b) => (b.onclick = () => { ckFilter = b.dataset.f; renderProducts(); }));
     $('#ck-groups').onclick = editGroups;
+    $('#ck-order').onclick = orderSeries;
     $('#ck-new').onclick = () => editSeriesPage(null);
     app.querySelectorAll('.spc [data-edit]').forEach((b) => (b.onclick = () => editSeriesPage(settings.cookie.series.find((y) => y.id === b.closest('.spc').dataset.sid))));
     app.querySelectorAll('.spc [data-bulk]').forEach((b) => (b.onclick = async () => {
@@ -510,6 +511,32 @@
       try { for (let i = 0; i < list.length; i += 6) await Promise.all(list.slice(i, i + 6).map((p) => NTC.api(`/admin/products/${p.id}`, { method: 'PUT', body: { ...p, active: on } }).then((r) => Object.assign(p, r.product)))); NTC.toast(on ? `已上架，客人看得到「${x.name}」了` : `已下架「${x.name}」`); }
       catch (e) { NTC.toast(e.message, 3500); } finally { NTC.loading(false); renderProducts(); }
     }));
+  }
+
+  // 系列的順序：選了分類就排那個分類裡的；其他系列的相對位置不變。存的時候全部重新編號 10、20、30…（不會有一樣的數字）
+  async function orderSeries() {
+    NTC.loading(true); try { await loadSettings(); } catch (e) { NTC.loading(false); return NTC.toast(e.message); } NTC.loading(false); // newest list: she may have changed things on another phone
+    const all = seriesList(); const g = groupsOf().find((x) => x.id === ckFilter);
+    const subset = g ? all.filter((x) => inGroup(x, g.id)) : all;
+    if (subset.length < 2) return NTC.toast('這裡只有一個商品，不用排');
+    const r = await orderSheet(g ? `「${g.name}」的順序` : '全部商品的順序', `客人在${g ? `「${g.name}」` : '造型餅乾'}頁看到的順序就是這裡由上到下。排好按「完成」就會存。`, subset.map((x) => ({ key: x.id, name: x.name, photo: coverOf(x) })));
+    if (!r) return;
+    const ids = new Set(subset.map((x) => x.id)); const q = r.map((x) => x.key); const byId = Object.fromEntries(all.map((x) => [x.id, x]));
+    const series = all.map((x) => (ids.has(x.id) ? q.shift() : x.id)).map((id, i) => ({ ...byId[id], sort: (i + 1) * 10 }));
+    NTC.loading(true, '儲存中…');
+    try { settings = (await NTC.api('/admin/settings', { method: 'PUT', body: { cookie: { ...settings.cookie, groups: undefined, series } } })).settings; renderProducts(); NTC.toast('順序已儲存，客人那邊也一樣'); }
+    catch (e) { NTC.toast(e.message, 3500); } finally { NTC.loading(false); }
+  }
+  // 可麗露／馬林糖的順序
+  async function orderSimple(cat) {
+    const list = products.filter((p) => p.category === cat).sort(bySort);
+    if (list.length < 2) return NTC.toast('這裡只有一個商品，不用排');
+    const r = await orderSheet('調整順序', '客人看到的順序就是這裡由上到下。排好按「完成」就會存。', list.map((p) => ({ key: p.id, name: p.name, photo: p.photo || p.card })));
+    if (!r) return;
+    const todo = r.map((x, i) => [products.find((p) => p.id === x.key), (i + 1) * 10]).filter(([p, n]) => p.sort !== n);
+    NTC.loading(true, '儲存中…');
+    try { for (const [p, n] of todo) Object.assign(p, (await NTC.api(`/admin/products/${p.id}`, { method: 'PUT', body: { ...p, sort: n } })).product); NTC.toast('順序已儲存'); }
+    catch (e) { NTC.toast(e.message, 3500); } finally { NTC.loading(false); renderProducts(); }
   }
 
   // 分類：店主自己新增、改名、排順序
@@ -572,6 +599,19 @@
     el.previousElementSibling.addEventListener('click', () => fin(null)); // the mask behind the sheet
     setTimeout(() => el.querySelector('#ask-v')?.focus(), 300);
   });
+  const orderSheet = (title, hint, rows) => new Promise((resolve) => {
+    let list = [...rows]; let done = false;
+    const { el, close } = NTC.sheet(`<h2>${esc(title)}</h2><p class="note" style="margin:0 0 8px">${esc(hint)}</p><div id="so-list"></div><button type="button" class="btn block" id="so-ok" style="margin-top:12px">完成</button>`);
+    const paint = (hl) => {
+      el.querySelector('#so-list').innerHTML = list.map((o, i) => `<div class="sorow${o.key === hl ? ' hl' : ''}" data-i="${i}"><span class="n">${i + 1}</span>${o.photo ? `<img src="${esc(asset(o.photo))}" alt="">` : '<i></i>'}<b>${esc(o.name || '（還沒填名稱）')}</b>
+        <button type="button" data-m="top" ${i ? '' : 'disabled'}>最前</button><button type="button" data-m="up" aria-label="往前一格" ${i ? '' : 'disabled'}>↑</button><button type="button" data-m="dn" aria-label="往後一格" ${i < list.length - 1 ? '' : 'disabled'}>↓</button></div>`).join('');
+      el.querySelectorAll('.sorow button').forEach((b) => (b.onclick = () => { const i = +b.closest('.sorow').dataset.i; const o = list.splice(i, 1)[0]; list.splice(b.dataset.m === 'top' ? 0 : b.dataset.m === 'up' ? i - 1 : i + 1, 0, o); paint(o.key); }));
+    };
+    paint();
+    const fin = (v) => { if (done) return; done = true; resolve(v); };
+    el.querySelector('#so-ok').onclick = () => { fin(list); close(); };
+    el.querySelector('.close').addEventListener('click', () => fin(null)); el.previousElementSibling.addEventListener('click', () => fin(null));
+  });
   const uploadPhoto = async (file, max) => (await NTC.api('/admin/images', { method: 'POST', body: { dataUrl: await shrink(file, max) } })).url;
 
   // 整頁「編輯商品」：照片、名稱、描述、分類、選項（每一片）。按「更新」才一次存好，像蝦皮。
@@ -602,14 +642,13 @@
         <details class="panel ed-more"><summary>更多設定</summary>
           <label class="field"><span>標題下的小字・第一行（單獨打開這個系列時顯示）</span><input id="ed-l1" maxlength="40" value="${esc(st.lines[0] || '')}"></label>
           <label class="field"><span>標題下的小字・第二行</span><input id="ed-l2" maxlength="40" value="${esc(st.lines[1] || '')}"></label>
-          <label class="field" style="margin-bottom:0"><span>排序（數字小的排前面）</span><input id="ed-sort" type="number" inputmode="numeric" value="${esc(st.sort)}"></label>
         </details>
         ${isNew ? '' : '<button type="button" class="btn ghost block" id="ed-del" style="color:var(--red)">刪除這個商品</button>'}
       </div>
       <footer class="ed-bar"><button type="button" class="btn ghost" id="ed-b1"></button><button type="button" class="btn" id="ed-b2"></button></footer>`;
     document.body.appendChild(box); document.body.classList.add('ed-open');
     const q1 = (s) => box.querySelector(s);
-    const collect = () => { st.name = q1('#ed-name').value.trim(); st.desc = q1('#ed-desc').value; st.lines = [q1('#ed-l1').value.trim(), q1('#ed-l2').value.trim()].filter(Boolean); st.sort = q1('#ed-sort').value; };
+    const collect = () => { st.name = q1('#ed-name').value.trim(); st.desc = q1('#ed-desc').value; st.lines = [q1('#ed-l1').value.trim(), q1('#ed-l2').value.trim()].filter(Boolean); };
     collect(); const start = snap();
     const dirty = () => { collect(); return snap() !== start; };
     // the phone's back gesture closes the editor (asking first when something is not saved)
@@ -704,17 +743,10 @@
       paintOpts(); const rows = box.querySelectorAll('#ed-opts .eo'); const last = rows[rows.length - 1]; last.scrollIntoView({ block: 'center', behavior: 'smooth' }); last.querySelector('.o-name').focus({ preventScroll: true });
     };
     // 調整順序：整串一起排（不用填數字；存檔時照這個順序重新編號）
-    q1('#ed-order').onclick = () => {
+    q1('#ed-order').onclick = async () => {
       if (st.opts.length < 2) return NTC.toast('有兩個以上的選項才需要排順序');
-      const { el, close } = NTC.sheet(`<h2>調整順序</h2><p class="note" style="margin:0 0 8px">客人看到的順序就是這裡由上到下的順序。排好按「完成」，最後記得按「更新」。</p><div id="so-list"></div><button type="button" class="btn block" id="so-ok" style="margin-top:12px">完成</button>`);
-      const paint = (hl) => {
-        el.querySelector('#so-list').innerHTML = st.opts.map((o, i) => `<div class="sorow${o.key === hl ? ' hl' : ''}" data-i="${i}"><span class="n">${i + 1}</span>${o.photo ? `<img src="${esc(asset(o.photo))}" alt="">` : '<i></i>'}<b>${esc(o.name || '（還沒填名稱）')}</b>
-          <button type="button" data-m="top" ${i ? '' : 'disabled'}>最前</button><button type="button" data-m="up" aria-label="往前一格" ${i ? '' : 'disabled'}>↑</button><button type="button" data-m="dn" aria-label="往後一格" ${i < st.opts.length - 1 ? '' : 'disabled'}>↓</button></div>`).join('');
-        el.querySelectorAll('.sorow button').forEach((b) => (b.onclick = () => { const i = +b.closest('.sorow').dataset.i; const o = st.opts.splice(i, 1)[0]; st.opts.splice(b.dataset.m === 'top' ? 0 : b.dataset.m === 'up' ? i - 1 : i + 1, 0, o); paint(o.key); }));
-      };
-      paint();
-      el.querySelector('#so-ok').onclick = () => { close(); paintOpts(); };
-      el.querySelector('.close').addEventListener('click', () => paintOpts()); el.previousElementSibling.addEventListener('click', () => paintOpts()); // ✕ or tapping outside keeps the new order too
+      const r = await orderSheet('調整順序', '客人看到的順序就是這裡由上到下。排好按「完成」，最後記得按「更新」。', st.opts.map((o) => ({ key: o.key, name: o.name, photo: o.photo })));
+      if (r) { const by = Object.fromEntries(st.opts.map((o) => [o.key, o])); st.opts = r.map((x) => by[x.key]); paintOpts(); }
     };
     q1('#ed-allprice').onclick = async () => {
       if (!st.opts.length) return NTC.toast('還沒有選項');
@@ -779,12 +811,13 @@
   function renderProducts() {
     const cnt = (c) => { const l = products.filter((p) => p.category === c); return `${l.filter((p) => p.active).length}／${l.length} 上架`; };
     const simple = (c) => `<section class="panel"><h2>${CATS[c]}</h2>${products.filter((p) => p.category === c).sort(bySort).map(prodRow).join('') || '<p class="note">還沒有商品</p>'}
-      <button class="btn ghost small add" data-c="${c}" style="margin-top:10px">＋ 新增${c === 'canele' ? '口味' : '商品'}</button></section>`;
+      <div class="row" style="gap:8px;margin-top:10px"><button class="btn ghost small add" data-c="${c}">＋ 新增${c === 'canele' ? '口味' : '商品'}</button><button type="button" class="btn ghost small" data-order="${c}">⇅ 排順序</button></div></section>`;
     app.innerHTML = `<div class="seg">${CAT_TABS.map(([c, t]) => `<button type="button" data-cat="${c}" class="${prodCat === c ? 'on' : ''}">${t}<small>${cnt(c)}</small></button>`).join('')}</div>`
       + (prodCat === 'cookie' ? cookiePanels() : simple(prodCat))
       + (prodCat === 'cookie' ? '' : '<p class="note">「上架」關掉＝客人看不到；「售完」打開＝看得到但不能買。點「編輯」可以改名稱、價格、照片。改名字或價格後，那張卡會改用文字顯示（設計圖上的字是印在圖裡的）。</p>');
     app.querySelectorAll('[data-cat]').forEach((b) => (b.onclick = () => { if (prodCat === b.dataset.cat) return; prodCat = b.dataset.cat; renderProducts(); window.scrollTo(0, 0); }));
     if (prodCat === 'cookie') wireCookies();
+    app.querySelectorAll('[data-order]').forEach((b) => (b.onclick = () => orderSimple(b.dataset.order)));
     app.querySelectorAll('.prod[data-id] input').forEach((i) => (i.onchange = async () => {
       const p = products.find((x) => x.id === i.closest('.prod').dataset.id);
       try { const r = await NTC.api(`/admin/products/${p.id}`, { method: 'PUT', body: { ...p, [i.dataset.k]: i.checked } }); Object.assign(p, r.product); NTC.toast(`${p.name}：${i.dataset.k === 'active' ? (p.active ? '已上架' : '已下架') : (p.soldOut ? '標示售完' : '恢復販售')}`); if (p.category === 'cookie') { const y = window.scrollY; renderProducts(); window.scrollTo(0, y); } }
@@ -812,7 +845,6 @@
         <label class="field"><span>單位</span><input id="e-unit" value="${esc(p.unit || '')}" maxlength="4"></label></div>
       ${p.category === 'cookie' ? askHtml(p)
     : `<label class="field"><span>說明（選填，顯示在加入購物車的視窗）</span><textarea id="e-desc" maxlength="300">${esc(p.desc || '')}</textarea></label>`}
-      <label class="field"><span>排序（數字小的排前面）</span><input id="e-sort" type="number" value="${esc(p.sort ?? 100)}"></label>
       <div class="row" style="gap:16px;margin-bottom:14px"><label class="tg">上架<input type="checkbox" id="e-active" ${p.active ? 'checked' : ''}></label><label class="tg red">售完<input type="checkbox" id="e-sold" ${p.soldOut ? 'checked' : ''}></label></div>
       <button class="btn block" id="e-save">儲存</button>
       ${p.isNew ? '' : '<button class="btn ghost block" id="e-del" style="margin-top:10px;color:var(--red)">刪除這個商品</button>'}`);
@@ -830,7 +862,7 @@
       const id = p.id || (p.category === 'cookie' ? `cookie-${ser}-${Date.now().toString(36)}` : `${p.category}-${Date.now().toString(36)}`);
       const body = { ...p, id, name, price: +el.querySelector('#e-price').value, unit: el.querySelector('#e-unit').value.trim(), desc: el.querySelector('#e-desc')?.value.trim() ?? p.desc,
         ...(p.category === 'cookie' ? { series: ser, ...askRead(el) } : {}),
-        sort: +el.querySelector('#e-sort').value, active: el.querySelector('#e-active').checked, soldOut: el.querySelector('#e-sold').checked, photo };
+        sort: p.isNew ? Math.max(0, ...products.filter((x) => x.category === p.category && (p.category !== 'cookie' || x.series === ser)).map((x) => x.sort || 0)) + 10 : (p.sort ?? 100), active: el.querySelector('#e-active').checked, soldOut: el.querySelector('#e-sold').checked, photo };
       if (photo !== p.photo) body.card = null; // a new photo replaces the designed card
       delete body.isNew;
       NTC.loading(true, '儲存中…');
