@@ -9,14 +9,20 @@ const TABLE = process.argv[2];
 if (!/^ntcookie-(qa|dev)$/.test(TABLE || '')) { console.error('usage: node seed-shopee2.mjs ntcookie-qa|ntcookie-dev'); process.exit(2); }
 const ddb = DynamoDBDocumentClient.from(new DynamoDBClient({ region: 'ap-northeast-1' }));
 const D = 'assets/cookies/shopee2/';
-const T = { name: { textLabel: '寶寶名字', textMax: 6 }, cart: { textLabel: '推車上的字', textMax: 12, textOptional: true }, num: { textLabel: '數字', textMax: 2, textOptional: true } };
+const T = { name: { textLabel: '寶寶名字', textMax: 6 }, namedate: { textLabel: '寶寶名字＋日期', textMax: 16 }, month: { textLabel: '月份文字', textMax: 12, textOptional: true }, cart: { textLabel: '推車上的字', textMax: 12, textOptional: true }, num: { textLabel: '數字', textMax: 2, textOptional: true } };
 const SERIES = [ // id, name, groups, desc, price, pieces [slug, name, text]
   ['mcqueen', '閃電麥坤系列', ['character', 'birthday'], '閃電麥坤餅乾・慶生餅乾・車子', 250, [['mq-red', '閃電麥坤（紅）'], ['mq-blue', '閃電麥坤（藍）'], ['mq-yellow', '克魯茲（黃）'], ['mq-black', '暴風傑克森（黑）'], ['mq-rusteze', 'Rust-eze 圓牌'], ['mq-5', '數字 5', 'num']]],
   ['crybaby', 'Crybaby 系列（大片款）', ['birthday'], '泡泡瑪特 crybaby・大片款', 250, [['cb-bunny', '兔兔（粉紅）'], ['cb-bee', '小蜜蜂（咖啡）'], ['cb-frog', '青蛙（綠）'], ['cb-bear', '小熊（咖啡）'], ['cb-alice', '愛麗絲（藍）'], ['cb-duck', '小鴨（黃）']]],
   ['kirby', '星之卡比系列', ['character'], '星之卡比餅乾・收涎', 230, [['kb-cap', '卡比（紅帽）'], ['kb-hat', '毛帽'], ['kb-medal', '平安獎牌'], ['kb-plaque', '名字牌', 'name'], ['kb-pacifier', '奶嘴'], ['kb-bottle', '奶瓶'], ['kb-bib', '圍兜'], ['kb-onesie', '包屁衣'], ['kb-shoes', '鞋子（一雙）'], ['kb-cake', '生日蛋糕'], ['kb-stroller', '嬰兒車', 'cart']]],
-  ['mario', '瑪利歐系列', ['character'], '瑪利歐收涎餅乾・瑪利歐賽車・瑪利兄弟・蘑菇人', 0, []],
+  // 16:15 她說耀西「可以跟瑪利歐系列全部都在一起」→ 耀西那組放進瑪利歐系列（價格先 250）
+  ['mario', '瑪利歐系列', ['character'], '瑪利歐收涎餅乾・瑪利歐賽車・瑪利兄弟・蘑菇人・耀西', 250, [['yo-yoshi', '耀西'], ['yo-plaque', '名字牌（Switch・耀西）', 'namedate'],
+    ['yo-pacifier', '耀西奶嘴'], ['yo-bottle', '耀西奶瓶'], ['yo-bib', '耀西圍兜'], ['yo-onesie', '耀西包屁衣'], ['yo-hat', '耀西毛帽（4 months）', 'month'],
+    ['yo-medal', '耀西平安獎牌'], ['yo-stroller', '耀西嬰兒車', 'cart']]],
   ['onepiece', '海賊王系列', ['character'], '海賊王收涎餅乾・魯夫・娜美・喬巴', 0, []],
   ['party', '單身派對系列', ['birthday'], '單身派對・派對餅乾・內衣餅乾・情趣餅乾・婚禮小物', 150, [['pt-bra', '內衣'], ['pt-pants', '內褲'], ['pt-ding', '丁丁']]],
+  ['perry', '鴨嘴獸泰瑞系列', ['character'], '飛哥與小佛・糖霜餅乾', 220, [['pe-agent', '特務泰瑞（帽子）'], ['pe-heart', '泰瑞（愛心）'], ['pe-round-squint', '泰瑞（圓・瞇眼）'],
+    ['pe-round-eyes', '泰瑞（圓・大眼）'], ['pe-square-squint', '泰瑞（方・瞇眼）'], ['pe-square-eyes', '泰瑞（方・大眼）']]],
+  ['totoro', '龍貓系列', ['character'], '龍貓收涎餅乾・慶生餅乾・豆豆龍・宮崎駿・龍貓車', 0, []], // 木頭＋烤網上分不出單片：只放封面
   // 16:08 她說「也是中國風，價錢你都先寫單片 250，我到時候再自己改」；兩片一樣的春斗方、兩個一樣的錢幣各放一個
   ['newyear', '過年系列', ['chinese'], '過年餅乾・過年糖霜餅乾・伴手禮', 250, [['ny-spring', '春'], ['ny-fu', '福'], ['ny-spring-r', '春 斗方'], ['ny-cloud', '旺年雲朵牌（2018）'],
     ['ny-dog', '臘腸狗（2018）'], ['ny-firecracker', '鞭炮（發）'], ['ny-lantern', '燈籠（春）'], ['ny-omamori', '招財御守'], ['ny-coin1', '招財進寶錢幣'],
