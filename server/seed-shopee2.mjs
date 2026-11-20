@@ -17,6 +17,10 @@ const SERIES = [ // id, name, groups, desc, price, pieces [slug, name, text]
   ['mario', '瑪利歐系列', ['character'], '瑪利歐收涎餅乾・瑪利歐賽車・瑪利兄弟・蘑菇人', 0, []],
   ['onepiece', '海賊王系列', ['character'], '海賊王收涎餅乾・魯夫・娜美・喬巴', 0, []],
   ['party', '單身派對系列', ['birthday'], '單身派對・派對餅乾・內衣餅乾・情趣餅乾・婚禮小物', 150, [['pt-bra', '內衣'], ['pt-pants', '內褲'], ['pt-ding', '丁丁']]],
+  // 16:08 她說「也是中國風，價錢你都先寫單片 250，我到時候再自己改」；兩片一樣的春斗方、兩個一樣的錢幣各放一個
+  ['newyear', '過年系列', ['chinese'], '過年餅乾・過年糖霜餅乾・伴手禮', 250, [['ny-spring', '春'], ['ny-fu', '福'], ['ny-spring-r', '春 斗方'], ['ny-cloud', '旺年雲朵牌（2018）'],
+    ['ny-dog', '臘腸狗（2018）'], ['ny-firecracker', '鞭炮（發）'], ['ny-lantern', '燈籠（春）'], ['ny-omamori', '招財御守'], ['ny-coin1', '招財進寶錢幣'],
+    ['ny-ingot-wang', '元寶（旺）'], ['ny-ingot-cai', '元寶（財）'], ['ny-zhong', '麻將・中'], ['ny-fa', '麻將・發'], ['ny-dice2', '骰子（二點）'], ['ny-dice5', '骰子（五點）']]],
 ];
 const s = (await ddb.send(new GetCommand({ TableName: TABLE, Key: { pk: 'SETTINGS', sk: 'main' } }))).Item;
 if (!s?.cookie?.series) throw new Error('no cookie settings yet');
