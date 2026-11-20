@@ -11,7 +11,7 @@
 <link rel="icon" href="assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css?v=1120h">
+<link rel="stylesheet" href="css/app.css?v=1120i">
 <style>
   :root { --page: 760px; }
   .tabs { position: sticky; top: 63px; z-index: 20; display: flex; gap: 6px; max-width: var(--page); margin: 0 auto; padding: 8px 14px; background: rgba(248, 237, 231, .96); }
@@ -84,6 +84,74 @@
   .savebar { position: fixed; left: 50%; bottom: 0; transform: translateX(-50%); z-index: 45; width: min(100vw, var(--page)); display: flex; align-items: center; gap: 10px;
     padding: 10px 14px calc(10px + env(safe-area-inset-bottom, 0px)); background: #fff8f0; border-top: 1px solid #e7cdb6; box-shadow: 0 -4px 14px rgba(120, 70, 40, .14); }
   .savebar span { flex: 1; font: 700 14px/1.3 var(--sans); color: #9a4f08; }
+  /* --- 造型餅乾 like Shopee's 我的商品 + a full-page 編輯商品 (11-20) */
+  .ck-search { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; padding: 0 12px; border: 1.5px solid #e3cdbf; border-radius: 12px; background: #fff; color: var(--muted); }
+  .ck-search input { flex: 1; min-width: 0; border: 0; outline: 0; background: none; padding: 11px 0; font: 500 16px var(--sans); color: var(--ink); }
+  .statusbar .gear { border-style: dashed; color: var(--brown); }
+  .spc { margin: 0 0 10px; padding: 12px; border: 1px solid #f1e2d9; border-radius: 16px; background: var(--card); box-shadow: 0 2px 10px rgba(150, 95, 70, .06); }
+  .spc-top { display: flex; align-items: flex-start; gap: 12px; width: 100%; padding: 0; border: 0; background: none; text-align: left; cursor: pointer; color: inherit; }
+  .spc-top img { width: 76px; height: 76px; flex: none; border-radius: 12px; object-fit: cover; background: #f3e4db; }
+  .spc-top .i { flex: 1; min-width: 0; }
+  .spc-top .i b { display: block; font: 900 16px/1.3 var(--serif); letter-spacing: .02em; }
+  .spc-top .pr { display: block; margin-top: 4px; font: 800 14.5px/1.2 var(--sans); color: var(--red); }
+  .spc-top .meta { display: block; margin-top: 4px; font: 600 12.5px/1.4 var(--sans); color: var(--muted); }
+  .spc-st { flex: none; padding: 5px 9px; border-radius: 999px; background: #eee3dc; color: #8a6f62; font: 800 11.5px/1 var(--sans); }
+  .spc-st.on { background: #e3f1e6; color: #2f6b3d; }
+  .spc-acts { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 12px; }
+  .spc-acts .btn { margin: 0; padding-left: 0; padding-right: 0; text-align: center; }
+  .addbar { position: fixed; left: 50%; bottom: 0; z-index: 40; transform: translateX(-50%); width: min(100vw, var(--page)); padding: 10px 14px calc(10px + env(safe-area-inset-bottom, 0px)); box-sizing: border-box;
+    background: rgba(248, 237, 231, .96); box-shadow: 0 -4px 14px rgba(120, 70, 40, .12); }
+  .addbar .btn { margin: 0; }
+  .grow { display: flex; align-items: center; gap: 6px; margin: 0 0 8px; }
+  .grow input { flex: 1; min-width: 0; padding: 10px 12px; border: 1.5px solid #e3cdbf; border-radius: 10px; font: 600 16px var(--sans); background: #fff; }
+  .grow small { flex: none; font: 600 12px var(--sans); color: var(--muted); }
+  .grow button { flex: none; width: 36px; height: 36px; border: 0; border-radius: 10px; background: #f1e1d8; font: 800 15px var(--sans); color: var(--ink); cursor: pointer; }
+  .grow button[disabled] { opacity: .3; cursor: default; }
+  body.ed-open { overflow: hidden; }
+  .ed { position: fixed; inset: 0; z-index: 46; display: flex; flex-direction: column; background: var(--bg, #f8ede7); }
+  .ed-top { flex: none; display: flex; align-items: center; gap: 8px; padding: calc(8px + env(safe-area-inset-top, 0px)) 10px 8px; background: #fff; border-bottom: 1px solid #ecdcd2; }
+  .ed-top h2 { flex: 1; margin: 0; text-align: center; font: 900 18px var(--serif); letter-spacing: .08em; }
+  .ed-top .ed-x { flex: none; min-width: 74px; padding: 10px 6px; border: 0; background: none; color: var(--brown); font: 800 15px var(--sans); text-align: left; text-decoration: none; cursor: pointer; }
+  .ed-top .ed-pv { text-align: right; }
+  .ed-body { flex: 1; overflow: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; width: 100%; max-width: var(--page); margin: 0 auto; padding: 12px 14px 28px; box-sizing: border-box; }
+  .ed-body .panel { margin-bottom: 12px; }
+  .ed h3 { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 8px; margin: 0 0 10px; font: 900 16px/1.3 var(--serif); }
+  .ed h3 small { font: 600 12px/1.3 var(--sans); color: var(--muted); }
+  .ed .req { color: var(--red); }
+  .ed-bar { flex: none; display: grid; grid-template-columns: 1fr 1.3fr; gap: 10px; width: 100%; max-width: var(--page); margin: 0 auto; padding: 10px 14px calc(10px + env(safe-area-inset-bottom, 0px)); box-sizing: border-box; background: #fff; border-top: 1px solid #ecdcd2; }
+  .ed-bar .btn { margin: 0; }
+  .phs { display: grid; grid-template-columns: repeat(auto-fill, minmax(76px, 1fr)); gap: 8px; }
+  .phs .ph { position: relative; aspect-ratio: 1; padding: 0; border: 0; border-radius: 12px; overflow: hidden; background: #f3e4db; cursor: pointer; }
+  .phs .ph img { display: block; width: 100%; height: 100%; object-fit: cover; }
+  .phs .ph .cv { position: absolute; left: 0; right: 0; bottom: 0; background: rgba(176, 96, 74, .9); color: #fff; font: 800 11.5px/22px var(--sans); text-align: center; letter-spacing: .1em; }
+  .phs .addph { aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; border: 1.5px dashed #c98f78; border-radius: 12px; background: #fffaf7; color: #b0604a; font: 700 12.5px/1.3 var(--sans); cursor: pointer; }
+  .phs .addph b { font-size: 24px; line-height: 1; }
+  .gchips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .gchips button { padding: 8px 14px; border: 1.5px solid #e3cdbf; border-radius: 999px; background: #fff; font: 700 14px var(--sans); color: var(--ink); cursor: pointer; }
+  .gchips button.on { background: var(--brown); border-color: var(--brown); color: #fff; }
+  .gchips button.on::before { content: "✓ "; }
+  .gchips button.add { border-style: dashed; color: var(--brown); }
+  .opt-tools { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 4px; }
+  .opt-tools .btn { margin: 0; }
+  .eo { display: flex; align-items: center; gap: 10px; padding: 12px 0; border-bottom: 1px dashed #ead7cc; }
+  .eo:last-child { border-bottom: 0; }
+  .eo.off .o-ph img { opacity: .45; }
+  .eo.bad { margin: 0 -8px; padding: 12px 8px; border-radius: 12px; background: #fff1ef; box-shadow: inset 0 0 0 1.5px #e3a19b; }
+  .eo .o-ph { position: relative; flex: none; display: flex; align-items: center; justify-content: center; width: 62px; height: 62px; border: 1.5px dashed #d9b7a6; border-radius: 12px; overflow: hidden; background: #fffaf7; color: #b0604a; font: 700 11.5px var(--sans); cursor: pointer; }
+  .eo .o-ph.has { border: 0; background: #f3e4db; }
+  .eo .o-ph img { width: 100%; height: 100%; object-fit: cover; }
+  .eo .o-mid { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+  .eo input.o-name, .eo input.o-price { box-sizing: border-box; width: 100%; padding: 8px 10px; border: 1.5px solid #e3cdbf; border-radius: 10px; background: #fff; font: 600 16px var(--sans); color: var(--ink); }
+  .eo .o-line { display: flex; align-items: center; gap: 6px; }
+  .eo .o-line span { font: 700 13px var(--sans); color: var(--ink2); }
+  .eo input.o-price { flex: 1; min-width: 0; max-width: 110px; }
+  .eo input.o-name { flex: 1; min-width: 0; }
+  .eo .o-del { flex: none; width: 34px; height: 36px; padding: 0; border: 0; border-radius: 10px; background: none; color: #a0705e; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  .eo .o-more { flex: none; width: 36px; height: 36px; margin-left: auto; border: 0; border-radius: 999px; background: #f1e1d8; font: 900 17px/1 var(--sans); color: var(--ink); cursor: pointer; }
+  .eo .o-tags { font: 600 12px/1.35 var(--sans); color: #9a4f08; }
+  .eo .o-on { flex: none; flex-direction: column; gap: 4px; font-size: 12px; }
+  .ed-more summary { cursor: pointer; font: 800 15px var(--sans); color: var(--ink2); }
+  .ed-more[open] summary { margin-bottom: 12px; }
 </style>
 </head>
 <body>
@@ -96,8 +164,8 @@
 <div class="shopbar" id="shopbar" hidden></div>
 <main class="wrap" id="app"><div class="spinner"></div></main>
 <p class="note" id="ver" style="text-align:center;margin:0 0 24px;color:var(--muted)"></p>
-<script src="js/config.js?v=1120h"></script>
-<script src="js/app.js?v=1120h"></script>
+<script src="js/config.js?v=1120i"></script>
+<script src="js/app.js?v=1120i"></script>
 <script>
 (async function () {
   const { $, esc, money, asset } = NTC;
@@ -379,59 +447,299 @@
           <label class="tg">上架<input type="checkbox" data-k="active" ${p.active ? 'checked' : ''}></label>
           <label class="tg red">售完<input type="checkbox" data-k="soldOut" ${p.soldOut ? 'checked' : ''}></label></div>
         <button class="btn ghost small edit">編輯</button></div>`;
-  const openSeries = new Set(); // which cookie series are unfolded in the 商品 tab
-  const liveOf = (sid) => products.filter((p) => p.category === 'cookie' && p.series === sid && p.active).length; // 這個系列有幾款上架（>0 客人就看得到）
+  // ================= 造型餅乾：像蝦皮的「我的商品」＋整頁「編輯商品」(11-20) =================
+  // 一個系列＝蝦皮的一個商品；系列裡的每一片＝蝦皮的「選項」。系列裡至少一片「上架」，客人就看得到這個系列。
+  const DEF_GROUPS = [{ id: 'character', name: '卡通・收涎' }, { id: 'birthday', name: '慶生・抓週' }];
+  const HOME_GROUPS = { character: 1, birthday: 1 }; // 首頁兩張大卡片連過去的分類：不能刪
+  const groupsOf = () => (settings?.cookie?.groups?.length ? settings.cookie.groups : DEF_GROUPS);
+  const seriesList = () => [...(settings?.cookie?.series || [])].sort((a, b) => (a.sort ?? 999) - (b.sort ?? 999));
+  const bySort = (a, b) => (a.sort ?? 999) - (b.sort ?? 999) || String(a.id).localeCompare(String(b.id));
+  const piecesOf = (sid) => products.filter((p) => p.category === 'cookie' && p.series === sid).sort(bySort);
+  const liveOf = (sid) => products.filter((p) => p.category === 'cookie' && p.series === sid && p.active).length; // 有幾款上架（>0 客人就看得到）
+  const coverOf = (x) => (x.photos && x.photos[0]) || x.photo || '';
+  const priceRange = (ps) => { const v = ps.map((p) => p.price); const lo = Math.min(...v); const hi = Math.max(...v); return lo === hi ? money(lo) : `${money(lo)} – ${money(hi)}`; };
+  const inGroup = (x, gid) => (x.groups || []).includes(gid);
+  const noGroup = (x) => !(x.groups || []).some((g) => groupsOf().some((y) => y.id === g));
+  let ckFilter = 'all'; let ckQuery = '';
+  const SEARCH_ICON = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>';
   function cookiePanels() {
-    const series = [...(settings?.cookie?.series || [])].sort((a, b) => (a.sort ?? 999) - (b.sort ?? 999));
-    const orphans = products.filter((p) => p.category === 'cookie' && !series.some((x) => x.id === p.series));
-    const of = (sid) => products.filter((p) => p.category === 'cookie' && p.series === sid);
-    return `<p class="note" style="margin:0 0 10px">一個系列＝一頁。系列裡只要有一款餅乾「上架」，客人就看得到這個系列；全部下架就看不到。點系列可以展開。</p>
-      ${series.map((x) => { const open = openSeries.has(x.id); const live = liveOf(x.id);
-        return `<section class="panel sr${open ? ' open' : ''}" data-sid="${esc(x.id)}" data-sname="${esc(x.name)}">
-        <button type="button" class="sr-head" data-fold="${esc(x.id)}" aria-expanded="${open}"><img src="${esc(asset(x.photo || 'assets/favicon.png'))}" alt="">
-          <span class="i"><b>${esc(x.name)}</b><span class="${live ? 'live' : ''}">${of(x.id).length} 款・${live ? `客人看得到（${live} 款上架）` : '客人看不到（都沒上架）'}</span></span><i class="chev"></i></button>
-        ${open ? `<div class="sr-tools"><button class="btn ghost small" data-bulk="on">全部上架</button><button class="btn ghost small" data-bulk="off">全部下架</button><button class="btn ghost small s-edit">編輯系列</button><a class="btn ghost small" href="cookies.html?s=${esc(x.id)}&preview=1" target="_blank">預覽 ›</a></div>
-          ${of(x.id).map(prodRow).join('') || '<p class="note">還沒有餅乾</p>'}
-          <button class="btn ghost small add" data-c="cookie" data-s="${esc(x.id)}" style="margin-top:10px">＋ 新增餅乾</button>` : ''}</section>`; }).join('') || '<p class="note">還沒有系列</p>'}
-      <button class="btn ghost block" id="s-new" style="margin:2px 0 14px">＋ 新增系列</button>
-      ${orphans.length ? `<section class="panel"><h2>造型餅乾・（系列已刪除）</h2><p class="note" style="margin:0 0 8px">這些餅乾的系列被刪掉了，客人看不到。編輯後選一個系列就會回來。</p>${orphans.map(prodRow).join('')}</section>` : ''}`;
+    const groups = groupsOf(); const all = seriesList();
+    const offN = all.filter((x) => !liveOf(x.id)).length; const noneN = all.filter(noGroup).length;
+    const chips = [['all', `全部 ${all.length}`], ...groups.map((g) => [g.id, `${g.name} ${all.filter((x) => inGroup(x, g.id)).length}`]), ...(noneN ? [['none', `未分類 ${noneN}`]] : []), ['off', `未上架 ${offN}`]];
+    if (!chips.some(([k]) => k === ckFilter)) ckFilter = 'all';
+    const shown = all.filter((x) => ckFilter === 'all' || (ckFilter === 'off' ? !liveOf(x.id) : ckFilter === 'none' ? noGroup(x) : inGroup(x, ckFilter)));
+    const gname = (x) => (x.groups || []).map((g) => groups.find((y) => y.id === g)?.name).filter(Boolean).join('、') || '未分類';
+    const orphans = products.filter((p) => p.category === 'cookie' && !all.some((x) => x.id === p.series));
+    return `<label class="ck-search">${SEARCH_ICON}<input id="ck-q" type="search" enterkeyhint="search" placeholder="搜尋商品或餅乾名稱" value="${esc(ckQuery)}"></label>
+      <div class="statusbar one" id="ck-f" style="margin-bottom:12px">${chips.map(([k, t]) => `<button type="button" data-f="${esc(k)}" class="${k === ckFilter ? 'on' : ''}">${esc(t)}</button>`).join('')}<button type="button" id="ck-groups" class="gear">⚙ 管理分類</button></div>
+      <div id="ck-list">${shown.map((x) => { const ps = piecesOf(x.id); const on = liveOf(x.id); const so = ps.filter((p) => p.soldOut).length;
+        return `<article class="spc" data-sid="${esc(x.id)}" data-q="${esc([x.name, ...ps.map((p) => p.name)].join(' ').toLowerCase())}">
+          <button type="button" class="spc-top" data-edit><img src="${esc(asset(coverOf(x) || 'assets/favicon.png'))}" alt="" loading="lazy">
+            <span class="i"><b>${esc(x.name)}</b><span class="pr">${ps.length ? priceRange(ps) : '還沒有選項'}</span>
+              <span class="meta">${ps.length} 款${on && on < ps.length ? `（${on} 款上架）` : ''}${so ? `・${so} 款售完` : ''}・${esc(gname(x))}</span></span>
+            <span class="spc-st${on ? ' on' : ''}">${on ? '上架中' : '未上架'}</span></button>
+          <div class="spc-acts"><button type="button" class="btn ghost small" data-bulk="${on ? 'off' : 'on'}">${on ? '下架' : '上架'}</button>
+            <a class="btn ghost small" href="cookies.html?s=${esc(x.id)}&preview=1" target="_blank" rel="noopener">預覽</a>
+            <button type="button" class="btn small" data-edit>編輯</button></div></article>`; }).join('')}<p class="note" id="ck-empty" style="text-align:center;margin:20px 0" hidden></p></div>
+      ${orphans.length ? `<section class="panel"><h2>造型餅乾・（系列已刪除）</h2><p class="note" style="margin:0 0 8px">這些餅乾的系列被刪掉了，客人看不到。編輯後選一個系列就會回來。</p>${orphans.map(prodRow).join('')}</section>` : ''}
+      <div style="height:80px"></div><div class="addbar"><button type="button" class="btn block" id="ck-new">＋ 新增商品</button></div>`;
   }
-  function editSeries(x) {
-    const isNew = !x;
-    x = x || { id: '', name: '', lines: ['可單片選購・自由搭配', '生日・收涎・派對・送禮'], photo: '', groups: ['character'], active: false, sort: 100 };
-    const { el, close } = NTC.sheet(`<h2>${isNew ? '新增' : '編輯'}・餅乾系列</h2>
-      <div class="row" style="margin:6px 0 12px"><img id="x-img" src="${esc(asset(x.photo || 'assets/favicon.png'))}" style="width:150px;height:90px;border-radius:12px;object-fit:cover" alt="">
-        <label class="btn ghost small">換頁首照片<input type="file" accept="image/*" id="x-file" hidden></label></div>
-      <label class="field"><span>系列名稱</span><input id="x-name" value="${esc(x.name)}" maxlength="30" placeholder="例如：麵包超人系列"></label>
-      <label class="field"><span>說明第一行</span><input id="x-l1" value="${esc(x.lines?.[0] || '')}" maxlength="40"></label>
-      <label class="field"><span>說明第二行</span><input id="x-l2" value="${esc(x.lines?.[1] || '')}" maxlength="40"></label>
-      <p style="font-weight:700;margin:4px 0 6px;font-size:13px;color:var(--ink2)">放在首頁哪張卡（可以兩張都放）</p>
-      <div class="row" style="gap:16px;margin-bottom:12px">${Object.entries(GROUP_NAMES).map(([g, t]) => `<label class="tg">${t}造型餅乾<input type="checkbox" class="x-g" data-g="${g}" ${(x.groups || []).includes(g) ? 'checked' : ''}></label>`).join('')}</div>
-      <label class="field"><span>排序（小的在前）</span><input id="x-sort" type="number" value="${esc(x.sort ?? 100)}"></label>
-      <p class="note" style="margin:-4px 0 12px">系列裡有餅乾「上架」，客人就看得到這個系列。</p>
-      <button class="btn block" id="x-save">儲存</button>
-      ${isNew ? '' : '<button class="btn ghost block" id="x-del" style="margin-top:10px;color:var(--red)">刪除這個系列</button>'}`);
-    let photo = x.photo;
-    el.querySelector('#x-file').onchange = async (e) => {
-      const f = e.target.files[0]; if (!f) return;
-      NTC.loading(true, '上傳照片…');
-      try { const dataUrl = await shrink(f); el.querySelector('#x-img').src = dataUrl; photo = (await NTC.api('/admin/images', { method: 'POST', body: { dataUrl } })).url; NTC.toast('照片已上傳'); }
-      catch (err) { NTC.toast(err.message); } finally { NTC.loading(false); }
+  function wireCookies() {
+    const qi = $('#ck-q');
+    const applyQ = () => { const qq = ckQuery.trim().toLowerCase(); let n = 0;
+      app.querySelectorAll('#ck-list .spc').forEach((a) => { const hit = !qq || a.dataset.q.includes(qq); a.hidden = !hit; n += hit; });
+      const e = $('#ck-empty'); e.hidden = !!n; e.textContent = qq ? '找不到符合的商品' : '這裡還沒有商品，按下面「＋ 新增商品」'; };
+    qi.oninput = () => { ckQuery = qi.value; applyQ(); }; // filter in place: re-rendering while typing would break 注音 input
+    applyQ();
+    app.querySelectorAll('#ck-f [data-f]').forEach((b) => (b.onclick = () => { ckFilter = b.dataset.f; renderProducts(); }));
+    $('#ck-groups').onclick = editGroups;
+    $('#ck-new').onclick = () => editSeriesPage(null);
+    app.querySelectorAll('.spc [data-edit]').forEach((b) => (b.onclick = () => editSeriesPage(settings.cookie.series.find((y) => y.id === b.closest('.spc').dataset.sid))));
+    app.querySelectorAll('.spc [data-bulk]').forEach((b) => (b.onclick = async () => {
+      const sid = b.closest('.spc').dataset.sid; const x = settings.cookie.series.find((y) => y.id === sid); const on = b.dataset.bulk === 'on';
+      const all = piecesOf(sid); const list = all.filter((p) => !!p.active !== on);
+      if (!all.length) return NTC.toast('這個商品還沒有選項，先按「編輯」新增', 3000);
+      if (!confirm(on ? `把「${x.name}」的 ${list.length} 款全部上架？\n客人馬上看得到、可以下單（請先確認價格）。` : `把「${x.name}」的 ${list.length} 款全部下架？\n客人就看不到這個商品。`)) return;
+      NTC.loading(true, on ? '上架中…' : '下架中…');
+      try { for (let i = 0; i < list.length; i += 6) await Promise.all(list.slice(i, i + 6).map((p) => NTC.api(`/admin/products/${p.id}`, { method: 'PUT', body: { ...p, active: on } }).then((r) => Object.assign(p, r.product)))); NTC.toast(on ? `已上架，客人看得到「${x.name}」了` : `已下架「${x.name}」`); }
+      catch (e) { NTC.toast(e.message, 3500); } finally { NTC.loading(false); renderProducts(); }
+    }));
+  }
+
+  // 分類：店主自己新增、改名、排順序
+  function editGroups() {
+    let gs = groupsOf().map((g) => ({ ...g }));
+    const used = (id) => seriesList().filter((x) => inGroup(x, id)).length;
+    const { el, close } = NTC.sheet(`<h2>管理分類</h2>
+      <p class="note" style="margin:0 0 10px">客人在造型餅乾頁最上面可以切換分類，順序照這裡。</p>
+      <div id="g-list"></div>
+      <button type="button" class="btn ghost block small" id="g-add" style="margin:6px 0 12px">＋ 新增分類</button>
+      <p class="note" style="margin:0 0 12px">「${esc(groupsOf().find((g) => g.id === 'character')?.name || '卡通・收涎')}」「${esc(groupsOf().find((g) => g.id === 'birthday')?.name || '慶生・抓週')}」是首頁兩張大卡片連過去的分類，不能刪。大卡片上的字是圖片，改名後首頁的圖要另外換。</p>
+      <button type="button" class="btn block" id="g-save">儲存</button>`);
+    const paint = () => {
+      el.querySelector('#g-list').innerHTML = gs.map((g, i) => `<div class="grow" data-i="${i}"><input class="g-name" maxlength="12" value="${esc(g.name)}" placeholder="分類名稱，例如：中國風">
+        <small>${used(g.id) ? `${used(g.id)} 個` : ''}</small>
+        <button type="button" class="g-up" aria-label="往上" ${i ? '' : 'disabled'}>↑</button><button type="button" class="g-dn" aria-label="往下" ${i < gs.length - 1 ? '' : 'disabled'}>↓</button>
+        <button type="button" class="g-del" aria-label="刪除" ${HOME_GROUPS[g.id] ? 'disabled' : ''}>✕</button></div>`).join('');
+      el.querySelectorAll('.grow').forEach((r) => { const i = +r.dataset.i;
+        r.querySelector('.g-name').oninput = (e) => { gs[i].name = e.target.value; };
+        r.querySelector('.g-up').onclick = () => { [gs[i - 1], gs[i]] = [gs[i], gs[i - 1]]; paint(); };
+        r.querySelector('.g-dn').onclick = () => { [gs[i + 1], gs[i]] = [gs[i], gs[i + 1]]; paint(); };
+        r.querySelector('.g-del').onclick = () => { const n = used(gs[i].id); if (n && !confirm(`「${gs[i].name}」裡有 ${n} 個商品。刪掉這個分類，商品不會刪除，只是不在這個分類裡。確定？`)) return; gs.splice(i, 1); paint(); };
+      });
     };
-    const save = async (list, msg) => {
+    paint();
+    el.querySelector('#g-add').onclick = () => { if (gs.length >= 12) return NTC.toast('最多 12 個分類'); gs.push({ id: `g${Date.now().toString(36)}`, name: '' }); paint(); el.querySelector('.grow:last-child .g-name').focus(); };
+    el.querySelector('#g-save').onclick = async () => {
+      gs = gs.map((g) => ({ ...g, name: g.name.trim() })).filter((g) => g.name || HOME_GROUPS[g.id]);
+      if (gs.some((g) => !g.name)) return NTC.toast('請填分類名稱');
+      if (new Set(gs.map((g) => g.name)).size !== gs.length) return NTC.toast('有兩個分類同名');
       NTC.loading(true, '儲存中…');
-      try { settings = (await NTC.api('/admin/settings', { method: 'PUT', body: { cookie: { ...settings.cookie, series: list } } })).settings; close(); renderProducts(); NTC.toast(msg); }
+      try { settings = (await NTC.api('/admin/settings', { method: 'PUT', body: { cookie: { ...settings.cookie, groups: gs } } })).settings; close(); renderProducts(); NTC.toast('分類已儲存'); }
       catch (e) { NTC.toast(e.message, 3500); } finally { NTC.loading(false); }
     };
-    el.querySelector('#x-save').onclick = () => {
-      const name = el.querySelector('#x-name').value.trim(); if (!name) return NTC.toast('請填系列名稱');
-      const next = { ...x, id: x.id || `s${Date.now().toString(36)}`, name, photo, lines: [el.querySelector('#x-l1').value.trim(), el.querySelector('#x-l2').value.trim()].filter(Boolean),
-        groups: [...el.querySelectorAll('.x-g')].filter((i) => i.checked).map((i) => i.dataset.g), sort: +el.querySelector('#x-sort').value };
-      const list = settings.cookie.series || [];
-      save(isNew ? [...list, next] : list.map((y) => (y.id === x.id ? next : y)), '已儲存');
+  }
+
+  // what a cookie asks the customer for, read from its stored label (e.g. 「寶寶名字＋日期」, 「日期」, 「月份文字」)
+  const askOf = (p) => { const tl = p.textLabel || ''; const dateOn = /日期/.test(tl); const nameLabel = tl.replace(/[＋+]\s*日期|日期\s*[＋+]|^日期$/, '').trim();
+    return { dateOn, nameOn: !!nameLabel, nameLabel, nameMax: nameLabel ? Math.max(1, (p.textMax || 12) - (dateOn ? 10 : 0)) : 6 }; };
+  const askHtml = (p) => { const T = askOf(p); return `<div class="askbox">
+      <p class="askt">下單時要客人填的資料</p>
+      <label class="tg">要客人填名字（寫在餅乾上的字）<span class="sp"></span><input type="checkbox" id="e-tn" ${T.nameOn ? 'checked' : ''}></label>
+      <div class="grid2" id="e-tnbox" ${T.nameOn ? '' : 'hidden'}><label class="field"><span>欄位名稱</span><input id="e-tl" value="${esc(T.nameLabel || '寶寶名字')}" maxlength="18"></label>
+        <label class="field"><span>最多幾個字</span><input id="e-tm" type="number" min="1" max="30" value="${T.nameMax}"></label></div>
+      <label class="tg">要客人選日期（用日曆選）<span class="sp"></span><input type="checkbox" id="e-td" ${T.dateOn ? 'checked' : ''}></label>
+      <label class="tg" id="e-toptrow" ${T.nameOn || T.dateOn ? '' : 'hidden'}>客人可以不填（選填）<span class="sp"></span><input type="checkbox" id="e-topt" ${p.textOptional ? 'checked' : ''}></label>
+      <p class="note" style="margin:6px 0 0">兩個都沒開＝這片不用填，直接加入購物車。有開的欄位客人一定要填（除非勾「可以不填」）。日期會寫成民國格式，例如 115.03.23。</p></div>`; };
+  const askWire = (el) => { const sync = () => { const n = el.querySelector('#e-tn').checked; const d = el.querySelector('#e-td').checked; el.querySelector('#e-tnbox').hidden = !n; el.querySelector('#e-toptrow').hidden = !(n || d); };
+    el.querySelector('#e-tn').onchange = sync; el.querySelector('#e-td').onchange = sync; };
+  const askRead = (el) => { const nOn = el.querySelector('#e-tn').checked; const dOn = el.querySelector('#e-td').checked; const lbl = el.querySelector('#e-tl').value.trim().replace(/日期/g, '') || '寶寶名字';
+    const nMax = Math.min(30, Math.max(1, +el.querySelector('#e-tm').value || 6));
+    return { textLabel: nOn && dOn ? `${lbl}＋日期` : nOn ? lbl : dOn ? '日期' : '', textMax: (nOn ? nMax : 0) + (dOn ? 10 : 0) || 12, textOptional: (nOn || dOn) && el.querySelector('#e-topt').checked }; };
+  const uploadPhoto = async (file, max) => (await NTC.api('/admin/images', { method: 'POST', body: { dataUrl: await shrink(file, max) } })).url;
+
+  // 整頁「編輯商品」：照片、名稱、描述、分類、選項（每一片）。按「更新」才一次存好，像蝦皮。
+  function editSeriesPage(x) {
+    const isNew = !x;
+    const sid = x ? x.id : `s${Date.now().toString(36)}`;
+    const st = {
+      name: x?.name || '', desc: x?.desc || '', lines: [...(x?.lines || [])], sort: x?.sort ?? '',
+      photos: x ? (x.photos?.length ? [...x.photos] : x.photo ? [x.photo] : []) : [],
+      groups: x ? [...(x.groups || [])].filter((g) => groupsOf().some((y) => y.id === g)) : groupsOf().some((g) => g.id === ckFilter) ? [ckFilter] : [],
+      opts: (x ? piecesOf(x.id) : []).map((p) => ({ ...p, key: p.id })), removed: [],
     };
-    const d = el.querySelector('#x-del');
-    if (d) d.onclick = () => { if (confirm(`確定刪除「${x.name}」系列？裡面的餅乾會一起從前台消失（資料還在，之後可以改到別的系列）。只想暫時不賣的話，把餅乾「全部下架」就好。`)) save(settings.cookie.series.filter((y) => y.id !== x.id), '已刪除系列'); };
+    const snap = () => JSON.stringify([st.name, st.desc, st.lines, String(st.sort), st.photos, st.groups, st.opts.map(({ key, priceAuto, ...o }) => o), st.removed]);
+    const box = document.createElement('div'); box.className = 'ed'; box.setAttribute('role', 'dialog'); box.setAttribute('aria-modal', 'true'); box.setAttribute('aria-label', isNew ? '新增商品' : '編輯商品');
+    box.innerHTML = `<header class="ed-top"><button type="button" class="ed-x">‹ 返回</button><h2>${isNew ? '新增商品' : '編輯商品'}</h2>${isNew ? '<span class="ed-x" style="visibility:hidden">‹ 返回</span>' : `<a class="ed-x ed-pv" href="cookies.html?s=${esc(sid)}&preview=1" target="_blank" rel="noopener">預覽 ›</a>`}</header>
+      <div class="ed-body">
+        <section class="panel"><h3>商品圖片 <small>第一張是封面・最多 9 張・點照片可以換順序</small></h3><div class="phs" id="ed-phs"></div></section>
+        <section class="panel">
+          <label class="field"><span>商品名稱 <b class="req">*</b></span><input id="ed-name" maxlength="30" placeholder="例如：佩佩豬系列" value="${esc(st.name)}"></label>
+          <label class="field" style="margin-bottom:0"><span>商品描述（選填，客人打開這個商品時看得到）</span><textarea id="ed-desc" rows="4" maxlength="1000" placeholder="例如：每片約 8–10 公分，名字牌可以寫寶寶名字和日期">${esc(st.desc)}</textarea></label>
+        </section>
+        <section class="panel"><h3>分類 <b class="req">*</b> <small>可以選不只一個</small></h3><div class="gchips" id="ed-gs"></div></section>
+        <section class="panel"><h3>選項 <small id="ed-cnt"></small></h3>
+          <div class="opt-tools"><button type="button" class="btn ghost small" id="ed-allprice">全部同一個價格</button><button type="button" class="btn ghost small" data-all="on">全部上架</button><button type="button" class="btn ghost small" data-all="off">全部下架</button></div>
+          <div id="ed-opts"></div>
+          <button type="button" class="btn ghost block" id="ed-add" style="margin-top:12px">＋ 新增選項</button>
+          <p class="note" style="margin:10px 0 0">一個選項＝一片餅乾，可以各自放照片和價格。有「上架」的選項客人才看得到；至少一片上架，這個商品才會出現在網站上。</p></section>
+        <details class="panel ed-more"><summary>更多設定</summary>
+          <label class="field"><span>標題下的小字・第一行（單獨打開這個系列時顯示）</span><input id="ed-l1" maxlength="40" value="${esc(st.lines[0] || '')}"></label>
+          <label class="field"><span>標題下的小字・第二行</span><input id="ed-l2" maxlength="40" value="${esc(st.lines[1] || '')}"></label>
+          <label class="field" style="margin-bottom:0"><span>排序（數字小的排前面）</span><input id="ed-sort" type="number" inputmode="numeric" value="${esc(st.sort)}"></label>
+        </details>
+        ${isNew ? '' : '<button type="button" class="btn ghost block" id="ed-del" style="color:var(--red)">刪除這個商品</button>'}
+      </div>
+      <footer class="ed-bar"><button type="button" class="btn ghost" id="ed-b1"></button><button type="button" class="btn" id="ed-b2"></button></footer>`;
+    document.body.appendChild(box); document.body.classList.add('ed-open');
+    const q1 = (s) => box.querySelector(s);
+    const collect = () => { st.name = q1('#ed-name').value.trim(); st.desc = q1('#ed-desc').value; st.lines = [q1('#ed-l1').value.trim(), q1('#ed-l2').value.trim()].filter(Boolean); st.sort = q1('#ed-sort').value; };
+    collect(); const start = snap();
+    const dirty = () => { collect(); return snap() !== start; };
+    // the phone's back gesture closes the editor (asking first when something is not saved)
+    history.pushState({ ntcEd: 1 }, '');
+    const onPop = () => { if (dirty() && !confirm('還沒按「更新」，確定離開？剛剛改的不會存。')) { history.pushState({ ntcEd: 1 }, ''); return; } teardown(); };
+    window.addEventListener('popstate', onPop);
+    const teardown = () => { window.removeEventListener('popstate', onPop); box.remove(); document.body.classList.remove('ed-open'); };
+    const shut = () => { teardown(); if (history.state?.ntcEd) history.back(); };
+    q1('.ed-top button.ed-x').onclick = () => { if (dirty() && !confirm('還沒按「更新」，確定離開？剛剛改的不會存。')) return; shut(); };
+
+    // --- 商品圖片
+    const paintPhs = () => {
+      q1('#ed-phs').innerHTML = st.photos.map((u, i) => `<button type="button" class="ph" data-i="${i}" aria-label="第 ${i + 1} 張照片"><img src="${esc(asset(u))}" alt="">${i ? '' : '<span class="cv">封面</span>'}</button>`).join('')
+        + (st.photos.length < 9 ? '<label class="addph"><b>＋</b>加入照片<input type="file" accept="image/*" multiple hidden></label>' : '');
+      box.querySelectorAll('#ed-phs .ph').forEach((b) => (b.onclick = () => {
+        const i = +b.dataset.i;
+        const { el, close } = NTC.sheet(`<h2>第 ${i + 1} 張照片</h2><img src="${esc(asset(st.photos[i]))}" alt="" style="display:block;width:100%;max-height:44vh;object-fit:contain;border-radius:14px;background:#f3e4db;margin:0 0 12px">
+          <div class="grid2" style="gap:8px">${i ? '<button type="button" class="btn ghost" data-a="cover">設為封面</button><button type="button" class="btn ghost" data-a="left">往前移</button>' : ''}${i < st.photos.length - 1 ? '<button type="button" class="btn ghost" data-a="right">往後移</button>' : ''}<button type="button" class="btn ghost" data-a="del" style="color:var(--red)">刪除這張</button></div>`);
+        el.querySelectorAll('[data-a]').forEach((a) => (a.onclick = () => {
+          const p = st.photos; const k = a.dataset.a;
+          if (k === 'cover') p.unshift(p.splice(i, 1)[0]); if (k === 'left') [p[i - 1], p[i]] = [p[i], p[i - 1]]; if (k === 'right') [p[i + 1], p[i]] = [p[i], p[i + 1]]; if (k === 'del') p.splice(i, 1);
+          close(); paintPhs();
+        }));
+      }));
+      const fi = box.querySelector('#ed-phs input[type=file]');
+      if (fi) fi.onchange = async (e) => {
+        const files = [...e.target.files].slice(0, 9 - st.photos.length); e.target.value = ''; if (!files.length) return;
+        try { for (let i = 0; i < files.length; i++) { NTC.loading(true, files.length > 1 ? `上傳照片 ${i + 1}／${files.length}…` : '上傳照片…'); st.photos.push(await uploadPhoto(files[i], 1200)); paintPhs(); } }
+        catch (err) { NTC.toast(err.message || '照片上傳失敗', 3500); } finally { NTC.loading(false); paintPhs(); }
+      };
+    };
+    // --- 分類
+    const paintGs = () => {
+      q1('#ed-gs').innerHTML = groupsOf().map((g) => `<button type="button" data-g="${esc(g.id)}" class="${st.groups.includes(g.id) ? 'on' : ''}" aria-pressed="${st.groups.includes(g.id)}">${esc(g.name)}</button>`).join('')
+        + '<button type="button" class="add" id="ed-gnew">＋ 新增分類</button>';
+      box.querySelectorAll('#ed-gs [data-g]').forEach((b) => (b.onclick = () => { const g = b.dataset.g; st.groups = st.groups.includes(g) ? st.groups.filter((y) => y !== g) : [...st.groups, g]; paintGs(); }));
+      q1('#ed-gnew').onclick = async () => {
+        const name = (prompt('新分類的名稱（最多 12 個字），例如：中國風') || '').trim().slice(0, 12); if (!name) return;
+        if (groupsOf().some((g) => g.name === name)) { const g = groupsOf().find((y) => y.name === name); if (!st.groups.includes(g.id)) st.groups.push(g.id); return paintGs(); }
+        const g = { id: `g${Date.now().toString(36)}`, name };
+        NTC.loading(true, '新增分類…');
+        try { settings = (await NTC.api('/admin/settings', { method: 'PUT', body: { cookie: { ...settings.cookie, groups: [...groupsOf(), g] } } })).settings; st.groups.push(g.id); paintGs(); NTC.toast(`已新增分類「${name}」`); }
+        catch (e) { NTC.toast(e.message, 3500); } finally { NTC.loading(false); }
+      };
+    };
+    // --- 選項（每一片）
+    const optRow = (o, i) => { const tags = [o.soldOut ? '售完' : '', o.textLabel ? `客人要填：${o.textLabel}${o.textOptional ? '（選填）' : ''}` : ''].filter(Boolean).join('・');
+      return `<div class="eo${o.active ? '' : ' off'}" data-i="${i}">
+        <label class="o-ph${o.photo ? ' has' : ''}" aria-label="選項照片">${o.photo ? `<img src="${esc(asset(o.photo))}" alt="" loading="lazy">` : '＋照片'}<input type="file" accept="image/*" hidden></label>
+        <div class="o-mid"><div class="o-line"><input class="o-name" maxlength="40" placeholder="名稱，例如：豬爸爸" value="${esc(o.name || '')}" aria-label="選項名稱"><button type="button" class="o-del" aria-label="刪除這個選項"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg></button></div>
+          <div class="o-line"><span>NT$</span><input class="o-price" type="number" inputmode="numeric" min="1" placeholder="價格" value="${esc(o.price || '')}" aria-label="價格"><button type="button" class="o-more" aria-label="更多設定">⋯</button></div>
+          ${tags ? `<div class="o-tags">${esc(tags)}</div>` : ''}</div>
+        <label class="tg o-on">上架<input type="checkbox" ${o.active ? 'checked' : ''}></label></div>`; };
+    const paintOpts = () => {
+      q1('#ed-opts').innerHTML = st.opts.map(optRow).join('') || '<p class="note" style="margin:4px 0 0">還沒有選項。按「＋ 新增選項」加第一片。</p>';
+      const on = st.opts.filter((o) => o.active).length;
+      q1('#ed-cnt').textContent = st.opts.length ? `${st.opts.length} 款・${on} 款上架` : '';
+      box.querySelectorAll('#ed-opts .eo').forEach((r) => { const i = +r.dataset.i; const o = st.opts[i];
+        r.querySelector('.o-name').oninput = (e) => { o.name = e.target.value; r.classList.remove('bad'); };
+        r.querySelector('.o-price').oninput = (e) => { o.price = e.target.value === '' ? '' : +e.target.value; o.priceAuto = false; r.classList.remove('bad'); };
+        r.querySelector('.o-on input').onchange = (e) => { o.active = e.target.checked; r.classList.toggle('off', !o.active); q1('#ed-cnt').textContent = `${st.opts.length} 款・${st.opts.filter((y) => y.active).length} 款上架`; paintBar(); };
+        r.querySelector('.o-ph input').onchange = async (e) => { const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+          NTC.loading(true, '上傳照片…'); try { o.photo = await uploadPhoto(f); paintOpts(); } catch (err) { NTC.toast(err.message || '照片上傳失敗', 3500); } finally { NTC.loading(false); } };
+        r.querySelector('.o-more').onclick = () => optMore(i);
+        r.querySelector('.o-del').onclick = () => delOpt(i);
+      });
+      paintBar();
+    };
+    const optMore = (i) => {
+      const o = st.opts[i];
+      const { el, close } = NTC.sheet(`<h2>${esc(o.name || '這個選項')}</h2>
+        <label class="tg red" style="display:flex;margin:4px 0 14px">售完（客人看得到，但不能買）<span class="sp"></span><input type="checkbox" id="m-sold" ${o.soldOut ? 'checked' : ''}></label>
+        ${askHtml(o)}
+        <div class="grid2" style="gap:8px"><button type="button" class="btn ghost small" id="m-up" ${i ? '' : 'disabled'}>往前移</button><button type="button" class="btn ghost small" id="m-dn" ${i < st.opts.length - 1 ? '' : 'disabled'}>往後移</button></div>
+        <button type="button" class="btn ghost block small" id="m-dup" style="margin-top:8px">複製一個一樣的選項</button>
+        <button type="button" class="btn ghost block small" id="m-del" style="margin-top:8px;color:var(--red)">刪除這個選項</button>
+        <button type="button" class="btn block" id="m-ok" style="margin-top:14px">完成</button>`);
+      askWire(el);
+      const keep = () => Object.assign(o, { soldOut: el.querySelector('#m-sold').checked, ...askRead(el) });
+      el.querySelector('#m-ok').onclick = () => { keep(); close(); paintOpts(); };
+      el.querySelector('#m-up').onclick = () => { keep(); [st.opts[i - 1], st.opts[i]] = [st.opts[i], st.opts[i - 1]]; close(); paintOpts(); };
+      el.querySelector('#m-dn').onclick = () => { keep(); [st.opts[i + 1], st.opts[i]] = [st.opts[i], st.opts[i + 1]]; close(); paintOpts(); };
+      el.querySelector('#m-dup').onclick = () => { keep(); const { id, key, ...rest } = o; st.opts.splice(i + 1, 0, { ...rest, key: `n${Math.random().toString(36).slice(2)}`, name: `${o.name || ''}（複製）`.slice(0, 40) }); close(); paintOpts(); };
+      el.querySelector('#m-del').onclick = () => { if (delOpt(i)) close(); };
+    };
+    const delOpt = (i) => { const o = st.opts[i]; if (o.id && !confirm(`刪除「${o.name}」？按「更新」後才會真的刪掉。（只想暫時不賣，關掉「上架」就好）`)) return false; if (o.id) st.removed.push(o.id); st.opts.splice(i, 1); paintOpts(); return true; };
+    q1('#ed-add').onclick = () => {
+      st.opts.push({ key: `n${Math.random().toString(36).slice(2)}`, name: '', price: st.opts.length ? st.opts[st.opts.length - 1].price : '', priceAuto: true, unit: '片', photo: '', active: true, soldOut: false });
+      paintOpts(); const rows = box.querySelectorAll('#ed-opts .eo'); const last = rows[rows.length - 1]; last.scrollIntoView({ block: 'center', behavior: 'smooth' }); last.querySelector('.o-name').focus({ preventScroll: true });
+    };
+    q1('#ed-allprice').onclick = () => {
+      if (!st.opts.length) return NTC.toast('還沒有選項');
+      const v = Math.round(+prompt(`${st.opts.length} 款全部改成多少錢？（之後還是可以一片一片改）`, st.opts[0].price || '')); if (!(v > 0)) return;
+      st.opts.forEach((o) => { o.price = v; }); paintOpts(); NTC.toast(`${st.opts.length} 款都改成 ${money(v)}，按「更新」才會存`);
+    };
+    box.querySelectorAll('[data-all]').forEach((b) => (b.onclick = () => { const on = b.dataset.all === 'on'; st.opts.forEach((o) => { o.active = on; }); paintOpts(); }));
+
+    // --- 下面兩顆鈕：新商品＝先不上架／儲存並上架；舊商品＝上架或下架／更新
+    function paintBar() {
+      const anyOn = st.opts.some((o) => o.active);
+      if (isNew) { q1('#ed-b1').textContent = '儲存，先不上架'; q1('#ed-b2').textContent = '儲存並上架'; }
+      else { q1('#ed-b1').textContent = anyOn ? '下架' : '上架'; q1('#ed-b2').textContent = '更新'; }
+    }
+    const save = async (mode) => {
+      collect();
+      if (!st.name) { NTC.toast('請填商品名稱'); q1('#ed-name').focus(); return; }
+      if (!st.groups.length) { NTC.toast('請選至少一個分類'); q1('#ed-gs').scrollIntoView({ block: 'center', behavior: 'smooth' }); return; }
+      st.opts = st.opts.filter((o) => o.id || String(o.name || '').trim() || o.photo || (+o.price > 0 && !o.priceAuto)); // a new row left empty (its price was only copied from the row above) is dropped
+      paintOpts();
+      const badAt = st.opts.findIndex((o) => !String(o.name || '').trim() || !(+o.price > 0));
+      if (badAt >= 0) {
+        const r = box.querySelectorAll('#ed-opts .eo')[badAt]; r.classList.add('bad'); r.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        NTC.toast(!String(st.opts[badAt].name || '').trim() ? `第 ${badAt + 1} 個選項請填名稱` : `「${st.opts[badAt].name}」請填價格`, 3000); return;
+      }
+      if (mode) st.opts.forEach((o) => { o.active = mode === 'on'; });
+      const stamp = Date.now().toString(36);
+      st.opts.forEach((o, i) => { if (!o.id) o.id = `cookie-${sid}-${stamp}${i.toString(36)}`.slice(0, 40); });
+      const body = {
+        series: { name: st.name, desc: st.desc, lines: st.lines, photos: st.photos, photo: st.photos[0] || '', groups: st.groups, ...(String(st.sort).trim() !== '' ? { sort: +st.sort } : {}) },
+        products: st.opts.map(({ key, priceAuto, ...o }, i) => ({ ...o, name: String(o.name).trim(), price: +o.price, unit: o.unit || '片', sort: (i + 1) * 10, active: !!o.active, soldOut: !!o.soldOut })),
+        remove: st.removed,
+      };
+      NTC.loading(true, '儲存中…');
+      try {
+        const r = await NTC.api(`/admin/cookie-series/${sid}`, { method: 'PUT', body });
+        settings = r.settings; products = r.products; shut(); renderProducts();
+        const on = st.opts.filter((o) => o.active).length;
+        NTC.toast(on ? `已${isNew ? '儲存並上架' : '更新'}「${st.name}」（${on} 款上架）` : st.opts.length ? `已儲存「${st.name}」，目前沒有上架，客人看不到` : `已儲存「${st.name}」，還沒有選項，客人暫時看不到`, 3500);
+      } catch (e) { NTC.toast(e.message, 4000); } finally { NTC.loading(false); }
+    };
+    q1('#ed-b1').onclick = () => {
+      if (isNew) return save('off');
+      const anyOn = st.opts.some((o) => o.active);
+      if (!st.opts.length) return NTC.toast('還沒有選項，先按「＋ 新增選項」');
+      if (confirm(anyOn ? `把「${st.name || '這個商品'}」整個下架？客人就看不到了。` : `把「${st.name || '這個商品'}」的 ${st.opts.length} 款全部上架？`)) save(anyOn ? 'off' : 'on');
+    };
+    q1('#ed-b2').onclick = () => save(isNew ? 'on' : undefined);
+    const del = q1('#ed-del');
+    if (del) del.onclick = async () => {
+      if (!confirm(`確定刪除「${x.name}」？\n網站上就看不到這個商品（裡面 ${st.opts.length} 款的資料會留在下面「系列已刪除」，之後可以搬回來）。只想暫時不賣的話，按「下架」就好。`)) return;
+      NTC.loading(true, '刪除中…');
+      try { settings = (await NTC.api('/admin/settings', { method: 'PUT', body: { cookie: { ...settings.cookie, series: settings.cookie.series.filter((y) => y.id !== x.id) } } })).settings; shut(); renderProducts(); NTC.toast('已刪除'); }
+      catch (e) { NTC.toast(e.message, 3500); } finally { NTC.loading(false); }
+    };
+    paintPhs(); paintGs(); paintOpts();
+    if (isNew) setTimeout(() => q1('#ed-name').focus(), 50);
   }
   const CAT_TABS = [['canele', '可麗露'], ['meringue', '馬林糖'], ['cookie', '造型餅乾']];
   function renderProducts() {
@@ -440,41 +748,26 @@
       <button class="btn ghost small add" data-c="${c}" style="margin-top:10px">＋ 新增${c === 'canele' ? '口味' : '商品'}</button></section>`;
     app.innerHTML = `<div class="seg">${CAT_TABS.map(([c, t]) => `<button type="button" data-cat="${c}" class="${prodCat === c ? 'on' : ''}">${t}<small>${cnt(c)}</small></button>`).join('')}</div>`
       + (prodCat === 'cookie' ? cookiePanels() : simple(prodCat))
-      + `<p class="note">「上架」關掉＝客人看不到；「售完」打開＝看得到但不能買。點「編輯」可以改名稱、價格、照片。${prodCat === 'cookie' ? '' : '改名字或價格後，那張卡會改用文字顯示（設計圖上的字是印在圖裡的）。'}</p>`;
+      + (prodCat === 'cookie' ? '' : '<p class="note">「上架」關掉＝客人看不到；「售完」打開＝看得到但不能買。點「編輯」可以改名稱、價格、照片。改名字或價格後，那張卡會改用文字顯示（設計圖上的字是印在圖裡的）。</p>');
     app.querySelectorAll('[data-cat]').forEach((b) => (b.onclick = () => { if (prodCat === b.dataset.cat) return; prodCat = b.dataset.cat; renderProducts(); window.scrollTo(0, 0); }));
-    app.querySelectorAll('[data-fold]').forEach((b) => (b.onclick = () => { const id = b.dataset.fold; openSeries.has(id) ? openSeries.delete(id) : openSeries.add(id); const y = window.scrollY; renderProducts(); window.scrollTo(0, y); }));
-    app.querySelectorAll('[data-bulk]').forEach((b) => (b.onclick = async () => {
-      const sec = b.closest('[data-sid]'); const sid = sec.dataset.sid; const name = sec.dataset.sname; const on = b.dataset.bulk === 'on';
-      const list = products.filter((p) => p.category === 'cookie' && p.series === sid && !!p.active !== on);
-      if (!list.length) return NTC.toast(on ? '這個系列已經全部上架' : '這個系列已經全部下架');
-      if (!confirm(on ? `把「${name}」的 ${list.length} 款餅乾全部上架？\n客人馬上看得到、可以下單（請先確認價格）。` : `把「${name}」的 ${list.length} 款餅乾全部下架？\n客人就看不到這個系列。`)) return;
-      NTC.loading(true, on ? '上架中…' : '下架中…');
-      try { for (let i = 0; i < list.length; i += 6) await Promise.all(list.slice(i, i + 6).map((p) => NTC.api(`/admin/products/${p.id}`, { method: 'PUT', body: { ...p, active: on } }).then((r) => Object.assign(p, r.product)))); NTC.toast(on ? `已上架 ${list.length} 款，客人看得到「${name}」了` : `已下架 ${list.length} 款`); }
-      catch (e) { NTC.toast(e.message, 3500); } finally { NTC.loading(false); renderProducts(); }
-    }));
-    app.querySelectorAll('.s-edit').forEach((b) => (b.onclick = () => editSeries(settings.cookie.series.find((y) => y.id === b.closest('[data-sid]').dataset.sid))));
-    const sn = $('#s-new'); if (sn) sn.onclick = () => editSeries(null);
+    if (prodCat === 'cookie') wireCookies();
     app.querySelectorAll('.prod[data-id] input').forEach((i) => (i.onchange = async () => {
       const p = products.find((x) => x.id === i.closest('.prod').dataset.id);
-      try { const r = await NTC.api(`/admin/products/${p.id}`, { method: 'PUT', body: { ...p, [i.dataset.k]: i.checked } }); Object.assign(p, r.product); NTC.toast(`${p.name}：${i.dataset.k === 'active' ? (p.active ? '已上架' : '已下架') : (p.soldOut ? '標示售完' : '恢復販售')}`); if (p.category === 'cookie' && i.dataset.k === 'active') { const y = window.scrollY; renderProducts(); window.scrollTo(0, y); } }
+      try { const r = await NTC.api(`/admin/products/${p.id}`, { method: 'PUT', body: { ...p, [i.dataset.k]: i.checked } }); Object.assign(p, r.product); NTC.toast(`${p.name}：${i.dataset.k === 'active' ? (p.active ? '已上架' : '已下架') : (p.soldOut ? '標示售完' : '恢復販售')}`); if (p.category === 'cookie') { const y = window.scrollY; renderProducts(); window.scrollTo(0, y); } }
       catch (e) { i.checked = !i.checked; NTC.toast(e.message); }
     }));
     app.querySelectorAll('.edit').forEach((b) => (b.onclick = () => editProduct(products.find((x) => x.id === b.closest('.prod').dataset.id))));
     app.querySelectorAll('.add').forEach((b) => (b.onclick = () => editProduct({ category: b.dataset.c, series: b.dataset.s, unit: b.dataset.c === 'canele' ? '盒' : b.dataset.c === 'cookie' ? '片' : '罐', active: false, soldOut: false, sort: 100, isNew: true })));
   }
-  async function shrink(file) {
-    const img = await new Promise((ok, ko) => { const i = new Image(); i.onload = () => ok(i); i.onerror = ko; i.src = URL.createObjectURL(file); });
-    const scale = Math.min(1, 900 / Math.max(img.width, img.height));
+  async function shrink(file, max = 900) {
+    const img = await new Promise((ok, ko) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ko(new Error('這張照片讀不到，請換一張')); i.src = URL.createObjectURL(file); });
+    const scale = Math.min(1, max / Math.max(img.width, img.height));
     const c = document.createElement('canvas'); c.width = Math.round(img.width * scale); c.height = Math.round(img.height * scale);
     c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
     for (const qv of [0.85, 0.75, 0.62, 0.5]) { const d = c.toDataURL('image/webp', qv); if (d.startsWith('data:image/webp') && d.length < 370000) return d; const j = c.toDataURL('image/jpeg', qv); if (j.length < 370000) return j; }
     throw new Error('圖片太大');
   }
-  // what a cookie asks the customer for, read from its stored label (e.g. 「寶寶名字＋日期」, 「日期」, 「月份文字」)
-  const askOf = (p) => { const tl = p.textLabel || ''; const dateOn = /日期/.test(tl); const nameLabel = tl.replace(/[＋+]\s*日期|日期\s*[＋+]|^日期$/, '').trim();
-    return { dateOn, nameOn: !!nameLabel, nameLabel, nameMax: nameLabel ? Math.max(1, (p.textMax || 12) - (dateOn ? 10 : 0)) : 6 }; };
   function editProduct(p) {
-    const T = askOf(p);
     const { el, close } = NTC.sheet(`
       <h2>${p.isNew ? '新增' : '編輯'}・${p.category === 'canele' ? '可麗露口味' : p.category === 'cookie' ? '造型餅乾' : '馬林糖'}</h2>
       <div class="row" style="margin:6px 0 12px"><img id="e-img" src="${esc(asset(p.photo || p.card || 'assets/favicon.png'))}" style="width:96px;height:96px;border-radius:14px;object-fit:cover" alt="">
@@ -483,22 +776,14 @@
       ${p.category === 'cookie' ? `<label class="field"><span>系列</span><select id="e-series">${(settings?.cookie?.series || []).map((x) => `<option value="${esc(x.id)}" ${x.id === p.series ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select></label>` : ''}
       <div class="grid2"><label class="field"><span>${p.category === 'canele' ? '單一口味禮盒價格（每盒 6 顆）' : p.category === 'cookie' ? '每片價格' : '價格'}</span><input id="e-price" type="number" inputmode="numeric" value="${esc(p.price || '')}"></label>
         <label class="field"><span>單位</span><input id="e-unit" value="${esc(p.unit || '')}" maxlength="4"></label></div>
-      ${p.category === 'cookie' ? `<div class="askbox">
-          <p class="askt">下單時要客人填的資料</p>
-          <label class="tg">要客人填名字（寫在餅乾上的字）<span class="sp"></span><input type="checkbox" id="e-tn" ${T.nameOn ? 'checked' : ''}></label>
-          <div class="grid2" id="e-tnbox" ${T.nameOn ? '' : 'hidden'}><label class="field"><span>欄位名稱</span><input id="e-tl" value="${esc(T.nameLabel || '寶寶名字')}" maxlength="18"></label>
-            <label class="field"><span>最多幾個字</span><input id="e-tm" type="number" min="1" max="30" value="${T.nameMax}"></label></div>
-          <label class="tg">要客人選日期（用日曆選）<span class="sp"></span><input type="checkbox" id="e-td" ${T.dateOn ? 'checked' : ''}></label>
-          <label class="tg" id="e-toptrow" ${T.nameOn || T.dateOn ? '' : 'hidden'}>客人可以不填（選填）<span class="sp"></span><input type="checkbox" id="e-topt" ${p.textOptional ? 'checked' : ''}></label>
-          <p class="note" style="margin:6px 0 0">兩個都沒開＝這片不用填，直接加入購物車。有開的欄位客人一定要填（除非勾「可以不填」）。日期會寫成民國格式，例如 115.03.23。</p></div>`
+      ${p.category === 'cookie' ? askHtml(p)
     : `<label class="field"><span>說明（選填，顯示在加入購物車的視窗）</span><textarea id="e-desc" maxlength="300">${esc(p.desc || '')}</textarea></label>`}
       <label class="field"><span>排序（數字小的排前面）</span><input id="e-sort" type="number" value="${esc(p.sort ?? 100)}"></label>
       <div class="row" style="gap:16px;margin-bottom:14px"><label class="tg">上架<input type="checkbox" id="e-active" ${p.active ? 'checked' : ''}></label><label class="tg red">售完<input type="checkbox" id="e-sold" ${p.soldOut ? 'checked' : ''}></label></div>
       <button class="btn block" id="e-save">儲存</button>
       ${p.isNew ? '' : '<button class="btn ghost block" id="e-del" style="margin-top:10px;color:var(--red)">刪除這個商品</button>'}`);
     let photo = p.photo;
-    if (p.category === 'cookie') { const sync = () => { const n = el.querySelector('#e-tn').checked; const d = el.querySelector('#e-td').checked; el.querySelector('#e-tnbox').hidden = !n; el.querySelector('#e-toptrow').hidden = !(n || d); };
-      el.querySelector('#e-tn').onchange = sync; el.querySelector('#e-td').onchange = sync; }
+    if (p.category === 'cookie') askWire(el);
     el.querySelector('#e-file').onchange = async (e) => {
       const f = e.target.files[0]; if (!f) return;
       NTC.loading(true, '上傳照片…');
@@ -510,14 +795,12 @@
       const ser = el.querySelector('#e-series')?.value;
       const id = p.id || (p.category === 'cookie' ? `cookie-${ser}-${Date.now().toString(36)}` : `${p.category}-${Date.now().toString(36)}`);
       const body = { ...p, id, name, price: +el.querySelector('#e-price').value, unit: el.querySelector('#e-unit').value.trim(), desc: el.querySelector('#e-desc')?.value.trim() ?? p.desc,
-        ...(p.category === 'cookie' ? (() => { const nOn = el.querySelector('#e-tn').checked; const dOn = el.querySelector('#e-td').checked; const lbl = el.querySelector('#e-tl').value.trim().replace(/日期/g, '') || '寶寶名字';
-          const nMax = Math.min(30, Math.max(1, +el.querySelector('#e-tm').value || 6));
-          return { series: ser, textLabel: nOn && dOn ? `${lbl}＋日期` : nOn ? lbl : dOn ? '日期' : '', textMax: (nOn ? nMax : 0) + (dOn ? 10 : 0) || 12, textOptional: (nOn || dOn) && el.querySelector('#e-topt').checked }; })() : {}),
+        ...(p.category === 'cookie' ? { series: ser, ...askRead(el) } : {}),
         sort: +el.querySelector('#e-sort').value, active: el.querySelector('#e-active').checked, soldOut: el.querySelector('#e-sold').checked, photo };
       if (photo !== p.photo) body.card = null; // a new photo replaces the designed card
       delete body.isNew;
       NTC.loading(true, '儲存中…');
-      try { const r = await NTC.api(`/admin/products/${id}`, { method: 'PUT', body }); const i = products.findIndex((x) => x.id === id); if (i >= 0) products[i] = r.product; else products.push(r.product); if (r.product.category === 'cookie') openSeries.add(r.product.series); const y = window.scrollY; close(); renderProducts(); window.scrollTo(0, y); NTC.toast('已儲存'); }
+      try { const r = await NTC.api(`/admin/products/${id}`, { method: 'PUT', body }); const i = products.findIndex((x) => x.id === id); if (i >= 0) products[i] = r.product; else products.push(r.product); const y = window.scrollY; close(); renderProducts(); window.scrollTo(0, y); NTC.toast('已儲存'); }
       catch (e) { NTC.toast(e.message, 3500); } finally { NTC.loading(false); }
     };
     const d = el.querySelector('#e-del');

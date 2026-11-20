@@ -5,5 +5,5 @@ window.NTC_CONFIG = {
   lineId: '@ntcookie',
   base: '',
   home: 'index.html',
-  version: '2026-11-20 h', // 每次上版改這裡，後台最下面會顯示
+  version: '2026-11-20 i', // 每次上版改這裡，後台最下面會顯示
 };

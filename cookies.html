@@ -15,8 +15,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
 <link rel="preload" as="image" href="assets/cookies/ui/header.webp" type="image/webp">
-<link rel="stylesheet" href="css/app.css?v=1120h">
-<link rel="stylesheet" href="css/cookie-selection.css?v=1120h">
+<link rel="stylesheet" href="css/app.css?v=1120i">
+<link rel="stylesheet" href="css/cookie-selection.css?v=1120i">
 </head>
 <body class="ckd-body">
 <main class="ckd" id="page">
@@ -32,14 +32,18 @@
 </main>
 <div class="ckd-bar" id="bar" hidden></div>
 <p class="sr-only" id="cookie-selection-status" role="status"></p>
-<script src="js/config.js?v=1120h"></script>
-<script src="js/app.js?v=1120h"></script>
-<script src="js/shop.js?v=1120h"></script>
+<script src="js/config.js?v=1120i"></script>
+<script src="js/app.js?v=1120i"></script>
+<script src="js/shop.js?v=1120i"></script>
 <script>
 (function () {
   const { $, esc, money, asset } = NTC;
   const q = new URLSearchParams(location.search);
-  const GROUPS = { character: '卡通・收涎造型餅乾', birthday: '慶生・抓週造型餅乾' };
+  // 分類是店主在後台自己建的（cookie.groups）；character、birthday 是首頁兩張大卡片連過來的
+  const DEF_GROUPS = [{ id: 'character', name: '卡通・收涎' }, { id: 'birthday', name: '慶生・抓週' }];
+  const groupsAll = () => (cat.settings.cookie?.groups?.length ? cat.settings.cookie.groups : DEF_GROUPS);
+  const titleOf = (g) => (/餅乾$/.test(g.name) ? g.name : `${g.name}造型餅乾`);
+  let gSel = q.get('g');
   const app = $('#app'); const bar = $('#bar');
   $('#back').onclick = NTC.back;
   let cat; let pick = {}; // productId -> qty chosen on this page (kept while switching series)
@@ -64,20 +68,47 @@
     const series = cat.settings.cookie?.series || [];
     const se = q.get('s') && series.find((x) => x.id === q.get('s'));
     if (se) return renderSeries(se);
-    const g = GROUPS[q.get('g')] ? q.get('g') : 'character';
-    const list = series.filter((x) => (x.groups || []).includes(g));
-    if (list.length === 1) return renderSeries(list[0]);
-    document.title = `${GROUPS[g]}｜N.T Cookie × N.T Canelé`; setPill(GROUPS[g]);
+    const groups = groupsAll(); const inG = (x, id) => (x.groups || []).includes(id);
+    const tabs = groups.filter((x) => series.some((y) => inG(y, x.id))); // categories that have something to show
+    const gObj = groups.find((x) => x.id === gSel) || tabs[0] || groups[0];
+    const g = gObj.id;
+    const list = series.filter((x) => inG(x, g));
+    if (list.length === 1 && tabs.length < 2) return renderSeries(list[0]);
+    document.title = `${titleOf(gObj)}｜N.T Cookie × N.T Canelé`; setPill(titleOf(gObj));
     bar.hidden = true; document.body.classList.remove('ckd-has-bar');
     if (!list.length) {
-      app.innerHTML = `<section class="ckd-banner empty"><div class="tx"><h2 style="--n:9">線上選購準備中</h2><div class="hr"><span>♡</span></div>
+      app.innerHTML = `${tabsHtml(tabs, g)}<section class="ckd-banner empty"><div class="tx"><h2 style="--n:9">線上選購準備中</h2><div class="hr"><span>♡</span></div>
           <p>卡通・收涎・慶生・抓週・婚禮小物</p><p>都可以客製，歡迎詢問報價</p></div></section>
         <a class="ckd-cta" href="custom.html${g === 'birthday' ? '?for=慶生' : ''}">客製詢問（留言＋上傳參考照片）</a>
         <a class="ckd-cta ghost" href="https://www.instagram.com/nt.cookie/">看作品集（Instagram）</a>${backBtn}`;
     } else {
-      return renderGroup(list, g);
+      return renderGroup(list, g, tabs);
     }
-    $('#back2').onclick = NTC.back;
+    $('#back2').onclick = NTC.back; wireTabs();
+  }
+  // 分類分頁：首頁只有兩張造型餅乾大卡片，其他分類（例如中國風）從這裡切換
+  const tabsHtml = (tabs, g) => (tabs.length < 2 ? '' : `<nav class="ckd-tabs" aria-label="造型餅乾分類">${tabs.map((x) => `<a href="cookies.html?g=${encodeURIComponent(x.id)}" data-g="${esc(x.id)}" class="${x.id === g ? 'on' : ''}"${x.id === g ? ' aria-current="page"' : ''}>${esc(x.name)}</a>`).join('')}</nav>`);
+  function wireTabs() {
+    app.querySelectorAll('.ckd-tabs a').forEach((a) => (a.onclick = (e) => {
+      if (e.metaKey || e.ctrlKey || e.shiftKey) return; e.preventDefault();
+      if (a.dataset.g === gSel) return;
+      gSel = a.dataset.g; openSid = null; history.replaceState(history.state, '', `cookies.html?g=${encodeURIComponent(gSel)}`);
+      render(); window.scrollTo({ top: 0 });
+    }));
+    const on = app.querySelector('.ckd-tabs a.on'); if (on) on.scrollIntoView({ inline: 'center', block: 'nearest' });
+  }
+  // 商品照片（後台可以放好幾張，可以左右滑）＋商品描述
+  const infoHtml = (x) => {
+    const ph = x.photos?.length > 1 ? x.photos : [];
+    if (!ph.length && !x.desc) return '';
+    return `<div class="ckd-info">${ph.length ? `<div class="ckd-gal" role="list">${ph.map((u, i) => `<button type="button" role="listitem" data-src="${esc(asset(u))}" aria-label="放大第 ${i + 1} 張照片"><img src="${esc(asset(u))}" alt="${esc(x.name)} 照片 ${i + 1}" loading="lazy"></button>`).join('')}</div>` : ''}${x.desc ? `<p class="ckd-desc">${esc(x.desc).replace(/\n/g, '<br>')}</p>` : ''}</div>`;
+  };
+  function wireInfo(root) {
+    root.querySelectorAll('.ckd-gal button').forEach((b) => (b.onclick = () => {
+      const v = document.createElement('div'); v.className = 'ckd-view'; v.setAttribute('role', 'dialog'); v.setAttribute('aria-label', '照片');
+      v.innerHTML = `<img src="${b.dataset.src}" alt=""><button type="button" aria-label="關閉">✕</button>`;
+      v.onclick = () => v.remove(); document.body.appendChild(v);
+    }));
   }
 
   function gridHtml(ps) {
@@ -105,9 +136,9 @@
   }
 
   // 卡通・收涎 / 慶生: every series is a bar; tap one to open its cookies right below (only one open at a time)
-  function renderGroup(list, g) {
+  function renderGroup(list, g, tabs = []) {
     groupPs = cat.products.filter((p) => list.some((x) => x.id === p.series));
-    app.innerHTML = `${minimumRule()}<div class="ckd-acc-list">${list.map((x) => {
+    app.innerHTML = `${tabsHtml(tabs, g)}${minimumRule()}<div class="ckd-acc-list">${list.map((x) => {
       const ps = cat.products.filter((p) => p.series === x.id); const lo = ps.length ? Math.min(...ps.map((p) => p.price)) : 0;
       return `<section class="ckd-acc" data-sid="${esc(x.id)}">
         <button type="button" class="ckd-acc-head" aria-expanded="false">
@@ -116,12 +147,12 @@
           <span class="cnt" hidden></span><span class="chev" aria-hidden="true"></span></button>
         <div class="ckd-acc-body" hidden></div></section>`;
     }).join('')}</div>${shippingNote()}<a class="ckd-custom" href="custom.html${g === 'birthday' ? '?for=慶生' : ''}">想要其他圖案？<b>客製詢問 ›</b></a>${backBtn}`;
-    $('#back2').onclick = NTC.back;
+    $('#back2').onclick = NTC.back; wireTabs();
     const open = (sid, scroll) => {
       app.querySelectorAll('.ckd-acc').forEach((sec) => {
         const on = sec.dataset.sid === sid; const body = sec.querySelector('.ckd-acc-body');
         sec.classList.toggle('open', on); sec.querySelector('.ckd-acc-head').setAttribute('aria-expanded', on); body.hidden = !on;
-        if (on && !body.childElementCount) { const ps = cat.products.filter((p) => p.series === sid); body.innerHTML = gridHtml(ps); wireCards(body, ps, groupPs); }
+        if (on && !body.childElementCount) { const ps = cat.products.filter((p) => p.series === sid); body.innerHTML = infoHtml(list.find((x) => x.id === sid) || {}) + gridHtml(ps); wireInfo(body); wireCards(body, ps, groupPs); }
         if (!on) body.innerHTML = '';
       });
       openSid = sid;
@@ -129,6 +160,7 @@
     };
     app.querySelectorAll('.ckd-acc-head').forEach((h) => (h.onclick = () => { const sid = h.closest('.ckd-acc').dataset.sid; open(openSid === sid ? null : sid, openSid !== sid); }));
     if (openSid && list.some((x) => x.id === openSid)) open(openSid, false);
+    else if (list.length === 1) open(list[0].id, false); // a category with a single product: open it right away
     document.body.classList.add('ckd-has-bar');
     paintBar(groupPs);
   }
@@ -139,11 +171,11 @@
     const off = ps.filter((p) => p.active === false).length;
     app.innerHTML = `${!se.active ? '<div class="ckd-adm">預覽：這個系列還沒有上架的餅乾，客人看不到這一頁。到後台把餅乾「上架」，客人就看得到。</div>'
       : off ? `<div class="ckd-adm">預覽：有 ${off} 款還沒上架（標「未上架」），客人看不到那幾款。</div>` : ''}
-      <section class="ckd-banner">${banner(se)}</section>
+      <section class="ckd-banner">${banner(se)}</section>${infoHtml(se)}
       <img class="ckd-sec" src="assets/cookies/ui/section.webp" alt="單片選購">
       ${minimumRule()}${gridHtml(ps)}
       ${shippingNote()}<a class="ckd-custom" href="custom.html">系列裡沒有想要的圖案？<b>客製詢問 ›</b></a>${backBtn}`;
-    $('#back2').onclick = NTC.back;
+    $('#back2').onclick = NTC.back; wireInfo(app);
     wireCards(app, ps, ps);
     document.body.classList.add('ckd-has-bar');
     paintBar(ps);

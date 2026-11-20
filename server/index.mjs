@@ -112,7 +112,9 @@ const DEFAULT_SETTINGS = {
   cookie: {
     minPieces: 6,
     shipping: { label: '黑貓宅配（造型餅乾）', tiers: [{ upTo: 8, fee: 130 }, { upTo: 999, fee: 170 }] },
-    series: [], // { id, name, lines: [說明], photo, groups: ['character'|'birthday'], active, sort }
+    // 分類（店主自己新增／改名／排序）。character、birthday 是首頁那兩張大卡片連過去的分類
+    groups: [{ id: 'character', name: '卡通・收涎' }, { id: 'birthday', name: '慶生・抓週' }],
+    series: [], // { id, name, desc, lines: [說明], photo（封面）, photos: [照片], groups: [分類 id], sort }
   },
   notice: '',
   // 購物須知（商店頁）：每一則平常照上面的設定自動寫好；店主可以改寫（over）、隱藏（off）、自己加（extra）
@@ -139,6 +141,41 @@ async function getSettings() {
 // 造型餅乾系列沒有自己的開關（SK 11-19）：系列裡只要有一款餅乾「上架」，客人就看得到這個系列；一款都沒上架＝客人看不到。
 // 管理員看得到全部系列（預覽、下測試單用）；回傳的 active＝這個系列現在客人看不看得到。
 const seriesOf = (s) => [...(s.cookie?.series || [])].sort((a, b) => (a.sort ?? 999) - (b.sort ?? 999));
+const cleanGroups = (list) => { const ids = new Set(); return (Array.isArray(list) ? list : []).slice(0, 12).map((g) => ({ id: str(g?.id, 20).toLowerCase().replace(/[^a-z0-9-]/g, ''), name: str(g?.name, 12) }))
+  .filter((g) => g.id && g.name && !ids.has(g.id) && ids.add(g.id)); };
+const cookieGroups = (s) => { const g = cleanGroups(s.cookie?.groups); return g.length ? g : DEFAULT_SETTINGS.cookie.groups; };
+const IMG_URL = /^(https:\/\/[^\s"'<>]+|assets\/[\w./-]+)$/; // an uploaded photo (/img/…) or one of the site's own pictures
+const cleanSeries = (x, i, groupIds) => {
+  const photos = [...new Set((Array.isArray(x.photos) ? x.photos : []).map((u) => str(u, 300)).filter((u) => IMG_URL.test(u)))].slice(0, 9);
+  const photo = str(x.photo, 300);
+  return {
+    id: str(x.id, 30).toLowerCase().replace(/[^a-z0-9-]/g, ''), name: str(x.name, 30),
+    desc: multiline(x.desc, 1000),
+    lines: (Array.isArray(x.lines) ? x.lines : []).map((l) => str(l, 40)).filter(Boolean).slice(0, 3),
+    photo: photos[0] || (IMG_URL.test(photo) ? photo : ''), photos,
+    groups: [...new Set((Array.isArray(x.groups) ? x.groups : []).filter((g) => groupIds.has(g)))],
+    sort: int(x.sort, (i + 1) * 10),
+  };
+};
+// one cookie (the 選項 of a series), shared by PUT /admin/products/:id and PUT /admin/cookie-series/:id
+function cleanProduct(b, old, settings) {
+  const id = str(b.id ?? old.id, 40).replace(/[^a-z0-9-]/gi, '');
+  if (!id) throw bad('商品代號不正確');
+  const p = { ...old, ...pick(b, PRODUCT_FIELDS), pk: 'PRODUCT', sk: id, id };
+  if (!['canele', 'meringue', 'cookie'].includes(p.category)) throw bad('分類不正確');
+  if (p.category === 'cookie') {
+    if (!(settings.cookie?.series || []).some((x) => x.id === p.series)) throw bad('請選擇這片餅乾屬於哪個系列');
+    p.textLabel = str(p.textLabel, 30) || undefined; p.textMax = p.textLabel ? Math.min(40, Math.max(1, int(p.textMax, 12))) : undefined;
+    p.textOptional = p.textLabel ? !!p.textOptional : undefined; // 選填：客人可以不填（不填就照圖上的字）
+    p.unit = str(p.unit, 4) || '片';
+  } else { delete p.series; delete p.textLabel; delete p.textMax; delete p.textOptional; }
+  p.name = str(p.name, 40); if (!p.name) throw bad('請填商品名稱');
+  p.price = int(p.price); if (!(p.price > 0)) throw bad(`「${p.name}」請填價格`);
+  p.photo = str(p.photo, 300) || undefined;
+  p.active = !!p.active; p.soldOut = !!p.soldOut; p.sort = int(p.sort, 999);
+  p.updatedAt = new Date().toISOString();
+  return p;
+}
 function visibleSeries(s, products, admin = false) {
   const live = new Set(products.filter((p) => p.category === 'cookie' && p.active).map((p) => p.series));
   return seriesOf(s).filter((x) => admin || live.has(x.id)).map((x) => ({ ...x, active: live.has(x.id) }));
@@ -163,7 +200,7 @@ function publicSettings(s, admin = false, products = null) {
       transfer: !!(open && s.payments?.transfer && bankReady),
     },
     canele: s.canele, notice: s.notice, shopNotes: cleanNotes(s.shopNotes), today: twDate(),
-    cookie: { minPieces: s.cookie.minPieces, shipping: s.cookie.shipping, series: products ? visibleSeries(s, products, admin) : [] },
+    cookie: { minPieces: s.cookie.minPieces, shipping: s.cookie.shipping, groups: cookieGroups(s), series: products ? visibleSeries(s, products, admin) : [] },
     preview: admin ? { closed: !!s.pauseOrders, testMode: !!s.testMode } : undefined, // 店家登入時：客人實際看到的狀態
   };
 }
@@ -1035,21 +1072,36 @@ async function route(event) {
         const b = parseBody(event);
         const id = seg[2].replace(/[^a-z0-9-]/gi, '').slice(0, 40);
         if (!id) throw bad('商品代號不正確');
-        const old = (await get('PRODUCT', id)) || {};
-        const p = { ...old, ...pick(b, PRODUCT_FIELDS), pk: 'PRODUCT', sk: id, id };
-        if (!['canele', 'meringue', 'cookie'].includes(p.category)) throw bad('分類不正確');
-        if (p.category === 'cookie') {
-          if (!(settings.cookie?.series || []).some((x) => x.id === p.series)) throw bad('請選擇這片餅乾屬於哪個系列');
-          p.textLabel = str(p.textLabel, 30) || undefined; p.textMax = p.textLabel ? Math.min(40, Math.max(1, int(p.textMax, 12))) : undefined;
-          p.textOptional = p.textLabel ? !!p.textOptional : undefined; // 選填：客人可以不填（不填就照圖上的字）
-          p.unit = str(p.unit, 4) || '片';
-        } else { delete p.series; delete p.textLabel; delete p.textMax; delete p.textOptional; }
-        p.name = str(p.name, 40); if (!p.name) throw bad('請填商品名稱');
-        p.price = int(p.price); if (!(p.price > 0)) throw bad('請填價格');
-        p.active = !!p.active; p.soldOut = !!p.soldOut; p.sort = int(p.sort, 999);
-        p.updatedAt = new Date().toISOString();
+        const p = cleanProduct({ ...b, id }, (await get('PRODUCT', id)) || {}, settings);
         await put(p);
         return json(200, { product: pick(p, PRODUCT_FIELDS) });
+      }
+      // 編輯一個造型餅乾系列（像蝦皮的「編輯商品」）：系列的名稱、照片、描述、分類，加上它所有的選項（每一片），一次存好
+      if (method === 'PUT' && seg[1] === 'cookie-series' && seg[2]) {
+        const b = parseBody(event);
+        const sid = seg[2].toLowerCase().replace(/[^a-z0-9-]/g, '').slice(0, 30);
+        if (!sid) throw bad('系列代號不正確');
+        const groupIds = new Set(cookieGroups(settings).map((g) => g.id));
+        const list = seriesOf(settings);
+        const at = list.findIndex((x) => x.id === sid);
+        const se = cleanSeries({ ...(at >= 0 ? list[at] : {}), ...(b.series || {}), id: sid }, at >= 0 ? at : list.length, groupIds);
+        if (!se.name) throw bad('請填商品名稱');
+        if (at < 0 && list.length >= 80) throw bad('系列太多了（最多 80 個）');
+        const series = at >= 0 ? list.map((x) => (x.id === sid ? se : x)) : [...list, { ...se, sort: b.series?.sort !== undefined ? se.sort : Math.max(0, ...list.map((x) => x.sort || 0)) + 10 }];
+        const next = { ...settings, cookie: { ...settings.cookie, series }, pk: 'SETTINGS', sk: 'main' };
+        const items = (Array.isArray(b.products) ? b.products : []).slice(0, 80);
+        const olds = await Promise.all(items.map((x) => get('PRODUCT', str(x.id, 40).replace(/[^a-z0-9-]/gi, '')).then((o) => o || {})));
+        const clean = items.map((x, i) => {
+          if (olds[i].id && olds[i].category !== 'cookie') throw bad('商品代號重複');
+          return cleanProduct({ ...x, category: 'cookie', series: sid, sort: x.sort ?? (i + 1) * 10 }, olds[i], next);
+        });
+        if (new Set(clean.map((p) => p.id)).size !== clean.length) throw bad('選項代號重複');
+        const remove = (Array.isArray(b.remove) ? b.remove : []).map((x) => str(x, 40)).filter((x) => x && !clean.some((p) => p.id === x));
+        const gone = (await Promise.all(remove.map((x) => get('PRODUCT', x)))).filter((p) => p && p.category === 'cookie' && p.series === sid);
+        await put(next);
+        for (let i = 0; i < clean.length; i += 10) await Promise.all(clean.slice(i, i + 10).map((p) => put(p)));
+        for (const p of gone) await del('PRODUCT', p.id);
+        return json(200, { settings: adminView(next), products: await listProducts() });
       }
       if (method === 'DELETE' && seg[1] === 'products' && seg[2]) { await del('PRODUCT', seg[2]); return json(200, { ok: true }); }
       if (method === 'POST' && path === '/admin/images') return json(200, { url: await putImage(parseBody(event)) });
@@ -1075,15 +1127,13 @@ async function route(event) {
           const c = b.cookie; const cs = c.shipping || settings.cookie.shipping;
           const tiers = (Array.isArray(cs.tiers) ? cs.tiers : []).map((t) => ({ upTo: int(t.upTo), fee: Math.max(0, int(t.fee)) })).filter((t) => t.upTo > 0).sort((x, y) => x.upTo - y.upTo);
           if (!tiers.length) throw bad('餅乾運費至少要有一個級距');
+          const groups = c.groups !== undefined ? cleanGroups(c.groups) : cookieGroups(settings);
+          if (!groups.length) throw bad('至少要有一個分類');
+          const groupIds = new Set(groups.map((g) => g.id));
           const ids = new Set();
-          const series = (Array.isArray(c.series) ? c.series : settings.cookie.series).slice(0, 40).map((x, i) => ({
-            id: str(x.id, 30).toLowerCase().replace(/[^a-z0-9-]/g, ''), name: str(x.name, 30),
-            lines: (Array.isArray(x.lines) ? x.lines : []).map((l) => str(l, 40)).filter(Boolean).slice(0, 3),
-            photo: str(x.photo, 300), groups: (Array.isArray(x.groups) ? x.groups : []).filter((g) => ['character', 'birthday'].includes(g)),
-            active: !!x.active, sort: int(x.sort, (i + 1) * 10),
-          }));
+          const series = (Array.isArray(c.series) ? c.series : settings.cookie.series).slice(0, 80).map((x, i) => cleanSeries(x, i, groupIds));
           for (const x of series) { if (!x.id || !x.name) throw bad('每個系列都要有名稱'); if (ids.has(x.id)) throw bad('系列代號重複'); ids.add(x.id); }
-          next.cookie = { minPieces: Math.min(200, Math.max(1, int(c.minPieces ?? settings.cookie.minPieces, 1))), shipping: { label: str(cs.label, 30) || DEFAULT_SETTINGS.cookie.shipping.label, tiers }, series };
+          next.cookie = { minPieces: Math.min(200, Math.max(1, int(c.minPieces ?? settings.cookie.minPieces, 1))), shipping: { label: str(cs.label, 30) || DEFAULT_SETTINGS.cookie.shipping.label, tiers }, groups, series };
         }
         let token;
         if (b.newAdminPass !== undefined && env.ALLOW_PASSCODE !== '1') throw bad('後台只能用 LINE 帳號登入，沒有店家密碼');

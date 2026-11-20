@@ -11,8 +11,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="css/app.css?v=1120h">
-<link rel="stylesheet" href="css/storefront.css?v=1120h">
+<link rel="stylesheet" href="css/app.css?v=1120i">
+<link rel="stylesheet" href="css/storefront.css?v=1120i">
 <title>線上商店｜N.T Cookie × N.T Canelé</title>
 <meta name="description" content="N.T Cookie × N.T Canelé 線上商店：可麗露禮盒、馬林糖一口酥，線上下單、LINE Pay 付款。">
 </head>
@@ -81,9 +81,9 @@
   </div>
   <form method="dialog"><button type="submit" autofocus>關閉</button></form>
 </dialog>
-<script src="js/config.js?v=1120h"></script>
-<script src="js/app.js?v=1120h"></script>
-<script src="js/shop.js?v=1120h"></script>
+<script src="js/config.js?v=1120i"></script>
+<script src="js/app.js?v=1120i"></script>
+<script src="js/shop.js?v=1120i"></script>
 <script>
   // top-left 「首頁」 always goes to the main menu; 返回上一頁 at the bottom goes back to wherever the customer came from
   NTC.$('#back2').addEventListener('click', (event) => {
@@ -119,6 +119,14 @@
 
   // 購物須知: written from the shop's settings; the owner can rewrite, hide or add notes in the admin (設定 → 購物須知)
   NTC.catalog().then((c) => {
+    // categories the owner added herself (e.g. 中國風) have no picture card: list them under the two cookie cards
+    const ck = c.settings.cookie || {}; const live = (ck.series || []).filter((x) => x.active);
+    const more = (ck.groups || []).filter((g) => g.id !== 'character' && g.id !== 'birthday' && live.some((x) => (x.groups || []).includes(g.id)));
+    if (more.length) {
+      const li = document.createElement('li'); li.className = 'store-more'; li.dataset.collection = 'cookie';
+      li.innerHTML = `<p>更多造型餅乾</p>${more.map((g) => `<a href="cookies.html?g=${encodeURIComponent(g.id)}">${NTC.esc(/餅乾$/.test(g.name) ? g.name : `${g.name}造型餅乾`)}<span aria-hidden="true"> ›</span></a>`).join('')}`;
+      collections[1].after(li); collections.splice(2, 0, li);
+    }
     const e = NTC.esc; const rows = NTC.shopNotes(c.settings).filter((r) => !r.hidden && (r.title || r.text));
     NTC.$('#shopping-body').innerHTML = `<dl class="store-rules">${rows.map((r) => `<dt>${e(r.title)}</dt><dd>${e(r.text).replace(/\n/g, '<br>')}</dd>`).join('')}</dl>`;
     if (location.hash === '#notes' && typeof info.showModal === 'function') info.showModal(); // the admin's 「看客人看到的樣子」
