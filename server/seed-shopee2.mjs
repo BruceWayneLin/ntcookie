@@ -30,6 +30,8 @@ const SERIES = [ // id, name, groups, desc, price, pieces [slug, name, text]
     ['cn-omamori', '平安御守'], ['cn-bag', '福袋'], ['cn-turtle', '壽龜'], ['cn-peach', '壽桃'], ['cn-horse', '小馬'], ['cn-feet', '小腳丫'], ['cn-shoes', '虎頭鞋'],
     ['cn-stroller', '嬰兒車'], ['cn-birth', '出生紀念牌（體重＋日期）', 'weightdate']]],
   ['plaque', '巨型匾額收涎', ['chinese'], '超大片匾額收涎餅乾（10×18 公分）', 1380, [['plaque-big', '巨型匾額（10×18 公分）', 'namedate']]],
+  // 17:18 她說蝦皮上只有佩佩豬沒有單片圖 → 佩佩豬從合照做（其他系列等拿到她蝦皮的選項圖再做）
+  ['peppa', '佩佩豬系列', ['character'], '佩佩豬收涎餅乾・慶生餅乾・收口水', 250, [['pp-peppa', '佩佩'], ['pp-george', '喬治'], ['pp-daddy', '豬爸爸'], ['pp-mummy', '豬媽媽'], ['pp-plaque', '佩佩名字牌', 'name'], ['pp-cake', '生日蛋糕']]],
   // 16:22 那批：文青少女、吉娃娃有單片；獨角獸／魷魚遊戲／阿奇／三眼怪在木頭或烤網上 → 只放封面；客製毛小孩＝聊聊附照片報價，只放她的範例照片
   ['girly', '文青少女繽紛收涎系列', ['character'], '文青少女・繽紛收涎餅乾', 220, [['gl-plaque', '名字牌', 'name'], ['gl-heart', '愛心日期牌', 'words'], ['gl-balloon', '熱氣球（4 months）', 'month'],
     ['gl-moon', '月亮'], ['gl-star', '星星'], ['gl-tutu', '芭蕾舞裙'], ['gl-horse', '搖搖馬'], ['gl-pacifier', '奶嘴'], ['gl-bottle', '奶瓶'], ['gl-bib', '圍兜'], ['gl-stroller', '嬰兒車', 'cart'], ['gl-omamori', '健康御守']]],

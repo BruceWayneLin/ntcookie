@@ -15,8 +15,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
 <link rel="preload" as="image" href="assets/cookies/ui/header.webp" type="image/webp">
-<link rel="stylesheet" href="css/app.css?v=1120l">
-<link rel="stylesheet" href="css/cookie-selection.css?v=1120l">
+<link rel="stylesheet" href="css/app.css?v=1120m">
+<link rel="stylesheet" href="css/cookie-selection.css?v=1120m">
 </head>
 <body class="ckd-body">
 <main class="ckd" id="page">
@@ -32,9 +32,9 @@
 </main>
 <div class="ckd-bar" id="bar" hidden></div>
 <p class="sr-only" id="cookie-selection-status" role="status"></p>
-<script src="js/config.js?v=1120l"></script>
-<script src="js/app.js?v=1120l"></script>
-<script src="js/shop.js?v=1120l"></script>
+<script src="js/config.js?v=1120m"></script>
+<script src="js/app.js?v=1120m"></script>
+<script src="js/shop.js?v=1120m"></script>
 <script>
 (function () {
   const { $, esc, money, asset } = NTC;
@@ -55,6 +55,9 @@
       <div class="tx"><h2 style="--n:${[...se.name].length}"><i class="sp l"></i>${esc(se.name)}<i class="sp r"></i></h2><div class="hr"><span>♡</span></div>${(se.lines || []).map((l) => `<p>${esc(l)}</p>`).join('')}${extra}</div>`;
   const backBtn = '<button type="button" class="ckd-back" id="back2"><i aria-hidden="true"></i>返回上一頁</button>';
   const minPieces = () => cat.settings.cookie.minPieces || 1;
+  // 「一片就可以訂」的系列（例如巨型匾額）：購物車或這次選的裡面有它，就不用湊滿最少片數
+  const singleIds = () => new Set((cat.settings.cookie.series || []).filter((x) => x.single).map((x) => x.id));
+  const waived = (items, chosen = []) => { const ids = singleIds(); return items.some((i) => ids.has(cat.byId[i.productId]?.series)) || chosen.some((p) => ids.has(p.series)); };
   const cartCookiePieces = (items) => items.filter((item) => cat.byId[item.productId]?.category === 'cookie').reduce((total, item) => total + item.qty, 0);
   const minimumRule = () => `<p class="ckd-minimum-rule"><b>${minPieces()} 片起訂</b>，可跨系列搭配</p>`;
   const shippingNote = () => {
@@ -143,7 +146,7 @@
       return `<section class="ckd-acc" data-sid="${esc(x.id)}">
         <button type="button" class="ckd-acc-head" aria-expanded="false">
           ${x.photo ? `<span class="ph"><img src="${esc(asset(x.photo))}" alt=""></span>` : ''}
-          <span class="t"><b style="--n:${[...x.name].length}">${esc(x.name)}</b><small>${ps.length} 款・單片 ${money(lo)} 起${x.active ? '' : '・<em>未上架</em>'}</small></span>
+          <span class="t"><b style="--n:${[...x.name].length}">${esc(x.name)}</b><small>${ps.length} 款・單片 ${money(lo)} 起${x.single ? '・1 片可訂' : ''}${x.active ? '' : '・<em>未上架</em>'}</small></span>
           <span class="cnt" hidden></span><span class="chev" aria-hidden="true"></span></button>
         <div class="ckd-acc-body" hidden></div></section>`;
     }).join('')}</div>${shippingNote()}<a class="ckd-custom" href="custom.html${g === 'birthday' ? '?for=慶生' : ''}">想要其他圖案？<b>客製詢問 ›</b></a>${backBtn}`;
@@ -173,7 +176,7 @@
       : off ? `<div class="ckd-adm">預覽：有 ${off} 款還沒上架（標「未上架」），客人看不到那幾款。</div>` : ''}
       <section class="ckd-banner">${banner(se)}</section>${infoHtml(se)}
       <img class="ckd-sec" src="assets/cookies/ui/section.webp" alt="單片選購">
-      ${minimumRule()}${gridHtml(ps)}
+      ${se.single ? '<p class="ckd-minimum-rule"><b>這個系列 1 片就可以訂</b></p>' : minimumRule()}${gridHtml(ps)}
       ${shippingNote()}<a class="ckd-custom" href="custom.html">系列裡沒有想要的圖案？<b>客製詢問 ›</b></a>${backBtn}`;
     $('#back2').onclick = NTC.back; wireInfo(app);
     wireCards(app, ps, ps);
@@ -187,7 +190,7 @@
     const n = chosen.reduce((a, p) => a + pick[p.id], 0); const sum = chosen.reduce((a, p) => a + pick[p.id] * p.price, 0);
     const items = NTC.cart.items(); const inCart = items.reduce((a, i) => a + i.qty, 0);
     const cartPieces = cartCookiePieces(items);
-    const min = minPieces();
+    const min = waived(items, chosen) ? 1 : minPieces();
     const left = min - cartPieces - n;
     const cartNote = cartPieces ? `購物車已有 ${cartPieces} 片・` : '';
     const reached = cartPieces >= min ? `已達 ${min} 片起訂` : `加入後達 ${min} 片起訂`;
@@ -222,7 +225,7 @@
       chosen.forEach((p) => NTC.cart.add({ type: 'product', productId: p.id, qty: pick[p.id], ...(texts[p.id] ? { text: texts[p.id] } : {}) }));
       const n = chosen.reduce((a, p) => a + pick[p.id], 0);
       pick = {}; render();
-      const ck = cartCookiePieces(NTC.cart.items()); const min = minPieces();
+      const ck = cartCookiePieces(NTC.cart.items()); const min = waived(NTC.cart.items()) ? 1 : minPieces();
       NTC.toast(ck < min ? `已加入 ${n} 片，再選 ${min - ck} 片就能結帳（${min} 片起訂）` : `已加入 ${n} 片到購物車 ♡`, 3200);
     };
     if (!needText.length) return done();

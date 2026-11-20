@@ -11,7 +11,7 @@
 <link rel="icon" href="assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css?v=1120l">
+<link rel="stylesheet" href="css/app.css?v=1120m">
 <style>
   :root { --page: 760px; }
   .tabs { position: sticky; top: 63px; z-index: 20; display: flex; gap: 6px; max-width: var(--page); margin: 0 auto; padding: 8px 14px; background: rgba(248, 237, 231, .96); }
@@ -171,8 +171,8 @@
 <div class="shopbar" id="shopbar" hidden></div>
 <main class="wrap" id="app"><div class="spinner"></div></main>
 <p class="note" id="ver" style="text-align:center;margin:0 0 24px;color:var(--muted)"></p>
-<script src="js/config.js?v=1120l"></script>
-<script src="js/app.js?v=1120l"></script>
+<script src="js/config.js?v=1120m"></script>
+<script src="js/app.js?v=1120m"></script>
 <script>
 (async function () {
   const { $, esc, money, asset } = NTC;
@@ -482,7 +482,7 @@
         return `<article class="spc" data-sid="${esc(x.id)}" data-q="${esc([x.name, ...ps.map((p) => p.name)].join(' ').toLowerCase())}">
           <button type="button" class="spc-top" data-edit><img src="${esc(asset(coverOf(x) || 'assets/favicon.png'))}" alt="" loading="lazy">
             <span class="i"><b>${esc(x.name)}</b><span class="pr">${ps.length ? priceRange(ps) : '還沒有選項'}</span>
-              <span class="meta">${ps.length} 款${on && on < ps.length ? `（${on} 款上架）` : ''}${so ? `・${so} 款售完` : ''}・${esc(gname(x))}</span></span>
+              <span class="meta">${ps.length} 款${on && on < ps.length ? `（${on} 款上架）` : ''}${so ? `・${so} 款售完` : ''}${x.single ? '・1 片可訂' : ''}・${esc(gname(x))}</span></span>
             <span class="spc-st${on ? ' on' : ''}">${on ? '上架中' : '未上架'}</span></button>
           <div class="spc-acts"><button type="button" class="btn ghost small" data-bulk="${on ? 'off' : 'on'}">${on ? '下架' : '上架'}</button>
             <a class="btn ghost small" href="cookies.html?s=${esc(x.id)}&preview=1" target="_blank" rel="noopener">預覽</a>
@@ -619,12 +619,12 @@
     const isNew = !x;
     const sid = x ? x.id : `s${Date.now().toString(36)}`;
     const st = {
-      name: x?.name || '', desc: x?.desc || '', lines: [...(x?.lines || [])], sort: x?.sort ?? '',
+      name: x?.name || '', desc: x?.desc || '', lines: [...(x?.lines || [])], sort: x?.sort ?? '', single: !!x?.single,
       photos: x ? (x.photos?.length ? [...x.photos] : x.photo ? [x.photo] : []) : [],
       groups: x ? [...(x.groups || [])].filter((g) => groupsOf().some((y) => y.id === g)) : groupsOf().some((g) => g.id === ckFilter) ? [ckFilter] : [],
       opts: (x ? piecesOf(x.id) : []).map((p) => ({ ...p, key: p.id })), removed: [],
     };
-    const snap = () => JSON.stringify([st.name, st.desc, st.lines, String(st.sort), st.photos, st.groups, st.opts.map(({ key, priceAuto, ...o }) => o), st.removed]);
+    const snap = () => JSON.stringify([st.name, st.desc, st.lines, String(st.sort), st.single, st.photos, st.groups, st.opts.map(({ key, priceAuto, ...o }) => o), st.removed]);
     const box = document.createElement('div'); box.className = 'ed'; box.setAttribute('role', 'dialog'); box.setAttribute('aria-modal', 'true'); box.setAttribute('aria-label', isNew ? '新增商品' : '編輯商品');
     box.innerHTML = `<header class="ed-top"><button type="button" class="ed-x">‹ 返回</button><h2>${isNew ? '新增商品' : '編輯商品'}</h2>${isNew ? '<span class="ed-x" style="visibility:hidden">‹ 返回</span>' : `<a class="ed-x ed-pv" href="cookies.html?s=${esc(sid)}&preview=1" target="_blank" rel="noopener">預覽 ›</a>`}</header>
       <div class="ed-body">
@@ -642,13 +642,15 @@
         <details class="panel ed-more"><summary>更多設定</summary>
           <label class="field"><span>標題下的小字・第一行（單獨打開這個系列時顯示）</span><input id="ed-l1" maxlength="40" value="${esc(st.lines[0] || '')}"></label>
           <label class="field"><span>標題下的小字・第二行</span><input id="ed-l2" maxlength="40" value="${esc(st.lines[1] || '')}"></label>
+          <label class="tg" style="display:flex;margin:2px 0 4px">這個商品一片就可以訂（不用湊滿 ${esc(settings.cookie.minPieces)} 片）<span class="sp"></span><input type="checkbox" id="ed-single" ${st.single ? 'checked' : ''}></label>
+          <p class="note" style="margin:0">打開後，客人的購物車裡只要有這個商品，就不受「最少幾片起訂」限制。適合大片的，例如巨型匾額。</p>
         </details>
         ${isNew ? '' : '<button type="button" class="btn ghost block" id="ed-del" style="color:var(--red)">刪除這個商品</button>'}
       </div>
       <footer class="ed-bar"><button type="button" class="btn ghost" id="ed-b1"></button><button type="button" class="btn" id="ed-b2"></button></footer>`;
     document.body.appendChild(box); document.body.classList.add('ed-open');
     const q1 = (s) => box.querySelector(s);
-    const collect = () => { st.name = q1('#ed-name').value.trim(); st.desc = q1('#ed-desc').value; st.lines = [q1('#ed-l1').value.trim(), q1('#ed-l2').value.trim()].filter(Boolean); };
+    const collect = () => { st.name = q1('#ed-name').value.trim(); st.desc = q1('#ed-desc').value; st.lines = [q1('#ed-l1').value.trim(), q1('#ed-l2').value.trim()].filter(Boolean); st.single = q1('#ed-single').checked; };
     collect(); const start = snap();
     const dirty = () => { collect(); return snap() !== start; };
     // the phone's back gesture closes the editor (asking first when something is not saved)
@@ -778,7 +780,7 @@
       const stamp = Date.now().toString(36);
       st.opts.forEach((o, i) => { if (!o.id) o.id = `cookie-${sid}-${stamp}${i.toString(36)}`.slice(0, 40); });
       const body = {
-        series: { name: st.name, desc: st.desc, lines: st.lines, photos: st.photos, photo: st.photos[0] || '', groups: st.groups, ...(String(st.sort).trim() !== '' ? { sort: +st.sort } : {}) },
+        series: { name: st.name, desc: st.desc, lines: st.lines, single: st.single, photos: st.photos, photo: st.photos[0] || '', groups: st.groups, ...(String(st.sort).trim() !== '' ? { sort: +st.sort } : {}) },
         products: st.opts.map(({ key, priceAuto, ...o }, i) => ({ ...o, name: String(o.name).trim(), price: +o.price, unit: o.unit || '片', sort: (i + 1) * 10, active: !!o.active, soldOut: !!o.soldOut })),
         remove: st.removed,
       };

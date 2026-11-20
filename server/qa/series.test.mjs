@@ -80,6 +80,32 @@ r = await call(`/admin/cookie-series/${SID}`, { method: 'PUT', user: ADMIN, body
 ok('remove → option deleted', r.status === 200 && JSON.stringify(mine(r.json.products).map((p) => p.id)) === JSON.stringify([ids[1]]), mine(r.json?.products || []));
 ok('remove ignores other series', r.json.products.some((p) => p.id === other.id), other.id);
 
+// 一片就可以訂: a series marked single waives the minimum for the order
+const ymd = (n) => { const d = new Date(Date.now() + 8 * 3600e3); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
+const st0 = (await call('/admin/settings', { user: ADMIN })).json.settings;
+await call('/admin/settings', { method: 'PUT', user: ADMIN, body: { pauseOrders: false, testMode: false, blockedDates: [], closedWeekdays: [], maxOrdersPerDay: 0, bank: { name: 'QA銀行', code: '999', account: '111122223333', holder: 'QA' }, payments: { linepay: true, ecpay: true, transfer: true } } });
+const day = ymd((st0.leadDays || 0) + 3);
+const order = (items) => call('/orders', { method: 'POST', body: { items, date: day, shippingId: 'home', contact: { name: '測試 王小明', phone: '0912-345-678', address: '台北市信義區市府路 1 號' }, note: '', payment: 'transfer' } });
+const regular = (await call('/admin/products', { user: ADMIN })).json.products.find((p) => p.category === 'cookie' && p.series !== SID && !p.textLabel);
+await call(`/admin/products/${regular.id}`, { method: 'PUT', user: ADMIN, body: { ...regular, active: true } });
+r = await order([{ type: 'product', productId: ids[1], qty: 1 }]);
+ok('one cookie from a normal series → refused (minimum)', r.status === 400 && /片起訂/.test(r.json.error), r.text.slice(0, 120));
+r = await call(`/admin/cookie-series/${SID}`, { method: 'PUT', user: ADMIN, body: { series: { name: 'QA 改名了', single: true }, products: [{ id: ids[1], name: '平安符', price: 320, active: true }] } });
+ok('series saved as 一片就可以訂', r.json?.settings?.cookie?.series?.find((x) => x.id === SID)?.single === true, r.text.slice(0, 120));
+r = await call('/catalog'); ok('customers get the flag', r.json.settings.cookie.series.find((x) => x.id === SID)?.single === true, '');
+r = await order([{ type: 'product', productId: ids[1], qty: 1 }]);
+ok('one cookie from a 一片可訂 series → order accepted (320 + 130 shipping)', r.status === 200 && r.json.total === 450, r.text.slice(0, 160));
+r = await order([{ type: 'product', productId: ids[1], qty: 1 }, { type: 'product', productId: regular.id, qty: 1 }]);
+ok('…and a normal cookie can ride along with it', r.status === 200 && r.json.total === 320 + regular.price + 130, r.text.slice(0, 200));
+const saved = (await call('/admin/orders', { user: ADMIN })).json.orders.find((o) => o.orderNo === r.json.orderNo);
+ok('the saved order has both lines and no internal flag on them', saved?.lines?.length === 2 && saved.lines.every((l) => !('single' in l)), saved?.lines);
+r = await order([{ type: 'product', productId: regular.id, qty: 1 }]);
+ok('a normal cookie alone is still refused', r.status === 400, r.status);
+r = await call(`/admin/cookie-series/${SID}`, { method: 'PUT', user: ADMIN, body: { series: { name: 'QA 改名了', single: false }, products: [{ id: ids[1], name: '平安符', price: 320, active: true }] } });
+ok('switching it off again', r.json?.settings?.cookie?.series?.find((x) => x.id === SID)?.single === undefined, '');
+r = await order([{ type: 'product', productId: ids[1], qty: 1 }]); ok('…brings the minimum back', r.status === 400, r.status);
+await call(`/admin/products/${regular.id}`, { method: 'PUT', user: ADMIN, body: { ...regular } });
+
 // a page that was opened before other series were added sends an old list: nothing but (at most) one series may disappear per save
 r = await call('/admin/settings', { user: ADMIN }); let cur = r.json.settings.cookie;
 r = await call('/admin/settings', { method: 'PUT', user: ADMIN, body: { cookie: { ...cur, series: cur.series.slice(0, cur.series.length - 3) } } });

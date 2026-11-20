@@ -190,7 +190,7 @@
       if (it.type === 'product' && cat.byId[it.productId]?.category === 'cookie') {
         const p = cat.byId[it.productId]; const se = (s.cookie?.series || []).find((x) => x.id === p.series);
         lines.push({
-          idx, it, ok: !p.soldOut && !!se, temp: 'cookie', photo: p.photo || '', price: p.price, unit: p.unit || '片', min: 1,
+          idx, it, ok: !p.soldOut && !!se, temp: 'cookie', single: !!(se && se.single), photo: p.photo || '', price: p.price, unit: p.unit || '片', min: 1,
           name: p.name, detail: (se ? se.name : '') + (p.textLabel && (it.text || !p.textOptional) ? `｜${p.textLabel}：${it.text || '（未填）'}` : ''),
           error: !se ? '這個系列目前沒有開放訂購，請移除' : p.soldOut ? '這片目前售完，請移除' : p.textLabel && !p.textOptional && !it.text ? `請移除後重新加入，並填寫${p.textLabel}` : '',
         });
@@ -220,7 +220,7 @@
     });
     lines.forEach((l) => { l.qty = l.it.qty; l.subtotal = l.price * l.qty; if (!l.error && l.qty < l.min) l.error = `這個禮盒 ${l.min} 盒起訂`; });
     const ck = lines.filter((l) => l.temp === 'cookie'); const pieces = ck.reduce((a, l) => a + l.qty, 0); const minP = s.cookie?.minPieces || 1;
-    if (pieces && pieces < minP && !ck[ck.length - 1].error) ck[ck.length - 1].error = `造型餅乾 ${minP} 片起訂（可跨系列搭配），目前 ${pieces} 片，還差 ${minP - pieces} 片`;
+    if (pieces && pieces < minP && !ck.some((l) => l.single) && !ck[ck.length - 1].error) ck[ck.length - 1].error = `造型餅乾 ${minP} 片起訂（可跨系列搭配），目前 ${pieces} 片，還差 ${minP - pieces} 片`;
     const subtotal = lines.reduce((a, l) => a + l.subtotal, 0);
     const shipping = NTC.shipping(lines.filter((l) => l.ok), subtotal, s);
     return { lines, subtotal, shipping, total: subtotal + shipping.fee, count: lines.reduce((a, l) => a + l.qty, 0), valid: lines.length > 0 && lines.every((l) => !l.error) };

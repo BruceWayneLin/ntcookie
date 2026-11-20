@@ -154,6 +154,7 @@ const cleanSeries = (x, i, groupIds) => {
     lines: (Array.isArray(x.lines) ? x.lines : []).map((l) => str(l, 40)).filter(Boolean).slice(0, 3),
     photo: photos[0] || (IMG_URL.test(photo) ? photo : ''), photos,
     groups: [...new Set((Array.isArray(x.groups) ? x.groups : []).filter((g) => groupIds.has(g)))],
+    single: x.single ? true : undefined, // 一片就可以訂（例如巨型匾額）：購物車裡有這個系列，就不用湊滿最少片數
     sort: int(x.sort, (i + 1) * 10),
   };
 };
@@ -352,7 +353,7 @@ function priceOrder(reqItems, products, settings, { admin = false } = {}) {
           if (!text && !p.textOptional) throw bad(`「${p.name}」請填寫${p.textLabel}`);
           if ([...text].length > int(p.textMax, 12)) throw bad(`「${p.name}」的${p.textLabel}最多 ${int(p.textMax, 12)} 個字`);
         }
-        lines.push({ type: 'product', productId: p.id, name: p.name, detail: se.name + (text ? `｜${p.textLabel}：${text}` : ''), text: text || undefined, unit: p.unit || '片', price: int(p.price), qty, temp: 'cookie' });
+        lines.push({ type: 'product', productId: p.id, name: p.name, detail: se.name + (text ? `｜${p.textLabel}：${text}` : ''), text: text || undefined, unit: p.unit || '片', price: int(p.price), qty, temp: 'cookie', single: se.single ? true : undefined });
       } else if (p.category === 'canele') {
         const min = int(settings.canele?.singleMinBoxes, 1);
         if (qty < min) throw bad(`單一口味禮盒 ${min} 盒起訂`);
@@ -377,8 +378,8 @@ function priceOrder(reqItems, products, settings, { admin = false } = {}) {
   }
   const pieces = lines.filter((l) => l.temp === 'cookie').reduce((a, l) => a + l.qty, 0);
   const minPieces = int(settings.cookie?.minPieces, 1);
-  if (pieces && pieces < minPieces) throw bad(`造型餅乾 ${minPieces} 片起訂（目前 ${pieces} 片），可以跨系列搭配`);
-  for (const l of lines) l.subtotal = l.price * l.qty;
+  if (pieces && pieces < minPieces && !lines.some((l) => l.single)) throw bad(`造型餅乾 ${minPieces} 片起訂（目前 ${pieces} 片），可以跨系列搭配`);
+  for (const l of lines) { delete l.single; l.subtotal = l.price * l.qty; }
   const subtotal = lines.reduce((a, l) => a + l.subtotal, 0);
   const shipping = calcShipping(lines, subtotal, settings);
   return { lines, subtotal, shipping, total: subtotal + shipping.fee };
