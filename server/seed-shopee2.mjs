@@ -25,6 +25,21 @@ const SERIES = [ // id, name, groups, desc, price, pieces [slug, name, text]
   ['teletubbies', '天線寶寶系列', ['character'], '天線寶寶收涎餅乾・丁丁・迪西・拉拉・小波', 280, [['tt-tinky-heart', '丁丁（愛心）', 'words'], ['tt-tinky-round', '丁丁（圓形）', 'words'],
     ['tt-dipsy', '迪西（愛心）'], ['tt-laalaa', '拉拉（圓形）', 'words'], ['tt-po-hi', '小波（愛心・Hi）'], ['tt-po-round', '小波（圓形）']]],
   ['moomin', '嚕嚕米系列', ['character'], '姆明嚕嚕米・嚕嚕米收涎餅乾・小不點', 0, []], // 烤網上分不出單片：只放封面
+  // 16:22 那批：文青少女、吉娃娃有單片；獨角獸／魷魚遊戲／阿奇／三眼怪在木頭或烤網上 → 只放封面；客製毛小孩＝聊聊附照片報價，只放她的範例照片
+  ['girly', '文青少女繽紛收涎系列', ['character'], '文青少女・繽紛收涎餅乾', 220, [['gl-plaque', '名字牌', 'name'], ['gl-heart', '愛心日期牌', 'words'], ['gl-balloon', '熱氣球（4 months）', 'month'],
+    ['gl-moon', '月亮'], ['gl-star', '星星'], ['gl-tutu', '芭蕾舞裙'], ['gl-horse', '搖搖馬'], ['gl-pacifier', '奶嘴'], ['gl-bottle', '奶瓶'], ['gl-bib', '圍兜'], ['gl-stroller', '嬰兒車', 'cart'], ['gl-omamori', '健康御守']]],
+  ['chihuahua', '變種吉娃娃系列', ['character'], '變種吉娃娃・LINE 貼圖', 220, [['ch-square-shout', '吉娃娃（方・大叫）'], ['ch-square-yellow', '吉娃娃（方・黃）'], ['ch-square-cap', '吉娃娃（方・浴帽）'],
+    ['ch-round-pink', '吉娃娃（圓・粉）'], ['ch-round-yellow', '吉娃娃（圓・黃）'], ['ch-round-blue', '吉娃娃（圓・藍）']]],
+  ['unicorn', '獨角獸系列', ['character'], '獨角獸收涎餅乾・慶生餅乾', 0, []],
+  ['squid', '魷魚遊戲系列', ['character'], '魷魚遊戲・椪糖餅乾・123 木頭人・紅士兵', 0, []],
+  ['duggee', '阿奇幼幼園系列', ['character', 'birthday'], '阿奇幼幼園・慶生餅乾（此款尺寸偏小）', 0, []],
+  ['aliens', '三眼怪系列', ['character'], '三眼怪・收涎餅乾・慶生餅乾・蛋糕裝飾', 0, []],
+  ['pets', '客製毛小孩餅乾', ['character'], '照您的毛小孩照片手繪。請先到「客製詢問」附上照片，我們報價後再製作。', 0, [], ['pet0', 'pet1', 'pet2', 'pet3', 'pet4', 'pet5']],
+  // 16:27 那批（都在烤網上 → 只放封面）；冰雪奇緣她說「慶生的」
+  ['sakura', '庫洛魔法使系列', ['character'], '庫洛魔法使・小櫻・小可・法杖', 0, []],
+  ['tsum', 'TSUM 公主系列', ['character'], '公主收涎餅乾・tsum・女寶收涎餅乾', 0, []],
+  ['marimekko', 'marimekko 罌粟花系列', ['birthday'], 'marimekko 罌粟花・慶生餅乾', 0, []],
+  ['frozen', '冰雪奇緣系列', ['birthday'], '冰雪奇緣・艾莎公主・安娜公主・雪寶・慶生餅乾', 0, []],
   ['totoro', '龍貓系列', ['character'], '龍貓收涎餅乾・慶生餅乾・豆豆龍・宮崎駿・龍貓車', 0, []], // 木頭＋烤網上分不出單片：只放封面
   // 16:08 她說「也是中國風，價錢你都先寫單片 250，我到時候再自己改」；兩片一樣的春斗方、兩個一樣的錢幣各放一個
   ['newyear', '過年系列', ['chinese'], '過年餅乾・過年糖霜餅乾・伴手禮', 250, [['ny-spring', '春'], ['ny-fu', '福'], ['ny-spring-r', '春 斗方'], ['ny-cloud', '旺年雲朵牌（2018）'],
@@ -36,11 +51,12 @@ if (!s?.cookie?.series) throw new Error('no cookie settings yet');
 const have = s.cookie.series; let sort = Math.max(0, ...have.map((x) => x.sort || 0));
 const groupIds = new Set((s.cookie.groups?.length ? s.cookie.groups : [{ id: 'character' }, { id: 'birthday' }]).map((g) => g.id));
 const add = []; const ids = {};
-for (const [id, name, groups, desc] of SERIES) {
+for (const [id, name, groups, desc, , , gallery] of SERIES) {
   const old = have.find((x) => x.id === id || x.name === name);
   if (old) { ids[id] = old.id; continue; }
   ids[id] = id;
-  add.push({ id, name, desc, lines: ['可單片選購・自由搭配'], photo: `${D}hero-${id}.webp`, photos: [`${D}hero-${id}.webp`], groups: groups.filter((g) => groupIds.has(g)), sort: (sort += 10) });
+  const photos = (gallery || [id]).map((g) => `${D}hero-${g}.webp`);
+  add.push({ id, name, desc, lines: ['可單片選購・自由搭配'], photo: photos[0], photos, groups: groups.filter((g) => groupIds.has(g)), sort: (sort += 10) });
 }
 if (add.length) await ddb.send(new UpdateCommand({ TableName: TABLE, Key: { pk: 'SETTINGS', sk: 'main' }, UpdateExpression: 'SET #c.#s = list_append(#c.#s, :n)',
   ExpressionAttributeNames: { '#c': 'cookie', '#s': 'series' }, ExpressionAttributeValues: { ':n': add } }));
