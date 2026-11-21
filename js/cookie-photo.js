@@ -24,7 +24,7 @@
 
   const median = (numbers) => numbers.sort((a, b) => a - b)[numbers.length >> 1];
 
-  function mask(source) {
+  function mask(source, group = false) {
     const scale = Math.min(1, 540 / Math.max(source.width, source.height));
     const w = Math.max(1, Math.round(source.width * scale)), h = Math.max(1, Math.round(source.height * scale));
     if (Math.min(w, h) < 36) return null;
@@ -38,7 +38,8 @@
       if (pixels[p + 3] <= 16) transparent++;
       else { fringe.push(p); rgb.forEach((channel, c) => channel.push(pixels[p + c])); }
     }
-    if (transparent > 6) return source;
+    if (transparent === 24) return source;
+    if (transparent > 6) return null;
     const [r, g, b] = rgb.map(median);
     // Reduce the influence of lightness so soft shadows stay with the discarded background.
     const distance = (p) => {
@@ -47,8 +48,8 @@
     };
     const spread = fringe.map(distance).sort((a, b) => a - b);
     const drift = spread[Math.floor(spread.length * .8)];
-    if (drift > 30) return null;
-    const threshold = Math.max(14, drift * 1.7 + 6);
+    if (drift > (group ? 10 : 30)) return null;
+    const threshold = drift < 4 ? 6 : Math.max(14, drift * 1.7 + 6);
     const foreground = new Uint8Array(n);
     for (let i = 0; i < n; i++) foreground[i] = pixels[i * 4 + 3] > 16 && distance(i * 4) > threshold;
     const stack = new Int32Array(n), label = new Int32Array(n), parts = [null];
@@ -69,12 +70,13 @@
       if (!part || part.count < n * .003) return 0;
       const { x0, x1, y0, y1 } = part;
       const wide = x1 - x0 > w * .84, tall = y1 - y0 > h * .84;
+      if (group) return wide && tall ? 0 : part.count;
       const middle = (x0 + x1) / (2 * w), center = (y0 + y1) / (2 * h);
       return !(wide && tall) && middle > .12 && middle < .88 && center > .11 && center < .89 ? part.count : 0;
     });
     const biggest = good.reduce((a, v) => Math.max(a, v), 0);
     if (biggest < n * .022 || biggest > n * .74) return null;
-    const keep = good.map((v) => v >= biggest * .065);
+    const keep = good.map((v) => v >= biggest * (group ? .012 : .065));
     // Fill enclosed icing. A separate shape such as the space between two cookies remains transparent.
     const outside = new Uint8Array(n);
     let length = 0;
@@ -97,7 +99,7 @@
     return isolated;
   }
 
-  function card(subject) {
+  function card(subject, group = false) {
     const { width: w, height: h } = subject;
     const data = subject.getContext('2d').getImageData(0, 0, w, h).data;
     let left = w, right = 0, top = h, bottom = 0;
@@ -106,8 +108,8 @@
       left = Math.min(left, x); right = Math.max(right, x); top = Math.min(top, y); bottom = Math.max(bottom, y);
     }
     if (right <= left || bottom <= top) return null;
-    const sw = right - left + 1, sh = bottom - top + 1, size = 900;
-    const ratio = Math.min(size * .85 / sw, size * .65 / sh);
+    const sw = right - left + 1, sh = bottom - top + 1, size = window.NTC_CONFIG.cookiePhotoSize;
+    const ratio = Math.min(size * (group ? .94 : .85) / sw, size * (group ? .94 : .65) / sh);
     const output = createCanvas(size, size), ctx = output.getContext('2d');
     ctx.fillStyle = background;
     ctx.fillRect(0, 0, size, size);
@@ -174,6 +176,22 @@
   }
 
   NTC.cookiePhoto = {
+    async prepareSeries(file) {
+      const source = await load(file);
+      const subject = mask(source, true);
+      const prepared = subject && card(subject, true);
+      if (prepared) return encode(prepared);
+      // Keep the whole group in view, including cookies near the edges.
+      const size = window.NTC_CONFIG.cookiePhotoSize;
+      const output = createCanvas(size, size), ctx = output.getContext('2d');
+      ctx.fillStyle = background;
+      ctx.fillRect(0, 0, size, size);
+      const factor = size * .94 / Math.max(source.width, source.height);
+      const w = source.width * factor, h = source.height * factor;
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(source, (size - w) / 2, (size - h) / 2, w, h);
+      return encode(output);
+    },
     // The same function serves new options, existing replacements and catalog preparation.
     async prepare(file, { allowTrace = true } = {}) {
       const source = await load(file), subject = mask(source);

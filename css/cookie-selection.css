@@ -83,10 +83,7 @@
   background: #fffaf7;
 }
 
-/* 11-21 i: every photo sits in the same square frame, so the cards line up whatever shape the picture is (wide pink cards
-   next to the owner's square photos used to make one card short and the next one tall). The frame is the pink of the cookie
-   cards. A wide card (7:4) is enlarged a little so the cookie fills the square: across all cards the cookie spans at most 77%
-   of the card's width, so only empty pink at the sides falls outside. Its top and bottom edges fade into the frame. */
+/* Match the square backing used by the owner’s photo uploader. */
 .ckd-card .ph {
   display: block;
   width: 100%;
@@ -97,7 +94,7 @@
   padding: 0;
   border: 0;
   border-radius: 10px;
-  background: #fdccb8;
+  background: var(--cookie-photo-background);
   overflow: hidden;
 }
 
@@ -108,11 +105,7 @@
   object-fit: contain;
 }
 
-.ckd-card .ph.wide img {
-  transform: scale(1.28);
-  -webkit-mask-image: linear-gradient(to bottom, transparent 21.6%, #000 23.6%, #000 76.4%, transparent 78.4%);
-  mask-image: linear-gradient(to bottom, transparent 21.6%, #000 23.6%, #000 76.4%, transparent 78.4%);
-}
+.cookie-reference { color: #694d4e; font-size: 12px; }
 
 .ckd-card button.ph {
   cursor: zoom-in;

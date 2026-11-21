@@ -16,7 +16,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
 <link rel="preload" as="image" href="assets/cookies/ui/header.webp" type="image/webp">
 <link rel="stylesheet" href="css/app.css?v=1121i">
-<link rel="stylesheet" href="css/cookie-selection.css?v=1121i">
+<link rel="stylesheet" href="css/cookie-selection.css?v=pink1">
 </head>
 <body class="ckd-body">
 <main class="ckd" id="page">
@@ -32,7 +32,7 @@
 </main>
 <div class="ckd-bar" id="bar" hidden></div>
 <p class="sr-only" id="cookie-selection-status" role="status"></p>
-<script src="js/config.js?v=1121i"></script>
+<script src="js/config.js?v=pink1"></script>
 <script src="js/app.js?v=1121i"></script>
 <script src="js/shop.js?v=1121i"></script>
 <script>
@@ -133,12 +133,13 @@
 
   function gridHtml(ps) {
     return `<div class="ckd-grid">${ps.map((p) => {
+      const reference = p.photo?.includes('/design-reference-');
       const photo = `${p.photo ? `<img src="${esc(asset(p.photo))}" alt="" loading="lazy">` : ''}${p.soldOut ? '<span class="sob">售完</span>' : ''}${p.active === false ? '<span class="offtag">未上架</span>' : ''}`;
       const photoControl = p.photo
         ? `<button type="button" class="ph" data-src="${esc(asset(p.photo))}" aria-label="放大${esc(p.name)}的照片">${photo}<span class="zoom-hint" aria-hidden="true"></span></button>`
         : `<div class="ph no-photo">${photo}</div>`;
       return `<div class="ckd-card${p.soldOut ? ' so' : ''}" data-id="${esc(p.id)}">
-        ${photoControl}<div class="nm">${esc(p.name)}</div><div class="pr">${money(p.price)}</div><div class="st"></div></div>`;
+        ${photoControl}${reference ? '<small class="cookie-reference">造型示意圖</small>' : ''}<div class="nm">${esc(p.name)}</div><div class="pr">${money(p.price)}</div><div class="st"></div></div>`;
     }).join('') || '<p class="ckd-note">這個系列還沒有餅乾，敬請期待</p>'}</div>`;
   }
   function wireCards(root, ps, barPs) {
@@ -153,8 +154,6 @@
       c.classList.toggle('on', (pick[p.id] || 0) > 0);
       const photo = c.querySelector('button.ph');
       if (photo) photo.onclick = () => showPhoto(photo.dataset.src, p.name, photo);
-      const im = c.querySelector('.ph img'); // a wide card (7:4) is shown a little larger inside the square frame (see the stylesheet)
-      if (im) { const fit = () => im.parentElement.classList.toggle('wide', im.naturalWidth > im.naturalHeight * 1.3); if (im.complete && im.naturalWidth) fit(); else im.addEventListener('load', fit, { once: true }); }
     });
   }
 

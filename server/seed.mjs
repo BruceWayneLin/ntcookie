@@ -20,9 +20,17 @@ const meringue = [
   ...(slug !== 'butter-cocoa' ? { card: `${M}card-${slug}.webp`, cardName: name, cardPrice: price, icon: `assets/v2/icons/meringue-${slug}.webp` } : {}),
   cardKind: kind, sort: 10 + i,
 }));
+const bags = meringue.map((jar, i) => {
+  const slug = jar.id.slice('meringue-'.length);
+  const flavor = slug === 'cocoa' ? '法芙娜可可' : jar.name;
+  const name = `${flavor}（大包裝）`;
+  return { id: `meringue-bag-${slug}`, category: 'meringue', name, price: 650, unit: '包',
+    desc: '大包裝約 200 g，每包至少 50 顆。', sort: 110 + i,
+    photo: `${M}bags/photo-${slug}.webp`, card: `${M}bags/card-${slug}.webp`, cardName: name, cardPrice: 650 };
+});
 const now = new Date().toISOString();
 const sku = process.argv[3];
-const selected = [...canele, ...meringue].filter((p) => !sku || p.id === sku);
+const selected = [...canele, ...meringue, ...bags].filter((p) => !sku || p.id === sku);
 if (!selected.length) throw new Error('Unknown product ID');
 for (const p of selected) {
   try {

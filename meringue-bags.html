@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<script>/* stale-page guard, part 1 (see js/app.js) */try{(function(d){var n=performance.getEntriesByType&&performance.getEntriesByType('navigation')[0];if(n&&n.transferSize>0)return;d.className+=' vchk';setTimeout(function(){d.classList.remove('vchk')},1200)})(document.documentElement)}catch(e){}</script>
+<style>.vchk body{visibility:hidden}.vchk::before{content:"";position:fixed;left:50%;top:40%;width:36px;height:36px;margin:-18px 0 0 -18px;border-radius:50%;border:3px solid #ecd5c8;border-top-color:#b0604a;opacity:0;animation:vchk .8s linear infinite,vchkin .15s .12s forwards}@keyframes vchk{to{transform:rotate(360deg)}}@keyframes vchkin{to{opacity:1}}</style>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>大包裝馬林糖一口酥｜N.T Cookie × N.T Canelé</title>
+<meta name="description" content="大包裝約 200 g，每包至少 50 顆｜雙重酥脆・香濃不膩。每款馬林糖搭配專屬的香酥餅乾底。原味奶油、小山園抹茶、法芙娜可可、天然紫薯、香濃起司、奶油可可。">
+<meta name="theme-color" content="#f5e6de">
+<meta property="og:title" content="馬林糖一口酥｜N.T Cookie × N.T Canelé">
+<meta property="og:image" content="https://brucewaynelin.github.io/ntcookie/assets/v2/02-meringue/bags/hero.webp">
+<link rel="icon" href="assets/favicon.png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/app.css?v=1121i">
+<link rel="stylesheet" href="css/meringue-packs.css?v=1">
+</head>
+<body><main class="bags-page">
+<nav class="pack-nav" aria-label="選擇包裝"><a href="meringue.html">小罐裝</a><a aria-current="page" href="meringue-bags.html">大包裝・約 200 g</a></nav>
+<h1 class="sr-only">馬林糖一口酥大包裝</h1>
+<img class="bags-hero" src="assets/v2/02-meringue/bags/hero.webp" width="1024" height="447" alt="大包裝約 200 g，每包至少 50 顆。法式手工，酥脆輕盈。">
+<section aria-label="口味選擇" class="bags-grid" id="bags" aria-busy="true"></section>
+<a class="nt-back" href="shop.html"><i aria-hidden="true"></i>返回商店</a>
+</main>
+<script src="js/config.js?v=pink1"></script><script src="js/app.js?v=1121i"></script><script src="js/shop.js?v=1122a"></script>
+<script>
+NTC.mountCartBar();
+const grid = document.getElementById('bags');
+NTC.catalog().then(catalog => {
+  const bags = catalog.products.filter(p => p.category === 'meringue' && p.unit === '包');
+  for (const product of bags) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.dataset.id = product.id;
+    button.disabled = product.soldOut;
+    button.setAttribute('aria-label', product.name + '，每包 ' + product.price + ' 元' + (product.soldOut ? '，售完' : ''));
+    const art = product.card && product.cardPrice === product.price && product.cardName === product.name;
+    const photo = new Image(); photo.alt = ''; photo.src = NTC.asset(art ? product.card : product.photo);
+    button.append(photo);
+    if (!art) {
+      button.classList.add('bag-custom');
+      const caption = document.createElement('span'); caption.textContent = product.name + '　' + NTC.money(product.price) + '／包';
+      button.append(caption);
+    }
+    if (product.soldOut) {
+      const sold = document.createElement('span'); sold.className = 'bag-sold'; sold.textContent = '售完'; button.append(sold);
+    }
+    button.onclick = () => NTC.openProduct(product);
+    grid.append(button);
+  }
+  if (!bags.length) grid.textContent = '目前沒有上架的大包裝口味。';
+}).catch(() => { grid.textContent = '口味暫時無法載入，請重新整理。'; }).finally(() => grid.setAttribute('aria-busy', 'false'));
+</script></body></html>

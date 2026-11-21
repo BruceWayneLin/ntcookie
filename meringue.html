@@ -15,6 +15,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/app.css?v=1121i">
+<link rel="stylesheet" href="css/meringue-packs.css?v=1">
 <style>
   .meringue-copy {
     margin: clamp(10px, 3.5vw, 22px) calc(22 * var(--u)) 0;
@@ -53,6 +54,7 @@
 </head>
 <body>
 <main class="dz dz-941">
+  <nav class="pack-nav" aria-label="選擇包裝"><a aria-current="page" href="meringue.html">小罐裝</a><a href="meringue-bags.html">大包裝・約 200 g</a></nav>
   <h1 class="sr-only">馬林糖一口酥・送禮小點</h1>
   <!-- design 0–548: banner with its own back / cart / menu buttons, then 「口味選擇」 -->
   <div class="seg" style="height:calc(548 * var(--u));background-image:url(assets/v2/page-meringue-top.webp)">
@@ -78,7 +80,7 @@
   NTC.$('#back').onclick = NTC.back;
   NTC.$('#menu').onclick = NTC.openMenu;
   NTC.mountCartBar();
-  NTC.catalog().then((c) => NTC.renderGrid(NTC.$('#grid'), 'meringue', c.products.filter((p) => p.category === 'meringue')))
+  NTC.catalog().then((c) => NTC.renderGrid(NTC.$('#grid'), 'meringue', c.products.filter((p) => p.category === 'meringue' && p.unit !== '包')))
     .catch((e) => NTC.toast(e.message, 4000));
 </script>
 </body>
