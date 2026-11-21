@@ -1,3 +1,64 @@
+.meringue-banner {
+  background: #efdbce;
+}
+.meringue-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px clamp(6px, 2%, 14px);
+  color: #512117;
+  background: linear-gradient(110deg, #eed7c6, #f9eae0 40%, #e6c9b9);
+}
+.meringue-toolbar .circle-btn {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  background: #fff6ec;
+  color: inherit;
+  font: 400 23px/1 var(--sans);
+}
+.meringue-brand {
+  flex: 1;
+  text-align: center;
+  font: 700 clamp(14px, 4vw, 24px)/1.15 Georgia, var(--serif);
+}
+.meringue-art { position: relative; overflow: hidden; container-type: inline-size; }
+.meringue-art img {
+  width: 100%;
+  height: auto;
+  /* The supplied artwork includes a mock toolbar and a bottom margin. The live toolbar sits above the product photo. */
+  margin: -10.5% 0 -1.9%;
+}
+.bag-banner-weight, .bag-banner-count { position: absolute; color: #512117; white-space: nowrap; }
+.bag-banner-weight {
+  left: 13.4%;
+  top: 48.8%;
+  width: 32%;
+  height: 18.4%;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: #f9d9bb;
+  font: 900 3.3cqw/1 var(--serif);
+}
+.bag-banner-count {
+  right: 2.2%;
+  top: 4%;
+  padding: .45em .7em;
+  border: 1px solid #bc9973;
+  border-radius: 999px;
+  background: #fff2de;
+  font: 700 clamp(12px, 2.7cqw, 17px)/1.2 var(--sans);
+}
+.bag-banner-count b { color: #8b3025; }
+.meringue-flavors {
+  display: grid;
+  justify-items: center;
+  margin: 0;
+  padding: 8px 0 2px;
+  background: #fcf0e6;
+}
+.meringue-flavors img { width: 73%; height: auto; }
 .pack-nav {
   display: flex;
   justify-content: center;
@@ -5,7 +66,7 @@
   padding: 4px 8px 8px;
   background: #fcf0e6;
 }
-.pack-nav a {
+.pack-nav > a, .pack-nav > [aria-current] {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -18,26 +79,11 @@
   color: #633d30;
   font-weight: 700;
 }
-.pack-nav a span {font-size: .85em; white-space: nowrap}
-.pack-nav a[aria-current] {background: #754633; color: #fff}
+.pack-nav > * > span {font-size: .85em; white-space: nowrap}
+.pack-nav > [aria-current] {background: #754633; color: #fff}
 .bags-page {max-width: var(--page); margin: auto; padding-bottom: 96px; background: #fae6dd}
-.bags-page .pack-nav {background: #fae6dd}
-.bags-hero {position: relative; container-type: inline-size}
-.bags-hero img {width: 100%; height: auto}
-.bags-weight {
-  position: absolute;
-  left: 12.3%;
-  top: 45.8%;
-  width: 30.8%;
-  height: 12.7%;
-  display: grid;
-  place-items: center;
-  border-radius: 999px;
-  background: #fad4b5;
-  color: #391b0e;
-  font: 900 3cqw/1 var(--serif);
-  white-space: nowrap;
-}
+.bags-page .nt-back {text-decoration: none}
+.bags-page .pack-nav {background: #fcf0e6}
 .bags-grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;padding:2px 2% 18px}
 .bags-grid button {position:relative;display:block;width:100%;min-width:0;align-self:stretch;padding:0;border:none;border-radius:13px;overflow:hidden;background:#fae7dd;color:#462818;cursor:pointer}
 .bags-grid img {display:block;width:100%;height:auto}

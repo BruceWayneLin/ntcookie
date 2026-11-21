@@ -9,29 +9,53 @@
 <meta name="description" content="大包裝每包超過 200 g，每包至少 50 顆｜雙重酥脆・香濃不膩。每款馬林糖搭配專屬的香酥餅乾底。原味奶油、小山園抹茶、法芙娜可可、天然紫薯、香濃起司、奶油可可。">
 <meta name="theme-color" content="#f5e6de">
 <meta property="og:title" content="馬林糖一口酥｜N.T Cookie × N.T Canelé">
-<meta property="og:image" content="https://brucewaynelin.github.io/ntcookie/assets/v2/02-meringue/bags/photo-butter.webp">
+<meta property="og:image" content="https://brucewaynelin.github.io/ntcookie/assets/v2/02-meringue/share-large.jpg">
 <link rel="icon" href="assets/favicon.png">
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/app.css?v=1121i">
-<link rel="stylesheet" href="css/meringue-packs.css?v=2">
+<link rel="stylesheet" href="css/meringue-packs.css?v=3">
 </head>
 <body><main class="bags-page">
 <h1 class="sr-only">馬林糖一口酥大包裝</h1>
-<div class="bags-hero">
-  <img src="assets/v2/02-meringue/bags/hero.webp" width="1024" height="447" alt="馬林糖一口酥，每包至少 50 顆。法式手工，酥脆輕盈。">
-  <span class="bags-weight">大包裝 超過 200 g</span>
-</div>
+  <header class="meringue-banner">
+    <div class="meringue-toolbar">
+      <a class="circle-btn" data-return-to-jars href="meringue.html#packs" aria-label="返回上一頁"><span aria-hidden="true">←</span></a>
+      <span class="meringue-brand">N.T Cookie × N.T Canelé</span>
+      <a class="circle-btn" id="banner-cart" href="cart.html" aria-label="購物車"><span class="badge" data-cart-count></span></a>
+      <button class="circle-btn" id="menu" type="button" aria-label="選單"><span aria-hidden="true">☰</span></button>
+    </div>
+    <div class="meringue-art"><img src="assets/v2/02-meringue/jar-and-bag-banner.jpg" width="1755" height="896" alt="馬林糖一口酥送禮小點，小罐禮盒與大包裝。法式手工，酥脆輕盈，甜而不膩。">
+      <span class="bag-banner-weight">大包裝 超過 200 g</span>
+      <span class="bag-banner-count">至少 <b>50 顆</b>／包</span>
+    </div>
+  </header>
+  <h2 class="meringue-flavors"><img src="assets/v2/02-meringue/flavor-heading.webp" width="638" height="81" alt="口味選擇"></h2>
   <nav class="pack-nav" id="packs" aria-label="選擇包裝">
-    <a href="meringue.html#packs">小罐裝<span>約 120 g</span></a>
-    <a href="meringue-bags.html#packs" aria-current="page">大包裝<span>超過 200 g</span></a>
+    <a data-return-to-jars href="meringue.html#packs">小罐裝<span>約 120 g</span></a>
+    <span aria-current="page">大包裝<span>超過 200 g</span></span>
   </nav>
 <section aria-label="口味選擇" class="bags-grid" id="bags" aria-busy="true"></section>
-<a class="nt-back" href="shop.html"><i aria-hidden="true"></i>返回商店</a>
+<a class="nt-back" data-return-to-jars href="meringue.html#packs"><i aria-hidden="true"></i>返回上一頁</a>
 </main>
-<script src="js/config.js?v=packs2"></script><script src="js/app.js?v=1121i"></script><script src="js/shop.js?v=1122a"></script>
+<script src="js/config.js?v=packs3"></script><script src="js/app.js?v=1121i"></script><script src="js/shop.js?v=1122a"></script>
 <script>
+const jarsUrl = new URL('meringue.html#packs', location.href);
+const referrer = document.referrer ? new URL(document.referrer) : null;
+for (const link of document.querySelectorAll('[data-return-to-jars]')) {
+  link.addEventListener('click', event => {
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    event.preventDefault();
+    if (history.length > 1 && referrer?.origin === jarsUrl.origin && referrer.pathname === jarsUrl.pathname) {
+      history.back();
+    } else {
+      location.replace(link.href);
+    }
+  });
+}
+NTC.$('#menu').onclick = NTC.openMenu;
+NTC.$('#banner-cart').insertAdjacentHTML('afterbegin', NTC.CART_SVG);
 NTC.mountCartBar();
 const grid = document.getElementById('bags');
 NTC.catalog().then(catalog => {

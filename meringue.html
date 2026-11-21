@@ -9,13 +9,13 @@
 <meta name="description" content="馬林糖一口酥，小罐裝每罐約 120 g｜雙重酥脆・香濃不膩。每款馬林糖搭配專屬的香酥餅乾底。原味奶油、小山園抹茶、法芙娜可可、天然紫薯、香濃起司、奶油可可。">
 <meta name="theme-color" content="#f5e6de">
 <meta property="og:title" content="馬林糖一口酥｜N.T Cookie × N.T Canelé">
-<meta property="og:image" content="https://brucewaynelin.github.io/ntcookie/assets/v2/02-meringue/banner.png">
+<meta property="og:image" content="https://brucewaynelin.github.io/ntcookie/assets/v2/02-meringue/share-jars.jpg">
 <link rel="icon" href="assets/favicon.png">
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/app.css?v=1121i">
-<link rel="stylesheet" href="css/meringue-packs.css?v=2">
+<link rel="stylesheet" href="css/meringue-packs.css?v=3">
 <style>
   .meringue-copy {
     margin: clamp(10px, 3.5vw, 22px) calc(22 * var(--u)) 0;
@@ -55,17 +55,19 @@
 <body>
 <main class="dz dz-941">
   <h1 class="sr-only">馬林糖一口酥・送禮小點</h1>
-  <!-- design 0–548: banner with its own back / cart / menu buttons, then 「口味選擇」 -->
-  <div class="seg" style="height:calc(548 * var(--u));background-image:url(assets/v2/page-meringue-top.webp)">
-    <!-- tap zones are larger than the drawn circles (30 px on a phone): full corner, at least 48 px tall -->
-    <button class="hot" id="back" aria-label="返回" style="left:0;top:0;width:calc(112*var(--u));height:max(calc(96*var(--u)),48px);border-radius:0 0 18px 0"></button>
-    <a class="hot" href="cart.html" aria-label="購物車" style="left:calc(749*var(--u));top:0;width:calc(96*var(--u));height:max(calc(96*var(--u)),48px);border-radius:0 0 14px 14px">
-      <span class="badge" data-cart-count style="position:absolute;right:calc(2*var(--u));top:calc(4*var(--u));min-width:19px;height:19px;padding:0 5px;border-radius:999px;background:var(--red);color:#fff;font:700 11px/19px var(--sans);text-align:center"></span></a>
-    <button class="hot" id="menu" aria-label="選單" style="left:calc(845*var(--u));top:0;width:calc(96*var(--u));height:max(calc(96*var(--u)),48px);border-radius:0 0 0 14px"></button>
-  </div>
+  <header class="meringue-banner">
+    <div class="meringue-toolbar">
+      <button class="circle-btn" id="back" type="button" aria-label="返回上一頁"><span aria-hidden="true">←</span></button>
+      <span class="meringue-brand">N.T Cookie × N.T Canelé</span>
+      <a class="circle-btn" id="banner-cart" href="cart.html" aria-label="購物車"><span class="badge" data-cart-count></span></a>
+      <button class="circle-btn" id="menu" type="button" aria-label="選單"><span aria-hidden="true">☰</span></button>
+    </div>
+    <div class="meringue-art"><img src="assets/v2/02-meringue/jar-and-bag-banner.jpg" width="1755" height="896" alt="馬林糖一口酥送禮小點，小罐禮盒與大包裝。法式手工，酥脆輕盈，甜而不膩。"></div>
+  </header>
+  <h2 class="meringue-flavors"><img src="assets/v2/02-meringue/flavor-heading.webp" width="638" height="81" alt="口味選擇"></h2>
   <nav class="pack-nav" id="packs" aria-label="選擇包裝">
-    <a href="meringue.html#packs" aria-current="page">小罐裝<span>約 120 g</span></a>
-    <a href="meringue-bags.html#packs">大包裝<span>超過 200 g</span></a>
+    <span aria-current="page">小罐裝<span>約 120 g</span></span>
+    <a href="meringue-bags.html">大包裝<span>超過 200 g</span></a>
   </nav>
   <!-- design 548–1496: the flavour cards (live from the shop's product list) -->
   <div class="seg grid-rows" id="grid" style="height:calc(948 * var(--u));background-image:url(assets/v2/page-meringue-mid.webp)"></div>
@@ -76,12 +78,13 @@
   </section>
 </main>
 <button type="button" class="nt-back" onclick="window.NTC && NTC.back ? NTC.back() : history.back()"><i aria-hidden="true"></i>返回上一頁</button>
-<script src="js/config.js?v=packs2"></script>
+<script src="js/config.js?v=packs3"></script>
 <script src="js/app.js?v=1121i"></script>
 <script src="js/shop.js?v=1122a"></script>
 <script>
   NTC.$('#back').onclick = NTC.back;
   NTC.$('#menu').onclick = NTC.openMenu;
+  NTC.$('#banner-cart').insertAdjacentHTML('afterbegin', NTC.CART_SVG);
   NTC.mountCartBar();
   NTC.catalog().then((c) => NTC.renderGrid(NTC.$('#grid'), 'meringue', c.products.filter((p) => p.category === 'meringue' && p.unit !== '包')))
     .catch((e) => NTC.toast(e.message, 4000));
