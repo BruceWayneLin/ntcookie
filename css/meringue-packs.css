@@ -81,7 +81,15 @@
 }
 .pack-nav > * > span {font-size: .85em; white-space: nowrap}
 .pack-nav > [aria-current] {background: #754633; color: #fff}
-.bags-page {max-width: var(--page); margin: auto; padding-bottom: 96px; background: #fae6dd}
+.pack-nav > .pack-large {
+  display: grid;
+  grid-template-columns: auto auto;
+  align-content: center;
+  row-gap: 2px;
+  text-align: center;
+}
+.pack-large small {grid-column: 1 / -1; font-size: .8em; line-height: 1.35}
+.bags-page {display: flow-root; max-width: var(--page); margin-inline: auto; background: var(--bg)}
 .bags-page .nt-back {text-decoration: none}
 .bags-page .pack-nav {background: #fcf0e6}
 .bags-grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;padding:2px 2% 18px}
