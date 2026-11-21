@@ -12,7 +12,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <link rel="stylesheet" href="css/app.css?v=1121i">
-<link rel="stylesheet" href="css/storefront.css?v=1121i">
+<link rel="stylesheet" href="css/storefront.css?v=six-tiles">
 <title>線上商店｜N.T Cookie × N.T Canelé</title>
 <meta name="description" content="N.T Cookie × N.T Canelé 線上商店：可麗露禮盒、馬林糖一口酥，線上下單、LINE Pay 付款。">
 </head>
@@ -65,13 +65,18 @@
         <h2 class="sr-only">中國風造型餅乾</h2>
       </a>
     </li>
+    <li data-collection="cookie">
+      <a class="store-custom" href="custom.html" aria-label="客製造型餅乾，詢問報價">
+        <span class="store-custom-photo"><img src="assets/cookies/pink-photos/cookie-sp-43462363913-08-a15c8f17886d0f0b.webp" width="900" height="900" alt=""></span>
+        <div class="store-custom-copy">
+          <img src="assets/shop/custom-cookie.webp" width="128" height="96" alt="">
+          <h2>客製<br>造型餅乾</h2>
+          <span class="store-custom-arrow" aria-hidden="true">›</span>
+        </div>
+      </a>
+    </li>
   </ul>
   <p class="sr-only" id="filter-status" role="status"></p>
-  <a class="store-custom" href="custom.html">
-    <img src="assets/shop/custom-cookie.webp" width="128" height="96" alt="">
-    <div><h2>想訂製專屬造型？</h2><p>提供日期、數量與參考圖，我們為你報價。</p></div>
-    <span class="store-custom-link">聊聊客製需求</span>
-  </a>
   <a class="nt-back" id="back2" href="index.html"><i aria-hidden="true"></i>返回上一頁</a>
 </main>
 <footer class="store-footer" aria-label="購物資訊">
@@ -87,7 +92,7 @@
   </div>
   <form method="dialog"><button type="submit" autofocus>關閉</button></form>
 </dialog>
-<script src="js/config.js?v=1121i"></script>
+<script src="js/config.js?v=six-tiles"></script>
 <script src="js/app.js?v=1121i"></script>
 <script src="js/shop.js?v=1121i"></script>
 <script>
@@ -149,7 +154,7 @@
         ${cover ? `<span class="store-category-photo"><img src="${e(NTC.asset(cover))}" alt="" loading="lazy"></span>` : ''}
         <span class="store-category-copy"><h2>${e(title)}</h2><span class="store-category-action">選購款式</span></span>
       </a>`;
-      collections.insertBefore(tile, chinese);
+      collections.append(tile);
     }
     const active = filters.querySelector('[aria-pressed="true"]');
     filterCollections(active.dataset.filter, active.textContent);
