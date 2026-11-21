@@ -47,17 +47,6 @@
         <h2 class="sr-only">慶生・抓週 造型餅乾</h2>
       </a>
     </li>
-    <li class="store-feature" data-collection="cookie" data-group="chinese">
-      <a class="store-category-card" href="cookies.html?g=chinese">
-        <span class="store-category-photo">
-          <img src="assets/cookies/shopee/chinese.webp" width="856" height="700" alt="">
-        </span>
-        <span class="store-category-copy">
-          <h2>中國風造型餅乾</h2>
-          <span class="store-category-action">選購款式</span>
-        </span>
-      </a>
-    </li>
     <li data-collection="gift">
       <a href="meringue.html">
         <img src="assets/v2/03-homepage/category-meringue-cookies.webp" width="464" height="246" alt="">
@@ -68,6 +57,17 @@
       <a href="canele.html">
         <img src="assets/v2/03-homepage/category-canele.webp" width="462" height="246" alt="">
         <h2 class="sr-only">N.T Canelé 可麗露專區</h2>
+      </a>
+    </li>
+    <li class="store-feature" data-collection="cookie" data-group="chinese">
+      <a class="store-category-card" href="cookies.html?g=chinese">
+        <span class="store-category-photo">
+          <img src="assets/cookies/shopee/chinese.webp" width="856" height="700" alt="">
+        </span>
+        <span class="store-category-copy">
+          <h2>中國風造型餅乾</h2>
+          <span class="store-category-action">選購款式</span>
+        </span>
       </a>
     </li>
   </ul>
@@ -92,7 +92,7 @@
   </div>
   <form method="dialog"><button type="submit" autofocus>關閉</button></form>
 </dialog>
-<script src="js/config.js?v=1121e"></script>
+<script src="js/config.js?v=1121f"></script>
 <script src="js/app.js?v=1121d"></script>
 <script src="js/shop.js?v=1121d"></script>
 <script>
@@ -154,7 +154,7 @@
         ${cover ? `<span class="store-category-photo"><img src="${e(NTC.asset(cover))}" alt="" loading="lazy"></span>` : ''}
         <span class="store-category-copy"><h2>${e(title)}</h2><span class="store-category-action">選購款式</span></span>
       </a>`;
-      collections.insertBefore(tile, collections.querySelector('[data-collection="gift"]'));
+      collections.insertBefore(tile, chinese);
     }
     const active = filters.querySelector('[aria-pressed="true"]');
     filterCollections(active.dataset.filter, active.textContent);
