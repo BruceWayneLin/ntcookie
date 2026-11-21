@@ -16,7 +16,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
 <link rel="preload" as="image" href="assets/cookies/ui/header.webp" type="image/webp">
 <link rel="stylesheet" href="css/app.css?v=1121i">
-<link rel="stylesheet" href="css/cookie-selection.css?v=pink1">
+<link rel="stylesheet" href="css/cookie-selection.css?v=series4x3">
 </head>
 <body class="ckd-body">
 <main class="ckd" id="page">
@@ -32,7 +32,7 @@
 </main>
 <div class="ckd-bar" id="bar" hidden></div>
 <p class="sr-only" id="cookie-selection-status" role="status"></p>
-<script src="js/config.js?v=pink1"></script>
+<script src="js/config.js?v=series4x3"></script>
 <script src="js/app.js?v=1121i"></script>
 <script src="js/shop.js?v=1121i"></script>
 <script>
@@ -193,7 +193,7 @@
     const off = ps.filter((p) => p.active === false).length;
     app.innerHTML = `${!se.active ? '<div class="ckd-adm">預覽：這個系列還沒有上架的餅乾，客人看不到這一頁。到後台把餅乾「上架」，客人就看得到。</div>'
       : off ? `<div class="ckd-adm">預覽：有 ${off} 款還沒上架（標「未上架」），客人看不到那幾款。</div>` : ''}
-      <section class="ckd-banner">${banner(se)}</section>${infoHtml(se)}
+      <section class="ckd-banner${se.photo ? ' has-photo' : ''}">${banner(se)}</section>${infoHtml(se)}
       <img class="ckd-sec" src="assets/cookies/ui/section.webp" alt="單片選購">
       ${se.single ? '<p class="ckd-minimum-rule"><b>這個系列 1 片就可以訂</b></p>' : minimumRule()}${gridHtml(ps)}
       ${shippingNote()}<a class="ckd-custom" href="custom.html">系列裡沒有想要的圖案？<b>客製詢問 ›</b></a>${backBtn}`;

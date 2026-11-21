@@ -9,13 +9,13 @@
     if (i + w < n) visit(i + w);
   };
 
-  async function load(file) {
+  async function load(file, maxSide = 1500) {
     const url = URL.createObjectURL(file);
     try {
       const img = new Image(); img.src = url;
       try { await img.decode(); }
       catch { throw new Error('這張照片讀不到，請換一張'); }
-      const scale = Math.min(1, 1500 / Math.max(img.naturalWidth, img.naturalHeight));
+      const scale = Math.min(1, maxSide / Math.max(img.naturalWidth, img.naturalHeight));
       const result = createCanvas(Math.max(1, Math.round(img.naturalWidth * scale)), Math.max(1, Math.round(img.naturalHeight * scale)));
       result.getContext('2d').drawImage(img, 0, 0, result.width, result.height);
       return result;
@@ -24,7 +24,7 @@
 
   const median = (numbers) => numbers.sort((a, b) => a - b)[numbers.length >> 1];
 
-  function mask(source, group = false) {
+  function mask(source) {
     const scale = Math.min(1, 540 / Math.max(source.width, source.height));
     const w = Math.max(1, Math.round(source.width * scale)), h = Math.max(1, Math.round(source.height * scale));
     if (Math.min(w, h) < 36) return null;
@@ -48,7 +48,7 @@
     };
     const spread = fringe.map(distance).sort((a, b) => a - b);
     const drift = spread[Math.floor(spread.length * .8)];
-    if (drift > (group ? 10 : 30)) return null;
+    if (drift > 30) return null;
     const threshold = drift < 4 ? 6 : Math.max(14, drift * 1.7 + 6);
     const foreground = new Uint8Array(n);
     for (let i = 0; i < n; i++) foreground[i] = pixels[i * 4 + 3] > 16 && distance(i * 4) > threshold;
@@ -70,13 +70,12 @@
       if (!part || part.count < n * .003) return 0;
       const { x0, x1, y0, y1 } = part;
       const wide = x1 - x0 > w * .84, tall = y1 - y0 > h * .84;
-      if (group) return wide && tall ? 0 : part.count;
       const middle = (x0 + x1) / (2 * w), center = (y0 + y1) / (2 * h);
       return !(wide && tall) && middle > .12 && middle < .88 && center > .11 && center < .89 ? part.count : 0;
     });
     const biggest = good.reduce((a, v) => Math.max(a, v), 0);
     if (biggest < n * .022 || biggest > n * .74) return null;
-    const keep = good.map((v) => v >= biggest * (group ? .012 : .065));
+    const keep = good.map((v) => v >= biggest * .065);
     // Fill enclosed icing. A separate shape such as the space between two cookies remains transparent.
     const outside = new Uint8Array(n);
     let length = 0;
@@ -99,7 +98,7 @@
     return isolated;
   }
 
-  function card(subject, group = false) {
+  function card(subject) {
     const { width: w, height: h } = subject;
     const data = subject.getContext('2d').getImageData(0, 0, w, h).data;
     let left = w, right = 0, top = h, bottom = 0;
@@ -109,7 +108,7 @@
     }
     if (right <= left || bottom <= top) return null;
     const sw = right - left + 1, sh = bottom - top + 1, size = window.NTC_CONFIG.cookiePhotoSize;
-    const ratio = Math.min(size * (group ? .94 : .85) / sw, size * (group ? .94 : .65) / sh);
+    const ratio = Math.min(size * .85 / sw, size * .65 / sh);
     const output = createCanvas(size, size), ctx = output.getContext('2d');
     ctx.fillStyle = background;
     ctx.fillRect(0, 0, size, size);
@@ -119,12 +118,19 @@
     return output;
   }
 
-  function encode(canvas) {
+  function encode(canvas, allowDownsize = false) {
     for (const quality of [.94, .88, .80, .72]) {
       const webp = canvas.toDataURL('image/webp', quality);
       if (webp.startsWith('data:image/webp') && webp.length < 370000) return webp;
       const jpeg = canvas.toDataURL('image/jpeg', quality);
       if (jpeg.length < 370000) return jpeg;
+    }
+    if (allowDownsize && Math.max(canvas.width, canvas.height) > 640) {
+      const smaller = createCanvas(Math.max(1, Math.round(canvas.width * .75)), Math.max(1, Math.round(canvas.height * .75)));
+      const ctx = smaller.getContext('2d');
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(canvas, 0, 0, smaller.width, smaller.height);
+      return encode(smaller, true);
     }
     throw new Error('圖片太大，請換一張');
   }
@@ -177,20 +183,13 @@
 
   NTC.cookiePhoto = {
     async prepareSeries(file) {
-      const source = await load(file);
-      const subject = mask(source, true);
-      const prepared = subject && card(subject, true);
-      if (prepared) return encode(prepared);
-      // Keep the whole group in view, including cookies near the edges.
-      const size = window.NTC_CONFIG.cookiePhotoSize;
-      const output = createCanvas(size, size), ctx = output.getContext('2d');
-      ctx.fillStyle = background;
-      ctx.fillRect(0, 0, size, size);
-      const factor = size * .94 / Math.max(source.width, source.height);
-      const w = source.width * factor, h = source.height * factor;
-      ctx.imageSmoothingQuality = 'high';
-      ctx.drawImage(source, (size - w) / 2, (size - h) / 2, w, h);
-      return encode(output);
+      // The storefront crops the preview to 4:3. Keep the full scene for gallery zoom.
+      const source = await load(file, 1200);
+      const ctx = source.getContext('2d');
+      ctx.globalCompositeOperation = 'destination-over';
+      ctx.fillStyle = '#fffaf7';
+      ctx.fillRect(0, 0, source.width, source.height);
+      return encode(source, true);
     },
     // The same function serves new options, existing replacements and catalog preparation.
     async prepare(file, { allowTrace = true } = {}) {

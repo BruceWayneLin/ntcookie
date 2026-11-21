@@ -16,19 +16,34 @@
   grid-template-areas: "photo photo" "text chev";
   align-items: center;
   gap: clamp(10px, 2.8vw, 16px);
-  padding: clamp(8px, 2.3vw, 12px);
+  padding: 0 0 clamp(10px, 2.8vw, 16px);
 }
 
-.ckd-acc-head .ph {
-  grid-area: photo;
+.ckd-acc-head .ph { grid-area: photo; }
+
+.ckd-banner.has-photo {
+  display: block;
+  overflow: hidden;
+  padding: 0;
+}
+
+.ckd-banner.has-photo .tx { padding: clamp(12px, 3vw, 20px); }
+
+.ckd-acc-head .ph,
+.ckd-banner.has-photo .ph {
+  position: relative;
   display: block;
   width: 100%;
   height: auto;
   aspect-ratio: 4 / 3;
-  border-radius: clamp(11px, 3vw, 18px);
+  border-radius: 0;
+  background: #fffaf7;
 }
 
-.ckd-acc-head .ph img {
+.ckd-acc-head .ph img,
+.ckd-banner.has-photo .ph img {
+  position: absolute;
+  inset: 0;
   display: block;
   object-fit: cover;
 }
@@ -37,7 +52,7 @@
   grid-area: text;
   width: 100%;
   gap: 3px;
-  padding: 0 0 2px clamp(4px, 1.5vw, 9px);
+  padding: 0 0 2px clamp(12px, 3.5vw, 20px);
 }
 
 .ckd-acc-head b {
@@ -53,7 +68,7 @@
 
 .ckd-acc-head .chev {
   grid-area: chev;
-  margin-right: clamp(4px, 1.5vw, 10px);
+  margin-right: clamp(12px, 3.5vw, 20px);
 }
 
 .ckd-acc-head .cnt {
