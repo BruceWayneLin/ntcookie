@@ -165,20 +165,74 @@
   transform-origin: left center;
 }
 
-.ckd-view img {
-  max-height: calc(100dvh - 110px);
+.ckd-view {
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: calc(60px + env(safe-area-inset-top, 0px)) 0 max(16px, env(safe-area-inset-bottom, 0px));
+  border: 0;
+  background: transparent;
 }
 
+.ckd-view[open] {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: stretch;
+  justify-content: stretch;
+}
+
+.ckd-view::backdrop { background: rgba(30, 14, 8, .9); }
+
+.ckd-slides {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+}
+.ckd-slides::-webkit-scrollbar { display: none; }
+
+.ckd-slide {
+  flex: 0 0 100%;
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  min-height: 0;
+  grid-template: minmax(0, 1fr) / minmax(0, 1fr);
+  padding-inline: 12px;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+}
+
+.ckd-view img { cursor: default; user-select: none; }
+
+.ckd-view-nav {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) 44px;
+  align-items: center;
+  justify-self: center;
+  gap: 12px;
+  width: min(100%, 360px);
+  padding-inline: 16px;
+  cursor: default;
+}
+.ckd-view-nav button { position: static; font-size: 26px; line-height: 1; }
+.ckd-view-nav button:disabled { opacity: .35; cursor: default; }
 .ckd-view p {
-  position: absolute;
-  right: 24px;
-  bottom: calc(15px + env(safe-area-inset-bottom, 0px));
-  left: 24px;
+  grid-column: 2;
   margin: 0;
   color: #fffaf7;
   text-align: center;
   font: 700 1rem/1.4 var(--sans);
+  overflow-wrap: anywhere;
 }
+.ckd-view p small { display: block; font-variant-numeric: tabular-nums; }
 
 .ckd-card button.ph:focus-visible {
   outline-offset: -3px;

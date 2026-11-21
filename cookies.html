@@ -16,7 +16,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
 <link rel="preload" as="image" href="assets/cookies/ui/header.webp" type="image/webp">
 <link rel="stylesheet" href="css/app.css?v=1121i">
-<link rel="stylesheet" href="css/cookie-selection.css?v=series4x3">
+<link rel="stylesheet" href="css/cookie-selection.css?v=photoSwipe1">
 </head>
 <body class="ckd-body">
 <main class="ckd" id="page">
@@ -32,7 +32,7 @@
 </main>
 <div class="ckd-bar" id="bar" hidden></div>
 <p class="sr-only" id="cookie-selection-status" role="status"></p>
-<script src="js/config.js?v=series4x3"></script>
+<script src="js/config.js?v=photoSwipe1"></script>
 <script src="js/app.js?v=1121i"></script>
 <script src="js/shop.js?v=1121i"></script>
 <script>
@@ -106,35 +106,74 @@
     if (!ph.length && !x.desc) return '';
     return `<div class="ckd-info">${ph.length ? `<div class="ckd-gal" role="list">${ph.map((u, i) => `<button type="button" role="listitem" data-src="${esc(asset(u))}" aria-label="放大第 ${i + 1} 張照片"><img src="${esc(asset(u))}" alt="${esc(x.name)} 照片 ${i + 1}" loading="lazy"></button>`).join('')}</div>` : ''}${x.desc ? `<p class="ckd-desc">${esc(x.desc).replace(/\n/g, '<br>')}</p>` : ''}</div>`;
   };
-  function showPhoto(src, label, trigger) {
-    const view = document.createElement('div');
+  function showPhoto(buttons, start) {
+    const view = document.createElement('dialog');
     view.className = 'ckd-view';
-    view.setAttribute('role', 'dialog');
-    view.setAttribute('aria-modal', 'true');
-    view.setAttribute('aria-label', label);
-    view.innerHTML = `<img src="${esc(src)}" alt="${esc(label)}"><button type="button" aria-label="關閉照片">✕</button><p>${esc(label)}</p>`;
-    const oldOverflow = document.body.style.overflow;
-    const close = () => { view.remove(); document.body.style.overflow = oldOverflow; document.removeEventListener('keydown', onKey); trigger?.focus(); };
-    const onKey = (e) => {
-      if (e.key === 'Escape') close();
-      if (e.key === 'Tab') { e.preventDefault(); view.querySelector('button').focus(); }
+    view.setAttribute('aria-label', '照片瀏覽');
+    view.innerHTML = `<button type="button" class="ckd-view-close" aria-label="關閉照片" autofocus>✕</button>
+      <div class="ckd-slides" tabindex="-1"></div>
+      <div class="ckd-view-nav"><button type="button" aria-label="上一張">‹</button>
+        <p aria-live="polite" aria-atomic="true"><b></b><small></small></p>
+        <button type="button" aria-label="下一張">›</button></div>`;
+    const track = view.querySelector('.ckd-slides');
+    const [close, previous, next] = view.querySelectorAll('button');
+    const name = view.querySelector('p b'), count = view.querySelector('p small');
+    const labels = buttons.map((button) => button.querySelector('img').alt);
+    track.innerHTML = buttons.map((button, i) => `<div class="ckd-slide">
+      <img src="${esc(button.dataset.src)}" alt="${esc(labels[i])}" loading="${i === start ? 'eager' : 'lazy'}" draggable="false"></div>`).join('');
+
+    let index;
+    function select(i) {
+      if (i === index) return;
+      index = i;
+      name.textContent = labels[i];
+      count.textContent = buttons.length > 1 ? `${i + 1} / ${buttons.length}` : '';
+      previous.disabled = i === 0;
+      next.disabled = i === buttons.length - 1;
+    }
+    function goTo(i) {
+      if (i < 0 || i >= buttons.length) return;
+      track.scrollLeft = track.children[i].offsetLeft;
+      select(i);
+    }
+    track.onscroll = () => {
+      if (!view.open) return;
+      const nearest = Math.round(track.scrollLeft / track.clientWidth);
+      select(Math.max(0, Math.min(nearest, buttons.length - 1)));
     };
-    view.onclick = (e) => { if (e.target === view || e.target.closest('button')) close(); };
+    previous.hidden = next.hidden = buttons.length === 1;
+    previous.onclick = () => goTo(index - 1);
+    next.onclick = () => goTo(index + 1);
+    close.onclick = () => view.close();
+    view.onclick = (event) => {
+      if (event.target === view || event.target.classList.contains('ckd-slide')) view.close();
+    };
+    view.onkeydown = (event) => {
+      if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+      event.preventDefault();
+      goTo(index + (event.key === 'ArrowRight' ? 1 : -1));
+    };
+    const oldOverflow = document.body.style.overflow;
+    view.onclose = () => {
+      view.remove();
+      document.body.style.overflow = oldOverflow;
+      buttons[index].focus();
+    };
     document.body.appendChild(view);
     document.body.style.overflow = 'hidden';
-    document.addEventListener('keydown', onKey);
-    view.querySelector('button').focus();
+    view.showModal();
+    goTo(start);
   }
   function wireInfo(root) {
-    root.querySelectorAll('.ckd-gal button').forEach((b) => (b.onclick = () => {
-      showPhoto(b.dataset.src, b.querySelector('img')?.alt || '系列', b);
-    }));
+    root.querySelectorAll('.ckd-gal button').forEach((button) => {
+      button.onclick = () => showPhoto([button], 0);
+    });
   }
 
   function gridHtml(ps) {
     return `<div class="ckd-grid">${ps.map((p) => {
       const reference = p.photo?.includes('/design-reference-');
-      const photo = `${p.photo ? `<img src="${esc(asset(p.photo))}" alt="" loading="lazy">` : ''}${p.soldOut ? '<span class="sob">售完</span>' : ''}${p.active === false ? '<span class="offtag">未上架</span>' : ''}`;
+      const photo = `${p.photo ? `<img src="${esc(asset(p.photo))}" alt="${esc(p.name)}" loading="lazy">` : ''}${p.soldOut ? '<span class="sob">售完</span>' : ''}${p.active === false ? '<span class="offtag">未上架</span>' : ''}`;
       const photoControl = p.photo
         ? `<button type="button" class="ph" data-src="${esc(asset(p.photo))}" aria-label="放大${esc(p.name)}的照片">${photo}<span class="zoom-hint" aria-hidden="true"></span></button>`
         : `<div class="ph no-photo">${photo}</div>`;
@@ -152,9 +191,9 @@
       plus.setAttribute('aria-label', `增加${p.name}的數量`);
       stepper.querySelector('output').setAttribute('aria-live', 'off');
       c.classList.toggle('on', (pick[p.id] || 0) > 0);
-      const photo = c.querySelector('button.ph');
-      if (photo) photo.onclick = () => showPhoto(photo.dataset.src, p.name, photo);
     });
+    const photos = Array.from(root.querySelectorAll('.ckd-card button.ph'));
+    photos.forEach((photo, i) => { photo.onclick = () => showPhoto(photos, i); });
   }
 
   // 卡通・收涎 / 慶生: every series is a bar; tap one to open its cookies right below (only one open at a time)
