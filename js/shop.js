@@ -26,13 +26,14 @@
   }
 
   function cardHtml(p, cat, w, h, kind) {
+    const labelSize = Math.min(kind === 'small' ? 33 : 36, (w - 24) / ([...p.name].length + (p.icon ? 1.8 : 0)));
     const inner = bakedOk(p, kind)
       ? `<img class="baked" src="${esc(asset(p.card))}" alt="" loading="lazy">`
       : cat === 'canele'
         ? `<div class="dyn"><div class="ph" style="height:${U(h - 59)}"><img src="${esc(asset(p.photo))}" alt="" loading="lazy"></div>
              <div class="nm" style="top:${U(h - 52)};height:${U(44)};font-size:${U(30)}">${p.icon ? `<img src="${esc(asset(p.icon))}" alt="">` : ''}${esc(p.name)}</div></div>`
         : `<div class="dyn"><div class="ph" style="height:${U(kind === 'small' ? 298 : 313)}"><img src="${esc(asset(p.photo))}" alt="" loading="lazy"></div>
-             <div class="nm" style="top:${U(kind === 'small' ? 318 : 334)};height:${U(48)};font-size:${U(kind === 'small' ? 33 : 36)}">${esc(p.name)}${p.icon ? `<img src="${esc(asset(p.icon))}" alt="">` : ''}</div>
+             <div class="nm" style="top:${U(kind === 'small' ? 318 : 334)};height:${U(48)};font-size:${U(labelSize)}">${esc(p.name)}${p.icon ? `<img src="${esc(asset(p.icon))}" alt="">` : ''}</div>
              <div class="pr" style="top:${U(kind === 'small' ? 378 : 394)};height:${U(54)};font-size:${U(38)}">${money(p.price)}<small>/ ${esc(p.unit || '罐')}</small><i></i></div></div>`;
     const so = p.soldOut ? '<div class="so"><span>售完</span></div>' : '';
     const label = `${p.name}${cat === 'canele' ? ' 單一口味禮盒' : ''} ${money(p.price)}／${p.unit || ''}${p.soldOut ? '（售完）' : ''}`;
