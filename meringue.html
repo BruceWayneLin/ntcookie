@@ -6,7 +6,7 @@
 <style>.vchk body{visibility:hidden}.vchk::before{content:"";position:fixed;left:50%;top:40%;width:36px;height:36px;margin:-18px 0 0 -18px;border-radius:50%;border:3px solid #ecd5c8;border-top-color:#b0604a;opacity:0;animation:vchk .8s linear infinite,vchkin .15s .12s forwards}@keyframes vchk{to{transform:rotate(360deg)}}@keyframes vchkin{to{opacity:1}}</style>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>馬林糖一口酥｜N.T Cookie × N.T Canelé</title>
-<meta name="description" content="馬林糖一口酥｜雙重酥脆・香濃不膩。每款馬林糖搭配專屬的香酥餅乾底。原味奶油、小山園抹茶、法芙娜可可、天然紫薯、香濃起司、奶油可可。">
+<meta name="description" content="馬林糖一口酥，小罐裝每罐約 120 g｜雙重酥脆・香濃不膩。每款馬林糖搭配專屬的香酥餅乾底。原味奶油、小山園抹茶、法芙娜可可、天然紫薯、香濃起司、奶油可可。">
 <meta name="theme-color" content="#f5e6de">
 <meta property="og:title" content="馬林糖一口酥｜N.T Cookie × N.T Canelé">
 <meta property="og:image" content="https://brucewaynelin.github.io/ntcookie/assets/v2/02-meringue/banner.png">
@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/app.css?v=1121i">
-<link rel="stylesheet" href="css/meringue-packs.css?v=1">
+<link rel="stylesheet" href="css/meringue-packs.css?v=2">
 <style>
   .meringue-copy {
     margin: clamp(10px, 3.5vw, 22px) calc(22 * var(--u)) 0;
@@ -54,7 +54,6 @@
 </head>
 <body>
 <main class="dz dz-941">
-  <nav class="pack-nav" aria-label="選擇包裝"><a aria-current="page" href="meringue.html">小罐裝</a><a href="meringue-bags.html">大包裝・約 200 g</a></nav>
   <h1 class="sr-only">馬林糖一口酥・送禮小點</h1>
   <!-- design 0–548: banner with its own back / cart / menu buttons, then 「口味選擇」 -->
   <div class="seg" style="height:calc(548 * var(--u));background-image:url(assets/v2/page-meringue-top.webp)">
@@ -64,6 +63,10 @@
       <span class="badge" data-cart-count style="position:absolute;right:calc(2*var(--u));top:calc(4*var(--u));min-width:19px;height:19px;padding:0 5px;border-radius:999px;background:var(--red);color:#fff;font:700 11px/19px var(--sans);text-align:center"></span></a>
     <button class="hot" id="menu" aria-label="選單" style="left:calc(845*var(--u));top:0;width:calc(96*var(--u));height:max(calc(96*var(--u)),48px);border-radius:0 0 0 14px"></button>
   </div>
+  <nav class="pack-nav" id="packs" aria-label="選擇包裝">
+    <a href="meringue.html#packs" aria-current="page">小罐裝<span>約 120 g</span></a>
+    <a href="meringue-bags.html#packs">大包裝<span>超過 200 g</span></a>
+  </nav>
   <!-- design 548–1496: the flavour cards (live from the shop's product list) -->
   <div class="seg grid-rows" id="grid" style="height:calc(948 * var(--u));background-image:url(assets/v2/page-meringue-mid.webp)"></div>
   <section class="meringue-copy" aria-labelledby="meringue-copy-title">
@@ -73,7 +76,7 @@
   </section>
 </main>
 <button type="button" class="nt-back" onclick="window.NTC && NTC.back ? NTC.back() : history.back()"><i aria-hidden="true"></i>返回上一頁</button>
-<script src="js/config.js?v=1122a"></script>
+<script src="js/config.js?v=packs2"></script>
 <script src="js/app.js?v=1121i"></script>
 <script src="js/shop.js?v=1122a"></script>
 <script>
