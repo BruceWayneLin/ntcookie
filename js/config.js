@@ -5,5 +5,6 @@ window.NTC_CONFIG = {
   lineId: '@ntcookie',
   base: '',
   home: 'index.html',
-  version: '2026-11-21 i', // 每次上版改這裡，後台最下面會顯示
+  cookiePhotoBackground: '#FAD7DC', // 造型餅乾單片固定粉紅底
+  version: '2026-11-22 a', // 每次上版改這裡，後台最下面會顯示
 };

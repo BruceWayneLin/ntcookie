@@ -182,8 +182,9 @@
 <div class="shopbar" id="shopbar" hidden></div>
 <main class="wrap" id="app"><div class="spinner"></div></main>
 <p class="note" id="ver" style="text-align:center;margin:0 0 24px;color:var(--muted)"></p>
-<script src="js/config.js?v=1121i"></script>
+<script src="js/config.js?v=1122a"></script>
 <script src="js/app.js?v=1121i"></script>
+<script src="js/cookie-photo.js?v=1122a"></script>
 <script>
 (async function () {
   const { $, esc, money, asset } = NTC;
@@ -659,103 +660,6 @@
     el.querySelector('.close').addEventListener('click', () => fin(null)); el.previousElementSibling.addEventListener('click', () => fin(null));
   });
   const uploadPhoto = async (file, max) => (await NTC.api('/admin/images', { method: 'POST', body: { dataUrl: await shrink(file, max) } })).url;
-  // 單片（選項）的照片：白底的單片圖（從蝦皮選項存下來的那種）→ 自動去掉白底，放到跟其他單片一樣的粉紅底卡片上。
-  // 不是白底的照片（或去完不像一片餅乾的）照原樣上傳。(11-21)
-  /*pinkCard:start*/
-  function pinkCard(img) {
-    const k = Math.min(1, 1400 / Math.max(img.width, img.height)); const w = Math.round(img.width * k), h = Math.round(img.height * k); const n = w * h; // 不要縮太小：細的描邊糊掉，白底會從縫裡漏進餅乾
-    if (w < 80 || h < 80) return null;
-    const c = document.createElement('canvas'); c.width = w; c.height = h; const x = c.getContext('2d', { willReadFrequently: true }); x.drawImage(img, 0, 0, w, h);
-    const im = x.getImageData(0, 0, w, h); const d = im.data;
-    const white = new Uint8Array(n); // 亮、沒有顏色＝白底（餅乾上的白色糖霜被有顏色的邊包住，不會被當成底）
-    for (let i = 0, p = 0; i < n; i++, p += 4) { const mx = Math.max(d[p], d[p + 1], d[p + 2]), mn = Math.min(d[p], d[p + 1], d[p + 2]); if (d[p + 3] < 8 || (mx >= 237 && mx - mn <= mx * 0.07)) white[i] = 1; }
-    const bw = Math.max(3, Math.round(Math.min(w, h) * 0.02)); let ring = 0, rw = 0; // 外圈有六成以上是白的才算白底圖
-    let rl = 0; // 外圈白底的平均亮度（等一下用來分辨「真的白底」跟「白色的糖霜」）
-    for (let y = 0; y < h; y++) for (let xx = 0; xx < w; xx++) { if (y >= bw && y < h - bw && xx === bw) xx = w - bw; const i = y * w + xx; ring++; if (white[i]) { rw++; rl += d[i * 4] + d[i * 4 + 1] + d[i * 4 + 2]; } }
-    if (rw / ring < 0.6) return null;
-    const bgL = rl / (3 * rw);
-    const R = 2; const grow = (src, keep) => { // 往外長 R 格（先橫再直）；keep＝只留在這些格子裡
-      const a = new Uint8Array(n), b2 = new Uint8Array(n);
-      for (let y = 0; y < h; y++) for (let xx = 0, o = y * w; xx < w; xx++) { let v = 0; for (let k2 = Math.max(0, xx - R); k2 <= Math.min(w - 1, xx + R) && !v; k2++) v = src[o + k2]; a[o + xx] = v; }
-      for (let xx = 0; xx < w; xx++) for (let y = 0; y < h; y++) { let v = 0; for (let k2 = Math.max(0, y - R); k2 <= Math.min(h - 1, y + R) && !v; k2++) v = a[k2 * w + xx]; b2[y * w + xx] = v && (!keep || keep[y * w + xx]) ? 1 : 0; }
-      return b2; };
-    const stack = new Int32Array(n); let sp = 0;
-    // 把餅乾從底上切出來。bg＝哪些格子算「底」。回傳 null＝這張不適合處理
-    const cut = (bg) => {
-      const ink = new Uint8Array(n); for (let i = 0; i < n; i++) ink[i] = bg[i] ? 0 : 1;
-      const wall = grow(ink); // 描邊加粗一點再灌：線條上的小缺口不會讓白底漏進白色的餅乾裡
-      let out = new Uint8Array(n); // 從四邊往裡面把連在一起的底標出來
-      const push = (i) => { if (!wall[i] && !out[i]) { out[i] = 1; stack[sp++] = i; } };
-      for (let xx = 0; xx < w; xx++) { push(xx); push((h - 1) * w + xx); } for (let y = 0; y < h; y++) { push(y * w); push(y * w + w - 1); }
-      while (sp) { const i = stack[--sp]; const xx = i % w; if (xx > 0) push(i - 1); if (xx < w - 1) push(i + 1); if (i >= w) push(i - w); if (i < n - w) push(i + w); }
-      out = grow(out, bg); // 剛剛加粗佔掉的那一圈底補回來
-      const lab = new Int32Array(n); const areas = [0]; // 剩下的一塊一塊分開：留最大那塊，和不小於它 6% 的（分開的蝴蝶結、一雙鞋的另一隻）；小雜點丟掉
-      for (let s = 0; s < n; s++) { if (out[s] || lab[s]) continue; const id = areas.length; let a = 0; lab[s] = id; stack[sp++] = s;
-        while (sp) { const i = stack[--sp]; a++; const xx = i % w; for (const j of [xx > 0 ? i - 1 : -1, xx < w - 1 ? i + 1 : -1, i - w, i + w]) if (j >= 0 && j < n && !out[j] && !lab[j]) { lab[j] = id; stack[sp++] = j; } }
-        areas.push(a); }
-      const big = Math.max(...areas); if (big < n * 0.03) return null;
-      let x0 = w, y0 = h, x1 = -1, y1 = -1, area = 0; const rMin = new Int32Array(h).fill(w), rMax = new Int32Array(h).fill(-1), cMin = new Int32Array(w).fill(h), cMax = new Int32Array(w).fill(-1);
-      for (let i = 0; i < n; i++) { if (out[i]) continue; if (areas[lab[i]] < big * 0.06) { out[i] = 1; continue; } const xx = i % w, y = (i / w) | 0; area++; if (xx < x0) x0 = xx; if (xx > x1) x1 = xx; if (y < y0) y0 = y; if (y > y1) y1 = y;
-        if (xx < rMin[y]) rMin[y] = xx; if (xx > rMax[y]) rMax[y] = xx; if (y < cMin[xx]) cMin[xx] = y; if (y > cMax[xx]) cMax[xx] = y; }
-      const bwid = x1 - x0 + 1, bhei = y1 - y0 + 1;
-      let rs = 0, cs = 0; for (let y = 0; y < h; y++) if (rMax[y] >= 0) rs += rMax[y] - rMin[y] + 1; for (let xx = 0; xx < w; xx++) if (cMax[xx] >= 0) cs += cMax[xx] - cMin[xx] + 1;
-      // 整張都是、或中間被吃掉（白餅乾放在白底上：輪廓裡面大半是空的）→ 不處理，照原圖上傳
-      if (bwid * bhei > n * 0.985 || area / (bwid * bhei) < 0.3 || Math.max(area / rs, area / cs) < 0.62) return null;
-      let hol = 0, hd = 0; // 被餅乾上下左右包住、卻被當成底的地方：如果那裡的白跟外面的白底不一樣（有糖霜的明暗），就是白底漏進白色餅乾裡了（例如白色棒球）→ 不處理
-      for (let y = y0; y <= y1; y++) for (let xx = rMin[y]; xx <= rMax[y]; xx++) { const i = y * w + xx; if (out[i] && y > cMin[xx] && y < cMax[xx]) { hol++; hd += Math.abs((d[i * 4] + d[i * 4 + 1] + d[i * 4 + 2]) / 3 - bgL); } }
-      if (hol / (area + hol) > 0.1 && hd / hol > 5) return null;
-      return { out, x0, y0, bwid, bhei, area };
-    };
-    const first = cut(white); if (!first) return null;
-    // 修過的白底圖，餅乾旁邊常有一圈淡淡的影子。只切白的話影子會留下來，換到粉紅底上就是一圈白邊，所以再把影子切掉。
-    // 影子的樣子：從白底往餅乾走，一路平滑地慢慢變暗，中間沒有明顯的邊。照這個走法走得到的地方才算影子：
-    //   ‧ 只走平滑、沒什麼顏色、不太暗的格子（靠近餅乾的影子會帶一點餅乾的顏色），或是被影子圍住的白
-    //   ‧ 只能往暗的地方走（雜訊容許回亮一點點）：影子後面又變亮的＝淺色的糖霜，那是餅乾，不能走進去
-    let pick = first;
-    const lum = new Uint8Array(n); for (let i = 0, p = 0; i < n; i++, p += 4) lum[i] = (d[p] * 77 + d[p + 1] * 150 + d[p + 2] * 29) >> 8;
-    const G = 8, T = 5; const cand = new Uint8Array(n); let shade = 0;
-    for (let y = 0, i = 0, p = 0; y < h; y++) for (let xx = 0; xx < w; xx++, i++, p += 4) {
-      if (first.out[i]) continue; if (white[i]) { cand[i] = 1; continue; }
-      const mx = Math.max(d[p], d[p + 1], d[p + 2]), mn = Math.min(d[p], d[p + 1], d[p + 2]); if (mx < 150 || mx >= 237 || mx - mn > mx * 0.17) continue;
-      const l = lum[i]; if ((xx > 0 && Math.abs(l - lum[i - 1]) > G) || (xx < w - 1 && Math.abs(l - lum[i + 1]) > G) || (y > 0 && Math.abs(l - lum[i - w]) > G) || (y < h - 1 && Math.abs(l - lum[i + w]) > G)) continue;
-      cand[i] = 1; shade++;
-    }
-    if (shade > n * 0.002) {
-      const best = new Int16Array(n).fill(-1), head = new Int32Array(256).fill(-1), nxt = new Int32Array(n); // best＝走到這一格的路上最暗的亮度；從亮的開始處理
-      const put = (i, m) => { best[i] = m; nxt[i] = head[m]; head[m] = i; };
-      for (let i = 0; i < n; i++) { if (!first.out[i] || !white[i]) continue; const xx = i % w; if ((xx > 0 && cand[i - 1]) || (xx < w - 1 && cand[i + 1]) || (i >= w && cand[i - w]) || (i < n - w && cand[i + w])) put(i, lum[i]); }
-      let got = 0;
-      for (let m = 255; m >= 0; m--) while (head[m] >= 0) { const i = head[m]; head[m] = nxt[i]; const xx = i % w;
-        for (let q = 0; q < 4; q++) { const j = q === 0 ? (xx > 0 ? i - 1 : -1) : q === 1 ? (xx < w - 1 ? i + 1 : -1) : q === 2 ? i - w : i + w;
-          if (j < 0 || j >= n || !cand[j] || best[j] >= 0 || lum[j] > m + T) continue; put(j, Math.min(m, lum[j])); got++; } }
-      // 走到一半被「不能回亮」擋下來的地方＝那裡沒有邊、只是慢慢變亮：是淺色的東西（白色糖霜、白色蘑菇點、整張照片的淺色邊）跟自己的影子連在一起。
-      // 真的影子幾乎不會這樣停（都是停在餅乾的邊上）。這種停法一多，就不要動，用只切白的那一版。
-      let stops = 0; for (let i = 0; i < n; i++) { if (best[i] < 0 || !cand[i]) continue; const xx = i % w; if ((xx > 0 && cand[i - 1] && best[i - 1] < 0) || (xx < w - 1 && cand[i + 1] && best[i + 1] < 0) || (i >= w && cand[i - w] && best[i - w] < 0) || (i < n - w && cand[i + w] && best[i + w] < 0)) stops++; }
-      if (got > first.area * 0.004 && !(stops > 40 && stops > got * 0.008)) {
-        const pale = new Uint8Array(n); for (let i = 0; i < n; i++) pale[i] = first.out[i] || (cand[i] && best[i] >= 0) ? 1 : 0;
-        const second = cut(pale);
-        if (second && second.area < first.area && second.area >= first.area * 0.7) pick = second; // 少掉太多＝吃到餅乾了，用只切白的那一版
-      }
-    }
-    const { out, x0, y0, bwid, bhei } = pick;
-    const rim = new Uint8Array(n); // 邊緣兩圈漸淡，才不會有一圈白邊
-    for (let i = 0; i < n; i++) { if (out[i]) continue; const xx = i % w; if ((xx > 0 && out[i - 1]) || (xx < w - 1 && out[i + 1]) || (i >= w && out[i - w]) || (i < n - w && out[i + w])) rim[i] = 1; }
-    for (let i = 0, p = 3; i < n; i++, p += 4) { if (out[i]) { d[p] = 0; continue; } if (rim[i]) { d[p] = 40; continue; } const xx = i % w; d[p] = (xx > 0 && rim[i - 1]) || (xx < w - 1 && rim[i + 1]) || (i >= w && rim[i - w]) || (i < n - w && rim[i + w]) ? 170 : 255; }
-    x.putImageData(im, 0, 0);
-    const W = 840, H = 480; const card = document.createElement('canvas'); card.width = W; card.height = H; const g = card.getContext('2d');
-    g.fillStyle = 'rgb(253, 204, 184)'; g.fillRect(0, 0, W, H);
-    const kk = Math.min(645 / bwid, 444 / bhei); const dw = bwid * kk, dh = bhei * kk;
-    g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high'; g.shadowColor = 'rgba(120, 60, 40, .32)'; g.shadowBlur = 22; g.shadowOffsetX = 4; g.shadowOffsetY = 13;
-    g.drawImage(c, x0, y0, bwid, bhei, (W - dw) / 2, (H - dh) / 2 - 4, dw, dh);
-    for (const qv of [0.88, 0.8, 0.7]) { const u = card.toDataURL('image/webp', qv); if (u.startsWith('data:image/webp') && u.length < 370000) return u; const j = card.toDataURL('image/jpeg', qv); if (j.length < 370000) return j; }
-    return null;
-  }
-  /*pinkCard:end*/
-  async function optionCard(file) {
-    try { const img = await new Promise((ok, ko) => { const i = new Image(); i.onload = () => ok(i); i.onerror = ko; i.src = URL.createObjectURL(file); }); return pinkCard(img); }
-    catch (e) { return null; } // 做不了就照原樣上傳
-  }
-
   // 整頁「編輯商品」：照片、名稱、描述、分類、選項（每一片）。名稱、價格、選項按「更新」才一次存好，像蝦皮；
   // 照片是「一換就存」：傳上去客人馬上看得到，不用再按更新（新增中的商品／新的選項還沒存過，照片就跟著一起存）。
   function editSeriesPage(x, draft) {
@@ -803,7 +707,6 @@
       Object.assign(st, { photos: draft.st.photos || [], groups: (draft.st.groups || []).filter((g) => groupsOf().some((y) => y.id === g)), opts: draft.st.opts || [], removed: draft.st.removed || [] });
       q1('#ed-name').value = draft.st.name || ''; q1('#ed-desc').value = draft.st.desc || ''; q1('#ed-l1').value = (draft.st.lines || [])[0] || ''; q1('#ed-l2').value = (draft.st.lines || [])[1] || ''; q1('#ed-single').checked = !!draft.st.single;
     }
-    const origs = new Map(); // 這次編輯裡被自動換成粉紅底的選項 → 她原本選的那張照片（可以改回原圖）
     let dT = 0; let wrote = !!draft; // 草稿：有改就存，改回原樣或存好了就清掉
     const keep = () => { collect(); if (snap() !== start()) { draftSet({ sid, isNew, at: Date.now(), name0: x?.name || '', st }); wrote = true; } else if (wrote) draftSet(null); };
     const sched = () => { clearTimeout(dT); dT = setTimeout(keep, 400); };
@@ -909,10 +812,15 @@
         pi.onfocus = () => setTimeout(() => { try { if (document.activeElement === pi) pi.setSelectionRange(0, pi.value.length); } catch (e) { /* 這個瀏覽器不能選 */ } }, 0);
         r.querySelector('.o-on input').onchange = (e) => { o.active = e.target.checked; r.classList.toggle('off', !o.active); q1('#ed-cnt').textContent = `${st.opts.length} 款・${st.opts.filter((y) => y.active).length} 款上架`; paintBar(); };
         r.querySelector('.o-ph input').onchange = async (e) => { const f = e.target.files[0]; e.target.value = ''; if (!f) return;
-          NTC.loading(true, '上傳照片…'); try { const cardUrl = await optionCard(f); // 白底的單片圖 → 粉紅底卡片；其他照片照原樣
-            o.photo = cardUrl ? (await NTC.api('/admin/images', { method: 'POST', body: { dataUrl: cardUrl } })).url : await uploadPhoto(f);
-            if (cardUrl) origs.set(o.key, f); else origs.delete(o.key);
-            paintOpts(); await optPhotoNow(o, cardUrl ? '白底已自動換成粉紅底（不要的話：按「⋯」→ 照片改用原圖）' : ''); } catch (err) { NTC.toast(err.message || '照片上傳失敗', 3500); } finally { NTC.loading(false); } };
+          try {
+            const dataUrl = await NTC.cookiePhoto.prepare(f);
+            if (!dataUrl) return;
+            NTC.loading(true, '上傳照片…');
+            o.photo = (await NTC.api('/admin/images', { method: 'POST', body: { dataUrl } })).url;
+            paintOpts();
+            await optPhotoNow(o, '已套用粉紅底。');
+          } catch (err) { NTC.toast(err.message || '照片上傳失敗', 3500); }
+          finally { NTC.loading(false); } };
         r.querySelector('.o-more').onclick = () => optMore(i);
         r.querySelector('.o-del').onclick = () => delOpt(i);
       });
@@ -924,7 +832,6 @@
         <label class="tg red" style="display:flex;margin:4px 0 14px">售完（客人看得到，但不能買）<span class="sp"></span><input type="checkbox" id="m-sold" ${o.soldOut ? 'checked' : ''}></label>
         ${askHtml(o)}
         <div class="grid2" style="gap:8px"><button type="button" class="btn ghost small" id="m-up" ${i ? '' : 'disabled'}>往前移</button><button type="button" class="btn ghost small" id="m-dn" ${i < st.opts.length - 1 ? '' : 'disabled'}>往後移</button></div>
-        ${origs.has(o.key) ? '<button type="button" class="btn ghost block small" id="m-orig" style="margin-top:8px">照片改用原圖（不要自動換粉紅底）</button>' : ''}
         <button type="button" class="btn ghost block small" id="m-dup" style="margin-top:8px">複製一個一樣的選項</button>
         <button type="button" class="btn ghost block small" id="m-del" style="margin-top:8px;color:var(--red)">刪除這個選項</button>
         <button type="button" class="btn block" id="m-ok" style="margin-top:14px">完成</button>`);
@@ -935,8 +842,6 @@
       el.querySelector('#m-dn').onclick = () => { keep(); [st.opts[i + 1], st.opts[i]] = [st.opts[i], st.opts[i + 1]]; close(); paintOpts(); };
       el.querySelector('#m-dup').onclick = () => { keep(); const { id, key, ...rest } = o; st.opts.splice(i + 1, 0, { ...rest, key: `n${Math.random().toString(36).slice(2)}`, name: `${o.name || ''}（複製）`.slice(0, 40) }); close(); paintOpts(); };
       el.querySelector('#m-del').onclick = () => { if (delOpt(i)) close(); };
-      const mo = el.querySelector('#m-orig'); if (mo) mo.onclick = async () => { keep(); NTC.loading(true, '上傳照片…');
-        try { o.photo = await uploadPhoto(origs.get(o.key)); origs.delete(o.key); close(); paintOpts(); await optPhotoNow(o, '已改用原圖。'); } catch (err) { NTC.toast(err.message || '照片上傳失敗', 3500); } finally { NTC.loading(false); } };
     };
     const delOpt = (i) => { const o = st.opts[i]; if (o.id && !confirm(`刪除「${o.name}」？按「更新」後才會真的刪掉。（只想暫時不賣，關掉「上架」就好）`)) return false; if (o.id) st.removed.push(o.id); st.opts.splice(i, 1); paintOpts(); return true; };
     q1('#ed-add').onclick = () => {
@@ -1055,9 +960,12 @@
     let photo = p.photo;
     if (p.category === 'cookie') askWire(el);
     el.querySelector('#e-file').onchange = async (e) => {
-      const f = e.target.files[0]; if (!f) return;
-      NTC.loading(true, '上傳照片…');
-      try { const dataUrl = await shrink(f); el.querySelector('#e-img').src = dataUrl; photo = (await NTC.api('/admin/images', { method: 'POST', body: { dataUrl } })).url;
+      const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+      try {
+        const dataUrl = p.category === 'cookie' ? await NTC.cookiePhoto.prepare(f) : await shrink(f);
+        if (!dataUrl) return;
+        NTC.loading(true, '上傳照片…');
+        el.querySelector('#e-img').src = dataUrl; photo = (await NTC.api('/admin/images', { method: 'POST', body: { dataUrl } })).url;
         if (p.isNew) NTC.toast('照片放好了，按「儲存」後客人才看得到', 3600);
         else { // 已經有的商品：照片一換就存，客人馬上看得到（名稱、價格還是按「儲存」）
           try { await NTC.api(`/admin/products/${p.id}`, { method: 'PUT', body: { photo } }); const y = products.find((z) => z.id === p.id); if (y) y.photo = photo; p.photo = photo; renderProducts();
