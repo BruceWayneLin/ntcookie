@@ -16,7 +16,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
 <link rel="preload" as="image" href="assets/cookies/ui/header.webp" type="image/webp">
 <link rel="stylesheet" href="css/app.css?v=1121d">
-<link rel="stylesheet" href="css/cookie-selection.css?v=1121d">
+<link rel="stylesheet" href="css/cookie-selection.css?v=1121e">
 </head>
 <body class="ckd-body">
 <main class="ckd" id="page">
@@ -32,7 +32,7 @@
 </main>
 <div class="ckd-bar" id="bar" hidden></div>
 <p class="sr-only" id="cookie-selection-status" role="status"></p>
-<script src="js/config.js?v=1121d"></script>
+<script src="js/config.js?v=1121e"></script>
 <script src="js/app.js?v=1121d"></script>
 <script src="js/shop.js?v=1121d"></script>
 <script>
@@ -135,8 +135,8 @@
     return `<div class="ckd-grid">${ps.map((p) => {
       const photo = `${p.photo ? `<img src="${esc(asset(p.photo))}" alt="" loading="lazy">` : ''}${p.soldOut ? '<span class="sob">售完</span>' : ''}${p.active === false ? '<span class="offtag">未上架</span>' : ''}`;
       const photoControl = p.photo
-        ? `<button type="button" class="ph" data-src="${esc(asset(p.photo))}" aria-label="放大${esc(p.name)}的照片">${photo}<span class="zoom-hint" aria-hidden="true">點圖放大</span></button>`
-        : `<div class="ph">${photo}</div>`;
+        ? `<button type="button" class="ph" data-src="${esc(asset(p.photo))}" aria-label="放大${esc(p.name)}的照片">${photo}<span class="zoom-hint" aria-hidden="true"></span></button>`
+        : `<div class="ph no-photo">${photo}</div>`;
       return `<div class="ckd-card${p.soldOut ? ' so' : ''}" data-id="${esc(p.id)}">
         ${photoControl}<div class="nm">${esc(p.name)}</div><div class="pr">${money(p.price)}</div><div class="st"></div></div>`;
     }).join('') || '<p class="ckd-note">這個系列還沒有餅乾，敬請期待</p>'}</div>`;

@@ -73,37 +73,80 @@
   grid-column: 1 / -1;
 }
 
+/* Match the photo frame to each image instead of adding bands around wide assets. */
 .ckd-card {
   grid-column: auto;
   min-width: 0;
   height: auto;
-  padding: 4px 4px 8px;
+  padding: 5px 5px 9px;
+  border-radius: 14px;
+  background: #fffaf7;
 }
 
 .ckd-card .ph {
+  display: block;
   width: 100%;
   height: auto;
-  aspect-ratio: 1;
   flex-shrink: 0;
   margin: 0;
   padding: 0;
   border: 0;
+  border-radius: 10px;
+  background: #f3d9cb;
+}
+
+.ckd-card .ph.no-photo {
+  aspect-ratio: 7 / 4;
 }
 
 .ckd-card .ph img {
   display: block;
-  object-fit: contain;
+  width: 100%;
+  height: auto;
+  aspect-ratio: auto 7 / 4;
+}
+
+.ckd-card button.ph {
+  cursor: zoom-in;
 }
 
 .ckd-card .zoom-hint {
   position: absolute;
   right: 6px;
   bottom: 6px;
-  padding: 3px 7px;
-  border-radius: 999px;
-  background: rgba(59, 34, 22, .82);
-  color: #fffaf7;
-  font: 600 .75rem/1.2 var(--sans);
+  width: 25px;
+  height: 25px;
+  border-radius: 50%;
+  color: #4b2b1c;
+  background: #fffaf5f5;
+  box-shadow: 0 1px 4px #4b2b1c29;
+  pointer-events: none;
+}
+
+.ckd-card .zoom-hint::before,
+.ckd-card .zoom-hint::after {
+  content: "";
+  position: absolute;
+}
+
+.ckd-card .zoom-hint::before {
+  top: 6px;
+  left: 6px;
+  width: 10px;
+  height: 10px;
+  border: 1.5px solid currentColor;
+  border-radius: 50%;
+}
+
+.ckd-card .zoom-hint::after {
+  top: 15px;
+  left: 14px;
+  width: 6px;
+  height: 1.5px;
+  border-radius: 2px;
+  background: currentColor;
+  transform: rotate(45deg);
+  transform-origin: left center;
 }
 
 .ckd-view img {
@@ -123,10 +166,6 @@
 
 .ckd-card button.ph:focus-visible {
   outline-offset: -3px;
-}
-
-.ckd-card.so .ph {
-  cursor: default;
 }
 
 .ckd-card .nm {

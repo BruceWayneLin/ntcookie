@@ -12,7 +12,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <link rel="stylesheet" href="css/app.css?v=1121d">
-<link rel="stylesheet" href="css/storefront.css?v=1121d">
+<link rel="stylesheet" href="css/storefront.css?v=1121e">
 <title>線上商店｜N.T Cookie × N.T Canelé</title>
 <meta name="description" content="N.T Cookie × N.T Canelé 線上商店：可麗露禮盒、馬林糖一口酥，線上下單、LINE Pay 付款。">
 </head>
@@ -45,6 +45,17 @@
       <a href="cookies.html?g=birthday">
         <img src="assets/v2/03-homepage/category-birthday-cookies.webp" width="462" height="234" alt="">
         <h2 class="sr-only">慶生・抓週 造型餅乾</h2>
+      </a>
+    </li>
+    <li class="store-feature" data-collection="cookie" data-group="chinese">
+      <a class="store-category-card" href="cookies.html?g=chinese">
+        <span class="store-category-photo">
+          <img src="assets/cookies/shopee/chinese.webp" width="856" height="700" alt="">
+        </span>
+        <span class="store-category-copy">
+          <h2>中國風造型餅乾</h2>
+          <span class="store-category-action">選購款式</span>
+        </span>
       </a>
     </li>
     <li data-collection="gift">
@@ -81,7 +92,7 @@
   </div>
   <form method="dialog"><button type="submit" autofocus>關閉</button></form>
 </dialog>
-<script src="js/config.js?v=1121d"></script>
+<script src="js/config.js?v=1121e"></script>
 <script src="js/app.js?v=1121d"></script>
 <script src="js/shop.js?v=1121d"></script>
 <script>
@@ -94,17 +105,23 @@
 
   const filters = NTC.$('.store-filters');
   const buttons = [...filters.querySelectorAll('button')];
-  const collections = [...document.querySelectorAll('[data-collection]')];
+  const collections = NTC.$('#collections');
+  const chinese = collections.querySelector('[data-group="chinese"]');
+  let hasChinese = true;
+  function filterCollections(category, name) {
+    let count = 0;
+    for (const collection of collections.children) {
+      collection.hidden = (collection === chinese && !hasChinese) || (category !== 'all' && collection.dataset.collection !== category);
+      if (!collection.hidden) count++;
+    }
+    NTC.$('#filter-status').textContent = `${name}，共 ${count} 個分類`;
+  }
   filters.addEventListener('click', (event) => {
     const selected = event.target.closest('button[data-filter]');
     if (!selected || selected.getAttribute('aria-pressed') === 'true') return;
     const category = selected.dataset.filter;
     buttons.forEach((button) => button.setAttribute('aria-pressed', String(button === selected)));
-    collections.forEach((collection) => {
-      collection.hidden = category !== 'all' && collection.dataset.collection !== category;
-    });
-    const count = collections.filter((collection) => !collection.hidden).length;
-    NTC.$('#filter-status').textContent = `${selected.textContent}，共 ${count} 個分類`;
+    filterCollections(category, selected.textContent);
   });
   filters.hidden = false;
 
@@ -119,15 +136,29 @@
 
   // 購物須知: written from the shop's settings; the owner can rewrite, hide or add notes in the admin (設定 → 購物須知)
   NTC.catalog().then((c) => {
-    // categories the owner added herself (e.g. 中國風) have no picture card: list them under the two cookie cards
-    const ck = c.settings.cookie || {}; const live = (ck.series || []).filter((x) => x.active);
-    const more = (ck.groups || []).filter((g) => g.id !== 'character' && g.id !== 'birthday' && live.some((x) => (x.groups || []).includes(g.id)));
-    if (more.length) {
-      const li = document.createElement('li'); li.className = 'store-more'; li.dataset.collection = 'cookie';
-      li.innerHTML = `<p>更多造型餅乾</p>${more.map((g) => `<a href="cookies.html?g=${encodeURIComponent(g.id)}">${NTC.esc(/餅乾$/.test(g.name) ? g.name : `${g.name}造型餅乾`)}<span aria-hidden="true"> ›</span></a>`).join('')}`;
-      collections[1].after(li); collections.splice(2, 0, li);
+    const cookie = c.settings.cookie || {};
+    const live = (cookie.series || []).filter((series) => series.active);
+    const cookieGroups = (cookie.groups || []).filter((group) => live.some((series) => (series.groups || []).includes(group.id)));
+    hasChinese = cookieGroups.some((group) => group.id === 'chinese');
+    const builtIn = new Set(['character', 'birthday', 'chinese']);
+    const e = NTC.esc;
+    for (const group of cookieGroups) {
+      if (builtIn.has(group.id)) continue;
+      const series = live.find((item) => (item.groups || []).includes(group.id) && (item.photo || item.photos?.[0]));
+      const cover = series?.photo || series?.photos?.[0];
+      const title = /餅乾$/.test(group.name) ? group.name : `${group.name}造型餅乾`;
+      const tile = document.createElement('li');
+      tile.className = 'store-feature';
+      tile.dataset.collection = 'cookie';
+      tile.innerHTML = `<a class="store-category-card${cover ? '' : ' no-photo'}" href="cookies.html?g=${encodeURIComponent(group.id)}">
+        ${cover ? `<span class="store-category-photo"><img src="${e(NTC.asset(cover))}" alt="" loading="lazy"></span>` : ''}
+        <span class="store-category-copy"><h2>${e(title)}</h2><span class="store-category-action">選購款式</span></span>
+      </a>`;
+      collections.insertBefore(tile, collections.querySelector('[data-collection="gift"]'));
     }
-    const e = NTC.esc; const rows = NTC.shopNotes(c.settings).filter((r) => !r.hidden && (r.title || r.text));
+    const active = filters.querySelector('[aria-pressed="true"]');
+    filterCollections(active.dataset.filter, active.textContent);
+    const rows = NTC.shopNotes(c.settings).filter((r) => !r.hidden && (r.title || r.text));
     NTC.$('#shopping-body').innerHTML = `<dl class="store-rules">${rows.map((r) => `<dt>${e(r.title)}</dt><dd>${e(r.text).replace(/\n/g, '<br>')}</dd>`).join('')}</dl>`;
     if (location.hash === '#notes' && typeof info.showModal === 'function') info.showModal(); // the admin's 「看客人看到的樣子」
   }).catch(() => {});
