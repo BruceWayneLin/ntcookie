@@ -15,8 +15,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
 <link rel="preload" as="image" href="assets/cookies/ui/header.webp" type="image/webp">
-<link rel="stylesheet" href="css/app.css?v=1121h">
-<link rel="stylesheet" href="css/cookie-selection.css?v=1121h">
+<link rel="stylesheet" href="css/app.css?v=1121i">
+<link rel="stylesheet" href="css/cookie-selection.css?v=1121i">
 </head>
 <body class="ckd-body">
 <main class="ckd" id="page">
@@ -32,9 +32,9 @@
 </main>
 <div class="ckd-bar" id="bar" hidden></div>
 <p class="sr-only" id="cookie-selection-status" role="status"></p>
-<script src="js/config.js?v=1121h"></script>
-<script src="js/app.js?v=1121h"></script>
-<script src="js/shop.js?v=1121h"></script>
+<script src="js/config.js?v=1121i"></script>
+<script src="js/app.js?v=1121i"></script>
+<script src="js/shop.js?v=1121i"></script>
 <script>
 (function () {
   const { $, esc, money, asset } = NTC;
@@ -153,6 +153,8 @@
       c.classList.toggle('on', (pick[p.id] || 0) > 0);
       const photo = c.querySelector('button.ph');
       if (photo) photo.onclick = () => showPhoto(photo.dataset.src, p.name, photo);
+      const im = c.querySelector('.ph img'); // a wide card (7:4) is shown a little larger inside the square frame (see the stylesheet)
+      if (im) { const fit = () => im.parentElement.classList.toggle('wide', im.naturalWidth > im.naturalHeight * 1.3); if (im.complete && im.naturalWidth) fit(); else im.addEventListener('load', fit, { once: true }); }
     });
   }
 
