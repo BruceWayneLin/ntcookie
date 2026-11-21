@@ -72,6 +72,7 @@
   let liffP = null;
   NTC.liff = () => (liffP ||= (async () => {
     if (!CFG.liffId) return null;
+    if (window.__liffGo) return new Promise(() => {}); // this page is only LINE's doorway to another page: index.html's own early init is already taking us there
     if (!window.liff) {
       await new Promise((ok) => { const s = document.createElement('script'); s.src = 'https://static.line-scdn.net/liff/edge/2/sdk.js'; s.onload = ok; s.onerror = ok; document.head.appendChild(s); });
     }
@@ -174,7 +175,7 @@
       const cs = s.cookie.shipping; const tiers = [...(cs.tiers || [])].sort((a, b) => a.upTo - b.upTo);
       const fee = (tiers.find((t) => pieces <= t.upTo) || tiers[tiers.length - 1] || { fee: 0 }).fee;
       // cookies + meringue share one (large) box: the top cookie tier
-      parts.push(jars ? { kind: 'cookie', label: `${cs.label}（含馬林糖）`, units: pieces, parcels: 1, fee: Math.max(fee, ...tiers.map((t) => t.fee)) } : { kind: 'cookie', label: cs.label, units: pieces, parcels: 1, fee });
+      parts.push(jars ? { kind: 'cookie', label: `${cs.label}（含${lines.some((l) => l.temp === 'ambient' && l.line) ? '常溫商品' : '馬林糖'}）`, units: pieces, parcels: 1, fee: Math.max(fee, ...tiers.map((t) => t.fee)) } : { kind: 'cookie', label: cs.label, units: pieces, parcels: 1, fee });
     } else if (jars) { // meringue alone: by the number of jars
       const at = [...(sh.ambient.tiers && sh.ambient.tiers.length ? sh.ambient.tiers : [{ upTo: 999, fee: sh.ambient.fee || 0 }])].sort((a, b) => a.upTo - b.upTo);
       parts.push({ kind: 'ambient', label: sh.ambient.label, units: jars, parcels: 1, fee: (at.find((t) => jars <= t.upTo) || at[at.length - 1]).fee });
@@ -199,7 +200,8 @@
         const ok = p && !p.soldOut;
         const isC = p && p.category === 'canele';
         lines.push({
-          idx, it, ok, temp: isC ? 'frozen' : 'ambient', photo: p ? (p.photo || p.card) : '', price: p ? p.price : 0,
+          idx, it, ok, temp: isC || (p && (s.categories || []).find((k) => k.id === p.category)?.temp === 'frozen') ? 'frozen' : 'ambient', photo: p ? (p.photo || p.card) : '', price: p ? p.price : 0, // 店主自己開的分類可以選冷凍
+          line: p && !['canele', 'meringue'].includes(p.category) ? p.category : undefined,
           name: p ? (isC ? `${p.name}・單一口味禮盒` : p.name) : '已下架的商品',
           detail: isC ? '每盒 6 顆・皆為相同口味' : '', unit: p ? (p.unit || (isC ? '盒' : '個')) : '',
           min: isC ? (s.canele.singleMinBoxes || 1) : 1,

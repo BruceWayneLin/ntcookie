@@ -24,6 +24,93 @@
 
   const median = (numbers) => numbers.sort((a, b) => a - b)[numbers.length >> 1];
 
+  // Pictures saved from a phone often carry a plain border around the real picture (white bars, a screenshot's margin).
+  // Left in, the inner picture's own background would be taken for the subject and land on the card as a box.
+  // An inner picture has ruler-straight sides; a cookie on a plain background does not, so that one is left alone.
+  function trim(source) {
+    const scale = Math.min(1, 600 / Math.max(source.width, source.height));
+    const w = Math.max(1, Math.round(source.width * scale)), h = Math.max(1, Math.round(source.height * scale));
+    if (Math.min(w, h) < 60) return source;
+    const sample = createCanvas(w, h), ctx = sample.getContext('2d', { willReadFrequently: true });
+    ctx.drawImage(source, 0, 0, w, h);
+    const px = ctx.getImageData(0, 0, w, h).data;
+    let x0 = 0, y0 = 0, x1 = w - 1, y1 = h - 1;
+    for (let pass = 0; pass < 3; pass++) {
+      const cw = x1 - x0 + 1, ch = y1 - y0 + 1;
+      if (Math.min(cw, ch) < 60) break;
+      const band = Math.max(2, Math.round(Math.min(cw, ch) * .015));
+      let plain = null, outer = null;
+      for (const sides of ['lrtb', 'lr', 'tb']) { // a border all round, or bars on two opposite sides only
+        const ring = [];
+        for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
+          if ((sides.includes('l') && x < x0 + band) || (sides.includes('r') && x > x1 - band) || (sides.includes('t') && y < y0 + band) || (sides.includes('b') && y > y1 - band)) ring.push((y * w + x) * 4);
+        }
+        const tone = [0, 1, 2].map((c) => median(ring.map((p) => px[p + c])));
+        const test = (p) => px[p + 3] > 16 && Math.abs(px[p] - tone[0]) <= 16 && Math.abs(px[p + 1] - tone[1]) <= 16 && Math.abs(px[p + 2] - tone[2]) <= 16;
+        if (ring.filter(test).length >= ring.length * .94) { plain = test; outer = tone; break; }
+      }
+      if (!plain) break;
+      const rows = new Int32Array(h), cols = new Int32Array(w);
+      for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) if (!plain((y * w + x) * 4)) { rows[y]++; cols[x]++; }
+      let top = y0, bottom = y1, left = x0, right = x1;
+      const row = Math.max(3, cw * .02), col = Math.max(3, ch * .02);
+      while (top <= bottom && rows[top] < row) top++;
+      while (bottom >= top && rows[bottom] < row) bottom--;
+      while (left <= right && cols[left] < col) left++;
+      while (right >= left && cols[right] < col) right--;
+      const iw = right - left + 1, ih = bottom - top + 1;
+      if (iw < cw * .3 || ih < ch * .3 || iw * ih > cw * ch * .97) break;
+      const hit = (x, y) => !plain((y * w + x) * 4);
+      const moved = { l: left > x0, r: right < x1, t: top > y0, b: bottom < y1 }; // only the sides that had a border are checked
+      let miss = 0, total = 0;
+      for (let y = top + Math.round(ih * .03); y <= bottom - Math.round(ih * .03); y++) {
+        if (moved.l) { total++; if (!(hit(left, y) || hit(left + 1, y) || hit(left + 2, y))) miss++; }
+        if (moved.r) { total++; if (!(hit(right, y) || hit(right - 1, y) || hit(right - 2, y))) miss++; }
+      }
+      for (let x = left + Math.round(iw * .03); x <= right - Math.round(iw * .03); x++) {
+        if (moved.t) { total++; if (!(hit(x, top) || hit(x, top + 1) || hit(x, top + 2))) miss++; }
+        if (moved.b) { total++; if (!(hit(x, bottom) || hit(x, bottom - 1) || hit(x, bottom - 2))) miss++; }
+      }
+      if (!total || miss > total * .02) break;
+      // The inner picture must have a plain background of its own right up to its edge: a square cookie has an outline or a
+      // baked edge there (darker than both sides), and a photo is not plain. Those stay as they are.
+      const thick = Math.max(2, Math.round(Math.min(iw, ih) * .015));
+      const inside = (inset) => {
+        const out = [], ax = left + 1 + inset, ay = top + 1 + inset, bx = right - 1 - inset, by = bottom - 1 - inset;
+        for (let y = ay; y <= by; y++) for (let x = ax; x <= bx; x++) {
+          if (y >= ay + thick && y <= by - thick && x === ax + thick) x = bx - thick + 1;
+          out.push((y * w + x) * 4);
+        }
+        return out;
+      };
+      const edge = inside(0), deep = inside(Math.round(Math.min(iw, ih) * .04));
+      const inner = [0, 1, 2].map((c) => median(edge.map((p) => px[p + c]))), deeper = [0, 1, 2].map((c) => median(deep.map((p) => px[p + c])));
+      const near = (p) => Math.abs(px[p] - inner[0]) <= 16 && Math.abs(px[p + 1] - inner[1]) <= 16 && Math.abs(px[p + 2] - inner[2]) <= 16;
+      if (edge.filter(near).length < edge.length * .92 || inner.some((v, c) => Math.abs(v - deeper[c]) > 14)) break;
+      const light = (r, g, b) => r * .3 + g * .59 + b * .11, floor = Math.min(light(...outer), light(...inner)) - 25;
+      let dark = 0, seen = 0;
+      const zone = (x, y) => { const p = (y * w + x) * 4; seen++; if (light(px[p], px[p + 1], px[p + 2]) < floor) dark++; };
+      for (let y = top + Math.round(ih * .03); y <= bottom - Math.round(ih * .03); y++) for (let k = 0; k < 3; k++) {
+        if (moved.l) zone(left + k, y);
+        if (moved.r) zone(right - k, y);
+      }
+      for (let x = left + Math.round(iw * .03); x <= right - Math.round(iw * .03); x++) for (let k = 0; k < 3; k++) {
+        if (moved.t) zone(x, top + k);
+        if (moved.b) zone(x, bottom - k);
+      }
+      if (dark > seen * .1) break;
+      x0 = left + 1; y0 = top + 1; x1 = right - 1; y1 = bottom - 1;
+    }
+    if (!x0 && !y0 && x1 === w - 1 && y1 === h - 1) return source;
+    const inset = Math.max(2, Math.round(Math.min(x1 - x0, y1 - y0) / scale * .006));
+    const sx = Math.round(x0 / scale) + inset, sy = Math.round(y0 / scale) + inset;
+    const sw = Math.round((x1 - x0 + 1) / scale) - inset * 2, sh = Math.round((y1 - y0 + 1) / scale) - inset * 2;
+    if (sw < 60 || sh < 60) return source;
+    const result = createCanvas(sw, sh);
+    result.getContext('2d').drawImage(source, sx, sy, sw, sh, 0, 0, sw, sh);
+    return result;
+  }
+
   function mask(source) {
     const scale = Math.min(1, 540 / Math.max(source.width, source.height));
     const w = Math.max(1, Math.round(source.width * scale)), h = Math.max(1, Math.round(source.height * scale));
@@ -193,7 +280,9 @@
     },
     // The same function serves new options, existing replacements and catalog preparation.
     async prepare(file, { allowTrace = true } = {}) {
-      const source = await load(file), subject = mask(source);
+      const full = await load(file), inner = trim(full);
+      let source = inner, subject = mask(inner);
+      if (!subject && inner !== full) { source = full; subject = mask(full); } // trimming did not help: carry on with the whole picture
       const canvas = (subject && card(subject)) || (allowTrace ? await trace(source) : null);
       return canvas ? encode(canvas) : null;
     },

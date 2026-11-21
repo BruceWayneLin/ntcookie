@@ -6,6 +6,7 @@ import {
   DynamoDBDocumentClient, GetCommand, PutCommand, UpdateCommand, DeleteCommand, QueryCommand,
 } from '@aws-sdk/lib-dynamodb';
 import crypto from 'node:crypto';
+import { gzipSync } from 'node:zlib';
 
 const env = process.env;
 const TABLE = env.TABLE || 'ntcookie';
@@ -145,6 +146,18 @@ const cleanGroups = (list) => { const ids = new Set(); return (Array.isArray(lis
   .filter((g) => g.id && g.name && !ids.has(g.id) && ids.add(g.id)); };
 const cookieGroups = (s) => { const g = cleanGroups(s.cookie?.groups); return g.length ? g : DEFAULT_SETTINGS.cookie.groups; };
 const IMG_URL = /^(https:\/\/[^\s"'<>]+|assets\/[\w./-]+)$/; // an uploaded photo (/img/…) or one of the site's own pictures
+// 自訂商品分類：店主在後台自己開的商品線（例如「馬林糖大包裝」）。裡面是簡單商品（照片、名稱、價格），前台各自有一頁（category.html?c=id）
+const BUILT_IN = ['canele', 'meringue', 'cookie'];
+const cleanCats = (list) => { const ids = new Set(); return (Array.isArray(list) ? list : []).slice(0, 12).map((c, i) => { const photo = str(c?.photo, 300); return {
+  id: str(c?.id, 20).toLowerCase().replace(/[^a-z0-9-]/g, ''), name: str(c?.name, 16), unit: str(c?.unit, 4) || '個', temp: c?.temp === 'frozen' ? 'frozen' : 'ambient',
+  intro: multiline(c?.intro, 200), photo: IMG_URL.test(photo) ? photo : '', sort: int(c?.sort, (i + 1) * 10) }; })
+  .filter((c) => c.id && c.name && !BUILT_IN.includes(c.id) && !ids.has(c.id) && ids.add(c.id)).sort((a, b) => a.sort - b.sort); };
+const catsOf = (s) => cleanCats(s.categories);
+// 馬林糖兩種包裝（單位「罐」＝jar、「包」＝bag）在頁面上的名稱、後面的小字、再下面一行：店主可以改。沒設定過就用原本的字
+const DEFAULT_PACKS = { jar: { name: '小罐裝', note: '約 120 g', extra: '' }, bag: { name: '大包裝', note: '超過 200 g', extra: '每包至少 50 顆' } };
+const cleanPacks = (p) => Object.fromEntries(['jar', 'bag'].map((k) => { const x = p?.[k]; const d = DEFAULT_PACKS[k];
+  return [k, { name: str(x?.name, 10) || d.name, note: x?.note === undefined ? d.note : str(x.note, 16), extra: x?.extra === undefined ? d.extra : str(x.extra, 20) }]; }));
+const catIds = (s) => new Set([...BUILT_IN, ...catsOf(s).map((c) => c.id)]);
 const cleanSeries = (x, i, groupIds) => {
   const photos = [...new Set((Array.isArray(x.photos) ? x.photos : []).map((u) => str(u, 300)).filter((u) => IMG_URL.test(u)))].slice(0, 9);
   const photo = str(x.photo, 300);
@@ -163,7 +176,7 @@ function cleanProduct(b, old, settings) {
   const id = str(b.id ?? old.id, 40).replace(/[^a-z0-9-]/gi, '');
   if (!id) throw bad('商品代號不正確');
   const p = { ...old, ...pick(b, PRODUCT_FIELDS), pk: 'PRODUCT', sk: id, id };
-  if (!['canele', 'meringue', 'cookie'].includes(p.category)) throw bad('分類不正確');
+  if (!catIds(settings).has(p.category)) throw bad('分類不正確');
   if (p.category === 'cookie') {
     if (!(settings.cookie?.series || []).some((x) => x.id === p.series)) throw bad('請選擇這片餅乾屬於哪個系列');
     p.textLabel = str(p.textLabel, 30) || undefined; p.textMax = p.textLabel ? Math.min(40, Math.max(1, int(p.textMax, 12))) : undefined;
@@ -202,6 +215,8 @@ function publicSettings(s, admin = false, products = null) {
     },
     canele: s.canele, notice: s.notice, shopNotes: cleanNotes(s.shopNotes), today: twDate(),
     cookie: { minPieces: s.cookie.minPieces, shipping: s.cookie.shipping, groups: cookieGroups(s), series: products ? visibleSeries(s, products, admin) : [] },
+    categories: catsOf(s), // 店主自己開的商品分類
+    packs: cleanPacks(s.packs), // 馬林糖兩種包裝在頁面上的名稱
     preview: admin ? { closed: !!s.pauseOrders, testMode: !!s.testMode } : undefined, // 店家登入時：客人實際看到的狀態
   };
 }
@@ -326,7 +341,7 @@ function calcShipping(lines, subtotal, settings) {
     const tiers = [...(cs.tiers || [])].map((t) => ({ upTo: int(t.upTo), fee: int(t.fee) })).filter((t) => t.upTo > 0).sort((a, b) => a.upTo - b.upTo);
     const fee = (tiers.find((t) => pieces <= t.upTo) || tiers[tiers.length - 1] || { fee: 0 }).fee;
     // 餅乾＋馬林糖裝同一箱：一定是大尺寸，運費＝餅乾運費的最高一級（店主：「跟餅乾一起訂，那一定是 170」）
-    parts.push(jars ? { kind: 'cookie', label: `${cs.label}（含馬林糖）`, units: pieces, parcels: 1, fee: Math.max(fee, ...tiers.map((t) => t.fee)) } : { kind: 'cookie', label: cs.label, units: pieces, parcels: 1, fee });
+    parts.push(jars ? { kind: 'cookie', label: `${cs.label}（含${lines.some((l) => l.temp === 'ambient' && l.line) ? '常溫商品' : '馬林糖'}）`, units: pieces, parcels: 1, fee: Math.max(fee, ...tiers.map((t) => t.fee)) } : { kind: 'cookie', label: cs.label, units: pieces, parcels: 1, fee });
   } else if (jars) parts.push({ kind: 'ambient', label: sh.ambient.label, units: jars, parcels: 1, fee: tierFee(ambientTiers(settings), jars) });
   const freeOver = int(settings.freeShippingOver);
   if (freeOver > 0 && subtotal >= freeOver) parts.forEach((p) => { p.fee = 0; });
@@ -359,7 +374,7 @@ function priceOrder(reqItems, products, settings, { admin = false } = {}) {
         if (qty < min) throw bad(`單一口味禮盒 ${min} 盒起訂`);
         lines.push({ type: 'product', productId: p.id, name: `${p.name}・單一口味禮盒`, detail: '每盒 6 顆・皆為相同口味', unit: '盒', price: int(p.price), qty, temp: 'frozen' });
       } else {
-        lines.push({ type: 'product', productId: p.id, name: p.name, unit: p.unit || '個', price: int(p.price), qty, temp: TEMP[p.category] || 'ambient' });
+        lines.push({ type: 'product', productId: p.id, name: p.name, unit: p.unit || '個', price: int(p.price), qty, temp: TEMP[p.category] || catsOf(settings).find((c) => c.id === p.category)?.temp || 'ambient', line: BUILT_IN.includes(p.category) ? undefined : p.category }); // line＝店主自己開的分類
       }
     } else if (it.type === 'canele-assorted') {
       const mode = (settings.canele?.modes || []).find((m) => m.id === it.mode);
@@ -810,6 +825,11 @@ async function dailyDigest() {
 export async function handler(event) {
   if (event?.source === 'ntcookie.daily') { const r = await dailyDigest(); console.log(JSON.stringify({ daily: r })); return r; }
   const res = await route(event);
+  try { // big JSON answers (the catalog is about 120 KB) go out gzipped: a Function URL does not compress by itself
+    if (typeof res.body === 'string' && res.body.length > 2000 && !res.isBase64Encoded && /json/.test(res.headers?.['content-type'] || '') && /\bgzip\b/.test((event.headers || {})['accept-encoding'] || '')) {
+      res.body = gzipSync(res.body).toString('base64'); res.isBase64Encoded = true; res.headers = { ...res.headers, 'content-encoding': 'gzip', vary: 'accept-encoding' };
+    }
+  } catch (e) { /* send it as it is */ }
   try {
     const h = event.headers || {}; const ua = h['user-agent'] || '';
     console.log(JSON.stringify({ m: event.requestContext?.http?.method, p: (event.rawPath || '').replace(/NT\d+/, 'NT…').replace(/\/img\/.+/, '/img/…'), s: res.statusCode,
@@ -828,10 +848,10 @@ async function route(event) {
     if (method === 'POST' && path === '/line/webhook') return await lineWebhook(event);
     if (method === 'GET' && path === '/catalog') {
       const [settings, products, viewer] = await Promise.all([getSettings(), listProducts(), getUser(event).catch(() => null)]);
-      const admin = isAdminOf(settings, viewer); const seriesIds = new Set(seriesOf(settings).map((x) => x.id));
+      const admin = isAdminOf(settings, viewer); const seriesIds = new Set(seriesOf(settings).map((x) => x.id)); const cats = catIds(settings);
       return json(200, {
         // customers: only 上架 products; admins also get 未上架 cookies (cookie preview marks them)
-        products: products.filter((p) => (p.active || (admin && p.category === 'cookie')) && (p.category !== 'cookie' || seriesIds.has(p.series))),
+        products: products.filter((p) => (p.active || (admin && p.category === 'cookie')) && (p.category !== 'cookie' || seriesIds.has(p.series)) && cats.has(p.category)),
         settings: publicSettings(settings, admin, products),
         fullDates: await fullDates(settings),
       }, { 'cache-control': 'no-cache' });
@@ -1069,6 +1089,32 @@ async function route(event) {
         return json(200, { ok: true });
       }
       if (method === 'GET' && path === '/admin/products') return json(200, { products: await listProducts() });
+      // 自訂商品分類：新增、改名、改單位／運送方式／介紹／封面、排順序（一次改一個，不會蓋到別人剛加的）
+      if (method === 'PUT' && seg[1] === 'categories' && seg[2]) {
+        const b = parseBody(event); const id = seg[2].toLowerCase().replace(/[^a-z0-9-]/g, '').slice(0, 20);
+        if (!id || BUILT_IN.includes(id)) throw bad('分類代號不正確');
+        const cats = catsOf(settings); const i = cats.findIndex((c) => c.id === id);
+        const one = cleanCats([{ ...(i >= 0 ? cats[i] : { sort: Math.max(0, ...cats.map((c) => c.sort)) + 10 }), ...pick(b, ['name', 'unit', 'temp', 'intro', 'photo', 'sort']), id }])[0];
+        if (!one) throw bad('請填分類名稱');
+        if (cats.some((c) => c.id !== id && c.name === one.name)) throw bad(`已經有「${one.name}」這個分類了`);
+        if (i < 0 && cats.length >= 12) throw bad('最多 12 個自訂分類');
+        if (i >= 0) cats[i] = one; else cats.push(one);
+        const next = { ...settings, categories: cats.sort((x, y) => x.sort - y.sort), pk: 'SETTINGS', sk: 'main' };
+        await put(next);
+        return json(200, { category: one, settings: adminView(next) });
+      }
+      // 刪掉一個自訂分類，裡面的商品一起刪（訂單上已經記下品名和價格，不受影響）
+      if (method === 'DELETE' && seg[1] === 'categories' && seg[2]) {
+        const id = seg[2].toLowerCase().replace(/[^a-z0-9-]/g, '').slice(0, 20); const cats = catsOf(settings);
+        if (BUILT_IN.includes(id)) throw bad('這個分類不能刪');
+        if (cats.some((c) => c.id === id)) {
+          for (const p of (await listProducts()).filter((x) => x.category === id)) await del('PRODUCT', p.id);
+          const next = { ...settings, categories: cats.filter((c) => c.id !== id), pk: 'SETTINGS', sk: 'main' };
+          await put(next);
+          return json(200, { settings: adminView(next), products: await listProducts() });
+        }
+        return json(200, { settings: adminView(settings), products: await listProducts() });
+      }
       if (method === 'PUT' && seg[1] === 'products' && seg[2]) {
         const b = parseBody(event);
         const id = seg[2].replace(/[^a-z0-9-]/gi, '').slice(0, 40);
@@ -1119,6 +1165,7 @@ async function route(event) {
         const keys = ['leadDays', 'maxDays', 'maxOrdersPerDay', 'closedWeekdays', 'blockedDates', 'dateLabel', 'dateNote', 'shipping', 'freeShippingOver', 'payments', 'bank', 'transferDays', 'canele', 'notice', 'shopNotes', 'testMode', 'pauseOrders', 'cookie'];
         const next = { ...settings, ...pick(b, keys), pk: 'SETTINGS', sk: 'main' };
         if (b.shopNotes !== undefined) next.shopNotes = cleanNotes(b.shopNotes);
+        if (b.packs !== undefined) next.packs = cleanPacks(b.packs);
         if (b.shipping) {
           const f = b.shipping.frozen || {}; const a = b.shipping.ambient || {};
           const tiers = (Array.isArray(f.tiers) ? f.tiers : []).map((t) => ({ upTo: int(t.upTo), fee: Math.max(0, int(t.fee)) })).filter((t) => t.upTo > 0).sort((x, y) => x.upTo - y.upTo);

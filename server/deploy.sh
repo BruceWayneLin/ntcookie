@@ -33,7 +33,7 @@ rm -f /tmp/ntcookie-api.zip && zip -q -j /tmp/ntcookie-api.zip index.mjs
 if ! aws lambda get-function --region $REGION --function-name $FN >/dev/null 2>&1; then
   aws lambda create-function --region $REGION --function-name $FN --runtime nodejs22.x --architectures arm64 \
     --handler index.handler --role arn:aws:iam::$ACCOUNT:role/$ROLE --zip-file fileb:///tmp/ntcookie-api.zip \
-    --memory-size 256 --timeout 20 --environment "Variables={TABLE=$TABLE}" >/dev/null
+    --memory-size 1024 --timeout 20 --environment "Variables={TABLE=$TABLE}" >/dev/null
   aws lambda wait function-active-v2 --region $REGION --function-name $FN
   aws lambda create-function-url-config --region $REGION --function-name $FN --auth-type NONE \
     --cors '{"AllowOrigins":["https://brucewaynelin.github.io","http://localhost:8765","http://127.0.0.1:8765","http://192.168.50.50:8765"],"AllowMethods":["GET","POST","PUT","PATCH","DELETE"],"AllowHeaders":["content-type","authorization","x-dev-user","x-dev-key","x-ntc-diag"],"MaxAge":3600}' >/dev/null
@@ -59,7 +59,7 @@ if os.path.exists(envfile):
             k, val = line.split("=", 1); v[k.strip()] = val.strip()
 print(json.dumps({"Variables": v}))
 PY
-aws lambda update-function-configuration --region $REGION --function-name $FN --environment file:///tmp/ntcookie-env.json >/dev/null
+aws lambda update-function-configuration --region $REGION --function-name $FN --memory-size 1024 --environment file:///tmp/ntcookie-env.json >/dev/null # 1024 MB：CPU 跟著加大，每個回應快三四倍；用量小，費用差不多
 rm -f /tmp/ntcookie-env.json
 aws lambda wait function-updated-v2 --region $REGION --function-name $FN
 echo "$FN → $URL"

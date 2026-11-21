@@ -155,13 +155,32 @@
 
   // ---- menu sheet (☰)
   NTC.openMenu = () => {
-    const links = [
-      [NTC.HOME, '首頁'], ['cookies.html?g=character', '卡通・收涎造型餅乾'], ['cookies.html?g=birthday', '慶生・抓週造型餅乾'], ['custom.html', '客製造型餅乾（詢問報價）'], ['canele.html', 'N.T Canelé 可麗露專區'], ['meringue.html', '馬林糖一口酥'],
-      ['reserve.html', '預約／訂購（選日期）'], ['cart.html', '購物車'], ['orders.html', '我的訂單'],
-    ];
-    const { el } = NTC.sheet(`<h2>選單</h2><div style="margin-top:12px">${links.map(([u, t]) => `<a class="opt" href="${u}" style="text-decoration:none"><span class="t">${t}</span><span class="r">›</span></a>`).join('')}
+    const row = ([u, t]) => `<a class="opt" href="${u}" style="text-decoration:none"><span class="t">${t}</span><span class="r">›</span></a>`;
+    const fixed = [['custom.html', '客製造型餅乾（詢問報價）'], ['canele.html', 'N.T Canelé 可麗露專區'], ['meringue.html', '馬林糖一口酥']];
+    const { el } = NTC.sheet(`<h2>選單</h2><div style="margin-top:12px">${row([NTC.HOME, '首頁'])}
+      <div id="menu-shop">${[['cookies.html?g=character', '卡通・收涎造型餅乾'], ['cookies.html?g=birthday', '慶生・抓週造型餅乾'], ...fixed].map(row).join('')}</div>
+      ${[['reserve.html', '預約／訂購（選日期）'], ['cart.html', '購物車'], ['orders.html', '我的訂單']].map(row).join('')}
       <a class="opt" href="${NTC.chatUrl('您好，我想詢問')}" style="text-decoration:none"><span class="t">聯絡客服（LINE 聊天）</span><span class="r">›</span></a></div>`);
+    // what the shop sells follows the live catalog: every cookie group with something on sale, then the product lines the owner opened herself (admin → 商品 → ＋ 新增分類)
+    NTC.catalog().then((c) => {
+      const live = (c.settings.cookie?.series || []).filter((x) => x.active);
+      const groups = (c.settings.cookie?.groups || []).filter((g) => live.some((x) => (x.groups || []).includes(g.id)));
+      const cats = (c.settings.categories || []).filter((k) => c.products.some((p) => p.category === k.id));
+      const box = el.querySelector('#menu-shop'); if (!box) return;
+      box.innerHTML = [...groups.map((g) => [`cookies.html?g=${encodeURIComponent(g.id)}`, esc(/餅乾$/.test(g.name) ? g.name : `${g.name}造型餅乾`)]), ...fixed,
+        ...cats.map((k) => [`category.html?c=${encodeURIComponent(k.id)}`, esc(k.name)])].map(row).join('');
+    }).catch(() => {});
     return el;
   };
+  // 馬林糖兩種包裝的名稱：頁面上「選擇包裝」那兩顆（第一顆＝罐、第二顆＝包）和大包裝橫幅上的字，照店主在後台設定的換掉
+  NTC.applyPackNames = (settings) => {
+    const p = settings && settings.packs; const nav = document.querySelector('.pack-nav'); if (!p || !nav) return;
+    [...nav.children].forEach((el, i) => { const k = i ? p.bag : p.jar; if (!k) return;
+      const first = el.firstChild; if (first && first.nodeType === 3) first.nodeValue = k.name; else el.insertBefore(document.createTextNode(k.name), first);
+      let note = el.querySelector('span'); if (!note && k.note) { note = document.createElement('span'); el.appendChild(note); } if (note) { note.textContent = k.note; note.hidden = !k.note; }
+      let extra = el.querySelector('small'); if (!extra && k.extra) { extra = document.createElement('small'); el.appendChild(extra); } if (extra) { extra.textContent = k.extra; extra.hidden = !k.extra; } });
+    const w = document.querySelector('.bag-banner-weight'); if (w && p.bag) w.textContent = `${p.bag.name} ${p.bag.note}`.trim();
+  };
+  if (document.querySelector('.pack-nav')) NTC.catalog().then((c) => NTC.applyPackNames(c.settings)).catch(() => {});
   NTC.back = () => { if (history.length > 1 && document.referrer && new URL(document.referrer).origin === location.origin) history.back(); else location.href = NTC.HOME; };
 })();
