@@ -14,6 +14,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/app.css?v=1122c">
+<link rel="stylesheet" href="css/shop-tiles.css?v=1011">
 <style>
   :root { --page: 760px; }
   .tabs { position: sticky; top: 63px; z-index: 20; display: flex; gap: 6px; max-width: var(--page); margin: 0 auto; padding: 8px 14px; background: rgba(248, 237, 231, .96); }
@@ -197,9 +198,10 @@
 <div class="shopbar" id="shopbar" hidden></div>
 <main class="wrap" id="app"><div class="spinner"></div></main>
 <p class="note" id="ver" style="text-align:center;margin:0 0 24px;color:var(--muted)"></p>
-<script src="js/config.js?v=1122-pink-edges"></script>
+<script src="js/config.js?v=2026-11-22V10.11"></script>
 <script src="js/app.js?v=1122d"></script>
-<script src="js/cookie-photo.js?v=1122-pink-edges"></script>
+<script src="js/shop-tiles.js?v=1011"></script>
+<script src="js/cookie-photo.js?v=auto-photo-1011"></script>
 <script>
 (async function () {
   const { $, esc, money, asset } = NTC;
@@ -840,11 +842,10 @@
         r.querySelector('.o-ph input').onchange = async (e) => { const f = e.target.files[0]; e.target.value = ''; if (!f) return;
           try {
             const dataUrl = await NTC.cookiePhoto.prepare(f);
-            if (!dataUrl) return;
             NTC.loading(true, '上傳照片…');
             o.photo = (await NTC.api('/admin/images', { method: 'POST', body: { dataUrl } })).url;
             paintOpts();
-            await optPhotoNow(o, '已套用粉紅底。');
+            await optPhotoNow(o, '照片已更新。');
           } catch (err) { NTC.toast(err.message || '照片上傳失敗', 3500); }
           finally { NTC.loading(false); } };
         r.querySelector('.o-more').onclick = () => optMore(i);
@@ -956,8 +957,9 @@
   let banOpen = false; // 「客製造型餅乾」那一塊有沒有打開（重畫後維持原樣）
   const banShot = {}; // 剛傳上去的圖：先用手機裡這一份顯示，不用等伺服器那一張慢慢載入（不然會空白一下，以為沒換到）
   const banBlock = (key, name) => { const own = banOf(key); const pic = own || BAN0[key];
+    const image = pic ? `<img src="${esc(banShot[pic] || asset(pic))}" alt="">` : '';
     return `<div class="banbox" data-ban="${esc(key)}" data-name="${esc(name)}"><p class="ban-t">商店頁的橫幅<small>客人在商店頁看到「${esc(name)}」的那一張圖${own ? '（現在用的是你放的圖）' : ''}</small></p>
-      <div class="catban tile">${pic ? `<img src="${esc(banShot[pic] || asset(pic))}" alt="">` : `<span>還沒有放橫幅<small>${key === 'custom' ? '現在用的是網站原本的卡片（餅乾圖案加上「客製造型餅乾」）' : '沒放的話，商店頁會用第一個商品的照片加上名稱，自動做一張卡片'}</small></span>`}</div>
+      <div class="catban tile">${pic ? (own ? image : NTC.shopTileArt(key, image)) : `<span>還沒有放橫幅<small>${key === 'custom' ? '現在用的是網站原本的卡片（餅乾圖案加上「客製造型餅乾」）' : '沒放的話，商店頁會用第一個商品的照片加上名稱，自動做一張卡片'}</small></span>`}</div>
       <div class="ban-acts"><label class="btn small">${own ? '換一張' : pic ? '換成自己的圖' : '放橫幅照片'}<input type="file" accept="image/*" class="ban-file" hidden></label>${own ? `<button type="button" class="btn ghost small ban-reset">${BAN0[key] || key === 'custom' ? '用回原本的圖' : '拿掉橫幅'}</button>` : ''}<a class="btn ghost small" href="shop.html" target="_blank" rel="noopener">看商店頁 ›</a></div>
       <p class="note" style="margin:8px 0 0">用橫的圖（寬大約是高的 2 倍），名稱要寫在圖上：客人在商店頁只會看到這張圖。上面看到的就是客人看到的樣子，換了馬上生效。</p></div>`; };
   const wireBans = () => app.querySelectorAll('.banbox').forEach((box) => { const key = box.dataset.ban; const name = box.dataset.name;
@@ -1128,7 +1130,6 @@
       const f = e.target.files[0]; e.target.value = ''; if (!f) return;
       try {
         const dataUrl = p.category === 'cookie' ? await NTC.cookiePhoto.prepare(f) : await shrink(f);
-        if (!dataUrl) return;
         NTC.loading(true, '上傳照片…');
         el.querySelector('#e-img').src = dataUrl; photo = (await NTC.api('/admin/images', { method: 'POST', body: { dataUrl } })).url;
         if (p.isNew) NTC.toast('照片放好了，按「儲存」後客人才看得到', 3600);

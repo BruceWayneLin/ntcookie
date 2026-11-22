@@ -269,7 +269,7 @@
       return !(wide && tall) && middle > .12 && middle < .88 && center > .11 && center < .89 ? part.count : 0;
     });
     const biggest = good.reduce((a, v) => Math.max(a, v), 0);
-    if (biggest < n * .022 || biggest > n * .74) return null;
+    if (!biggest || biggest > n * .74) return null;
     const keep = good.map((v) => v >= biggest * .065);
     // Fill enclosed icing. A separate shape such as the space between two cookies remains transparent.
     const outside = new Uint8Array(n);
@@ -278,6 +278,9 @@
     for (let x = 0; x < w; x++) { queue(x); queue((h - 1) * w + x); }
     for (let y = 0; y < h; y++) { queue(y * w); queue(y * w + w - 1); }
     for (let i = 0; i < length; i++) neighbors(stack[i], w, n, queue);
+    // A thin dark outline can enclose a large white cookie on a white surface.
+    // Judge small components by the silhouette they enclose, including the icing.
+    if (biggest < n * .022 && (n - length < n * .022 || n - length < 2 * biggest)) return null;
     clearShadows(pixels, outside, stack, length, w, r, g, b);
     if (Math.max(r, g, b) - Math.min(r, g, b) > 20) clearTabletop(pixels, outside, stack, length, w);
     const output = ctx.createImageData(w, h);
@@ -345,52 +348,6 @@
     throw new Error('圖片太大，請換一張');
   }
 
-  function trace(source) {
-    return new Promise((resolve) => {
-      const { el, close } = NTC.sheet(`
-        <h2>圈選餅乾</h2>
-        <p class="note">照片背景比較複雜。沿著餅乾外緣點選至少三點，再按「套用粉紅底」。</p>
-        <div class="cookie-photo-outline"></div>
-        <div class="row" style="gap:8px;margin-top:12px">
-          <button type="button" class="btn ghost outline-undo">退一步</button>
-          <button type="button" class="btn outline-save" disabled>套用粉紅底</button>
-        </div>`);
-      el.setAttribute('aria-label', '圈選餅乾');
-      const preview = createCanvas(source.width, source.height);
-      Object.assign(preview.style, { display: 'block', width: 'auto', height: 'auto', maxWidth: '100%', maxHeight: '52vh', margin: '8px auto', cursor: 'crosshair' });
-      el.querySelector('.cookie-photo-outline').append(preview);
-      const undo = el.querySelector('.outline-undo'), save = el.querySelector('.outline-save');
-      const points = [], ctx = preview.getContext('2d');
-      const path = (g) => { g.beginPath(); points.forEach(([x, y], i) => i ? g.lineTo(x, y) : g.moveTo(x, y)); g.closePath(); };
-      function paint() {
-        ctx.clearRect(0, 0, preview.width, preview.height);
-        ctx.drawImage(source, 0, 0);
-        if (points.length) {
-          path(ctx);
-          ctx.strokeStyle = '#f52d70'; ctx.lineWidth = Math.max(2, preview.width / 180); ctx.stroke();
-          for (const [x, y] of points) { ctx.beginPath(); ctx.arc(x, y, Math.max(3, preview.width / 125), 0, Math.PI * 2); ctx.fillStyle = '#f52d70'; ctx.fill(); }
-        }
-        save.disabled = points.length < 3; undo.disabled = !points.length;
-      }
-      preview.addEventListener('click', (event) => {
-        const bounds = preview.getBoundingClientRect();
-        points.push([(event.clientX - bounds.left) * preview.width / bounds.width, (event.clientY - bounds.top) * preview.height / bounds.height]);
-        paint();
-      });
-      undo.onclick = () => { points.pop(); paint(); };
-      save.onclick = () => {
-        const subject = createCanvas(source.width, source.height), g = subject.getContext('2d');
-        path(g); g.clip(); g.drawImage(source, 0, 0);
-        const result = card(subject);
-        if (!result) { NTC.toast('請多圈幾個餅乾外緣的點'); return; }
-        close(); resolve(result);
-      };
-      el.querySelector('.close').addEventListener('click', () => resolve(null));
-      el.previousElementSibling.addEventListener('click', () => resolve(null));
-      paint();
-    });
-  }
-
   NTC.cookiePhoto = {
     async prepareSeries(file) {
       // The storefront crops the preview to 4:3. Keep the full scene for gallery zoom.
@@ -402,13 +359,15 @@
       return encode(source, true);
     },
     // The same function serves new options, existing replacements and catalog preparation.
-    async prepare(file, { allowTrace = true } = {}) {
+    async prepare(file) {
       const full = await load(file), inner = trim(full);
       let source = inner, subject = mask(inner);
       if (!subject && inner !== full) { source = full; subject = mask(full); } // trimming did not help: carry on with the whole picture
       if (!subject) subject = maskCloseUp(source);
-      const canvas = (subject && card(subject)) || (allowTrace ? await trace(source) : null);
-      return canvas ? encode(canvas) : null;
+      // A busy scene with no reliable silhouette keeps its complete photo in the pink card.
+      const canvas = (subject && card(subject)) || card(inner);
+      if (!canvas) throw new Error('照片中沒有可用的圖像，請換一張');
+      return encode(canvas);
     },
   };
 })();
