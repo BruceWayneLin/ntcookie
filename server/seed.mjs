@@ -18,14 +18,14 @@ const meringue = [
 ].map(([slug, name, price, kind], i) => ({
   id: `meringue-${slug}`, category: 'meringue', name, price, unit: '罐', photo: `${M}photo-${slug}.webp`,
   ...(slug !== 'butter-cocoa' ? { card: `${M}card-${slug}.webp`, cardName: name, cardPrice: price, icon: `assets/v2/icons/meringue-${slug}.webp` } : {}),
-  desc: '每罐約 120 g。', cardKind: kind, sort: 10 + i,
+  desc: '每罐約 30 顆。', cardKind: kind, sort: 10 + i,
 }));
 const bags = meringue.map((jar, i) => {
   const slug = jar.id.slice('meringue-'.length);
   const flavor = slug === 'cocoa' ? '法芙娜可可' : jar.name;
   const name = `${flavor}（大包裝）`;
   return { id: `meringue-bag-${slug}`, category: 'meringue', name, price: 650, unit: '包',
-    desc: '每包超過 200 g，至少 50 顆。', sort: 110 + i,
+    desc: '每包至少 50 顆。', sort: 110 + i,
     photo: `${M}bags/photo-${slug}.webp`, card: `${M}bags/card-${slug}.webp`, cardName: name, cardPrice: 650 };
 });
 const now = new Date().toISOString();

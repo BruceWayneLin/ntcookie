@@ -90,7 +90,7 @@
   <form method="dialog"><button type="submit" autofocus>關閉</button></form>
 </dialog>
 <script src="js/config.js?v=2026-11-22V10.10"></script>
-<script src="js/app.js?v=2026-11-22V10.10"></script>
+<script src="js/app.js?v=1122d"></script>
 <script src="js/shop.js?v=1122c"></script>
 <script>
   // top-left 「首頁」 always goes to the main menu; 返回上一頁 at the bottom goes back to wherever the customer came from
@@ -104,6 +104,19 @@
   const buttons = [...filters.querySelectorAll('button')];
   const collections = NTC.$('#collections');
   const chinese = collections.querySelector('[data-group="chinese"]');
+  // the owner's own banners (admin → 商品 → 商店頁的橫幅): her picture takes the place of a tile's own art.
+  // Remembered on this phone, so the next visit shows it straight away instead of swapping after the catalogue arrives.
+  const tileKey = (a) => { const h = a.getAttribute('href') || ''; const g = /^cookies\.html\?g=([\w-]+)/.exec(h); return g ? `g-${g[1]}` : (/^(meringue|canele|custom)\.html/.exec(h) || [])[1] || ''; };
+  const tiles = [...collections.querySelectorAll(':scope > li > a')].map((a) => ({ a, key: tileKey(a), html: a.innerHTML, cls: a.className, name: (a.querySelector('h2')?.textContent || '').replace(/\s+/g, ' ').trim() }));
+  const ownTile = (src, name) => `<img src="${NTC.esc(NTC.asset(src))}" alt="" style="object-fit:cover"><h2 class="sr-only">${NTC.esc(name)}</h2>`;
+  function applyBanners(map) {
+    for (const t of tiles) {
+      const src = t.key && map && typeof map[t.key] === 'string' ? map[t.key] : '';
+      if (src) { if (t.a.dataset.own !== src) { t.a.className = ''; t.a.innerHTML = ownTile(src, t.name); t.a.dataset.own = src; } }
+      else if (t.a.dataset.own) { t.a.className = t.cls; t.a.innerHTML = t.html; delete t.a.dataset.own; }
+    }
+  }
+  try { applyBanners(JSON.parse(localStorage.getItem('ntc-banners') || '{}')); } catch (err) { /* nothing remembered yet */ }
   let hasChinese = true;
   function filterCollections(category, name) {
     let count = 0;
@@ -139,33 +152,37 @@
     hasChinese = cookieGroups.some((group) => group.id === 'chinese');
     const builtIn = new Set(['character', 'birthday', 'chinese']);
     const e = NTC.esc;
+    const banners = c.settings.banners || {};
+    applyBanners(banners);
+    try { localStorage.setItem('ntc-banners', JSON.stringify(banners)); } catch (err) { /* this phone cannot remember: the tiles just swap a moment later next time */ }
     for (const group of cookieGroups) {
       if (builtIn.has(group.id)) continue;
       const series = live.find((item) => (item.groups || []).includes(group.id) && (item.photo || item.photos?.[0]));
       const cover = series?.photo || series?.photos?.[0];
       const title = /餅乾$/.test(group.name) ? group.name : `${group.name}造型餅乾`;
       const tile = document.createElement('li');
-      tile.className = 'store-feature';
       tile.dataset.collection = 'cookie';
-      tile.innerHTML = `<a class="store-category-card${cover ? '' : ' no-photo'}" href="cookies.html?g=${encodeURIComponent(group.id)}">
+      const own = banners[`g-${group.id}`];
+      if (own) tile.innerHTML = `<a href="cookies.html?g=${encodeURIComponent(group.id)}">${ownTile(own, title)}</a>`; // her own banner: a tile like the built-in ones
+      else { tile.className = 'store-feature'; tile.innerHTML = `<a class="store-category-card${cover ? '' : ' no-photo'}" href="cookies.html?g=${encodeURIComponent(group.id)}">
         ${cover ? `<span class="store-category-photo"><img src="${e(NTC.asset(cover))}" alt="" loading="lazy"></span>` : ''}
         <span class="store-category-copy"><h2>${e(title)}</h2><span class="store-category-action">選購款式</span></span>
-      </a>`;
+      </a>`; }
       collections.append(tile);
     }
     // product lines the owner opened herself (admin → 商品 → ＋ 新增分類): one card each, as soon as something in it is on sale
     for (const line of c.settings.categories || []) {
       const items = c.products.filter((item) => item.category === line.id);
       if (!items.length) continue;
-      const cover = line.photo || items.find((item) => item.photo)?.photo;
+      const cover = items.find((item) => item.photo)?.photo;
       const tile = document.createElement('li');
-      tile.className = 'store-feature';
       tile.dataset.collection = line.temp === 'frozen' ? 'line' : 'gift';
       tile.dataset.line = line.id;
-      tile.innerHTML = `<a class="store-category-card${cover ? '' : ' no-photo'}" href="category.html?c=${encodeURIComponent(line.id)}">
+      if (line.photo) tile.innerHTML = `<a href="category.html?c=${encodeURIComponent(line.id)}">${ownTile(line.photo, line.name)}</a>`; // her banner: a tile like the built-in ones
+      else { tile.className = 'store-feature'; tile.innerHTML = `<a class="store-category-card${cover ? '' : ' no-photo'}" href="category.html?c=${encodeURIComponent(line.id)}">
         ${cover ? `<span class="store-category-photo"><img src="${e(NTC.asset(cover))}" alt="" loading="lazy"></span>` : ''}
         <span class="store-category-copy"><h2>${e(line.name)}</h2><span class="store-category-action">選購商品</span></span>
-      </a>`;
+      </a>`; }
       collections.append(tile);
     }
     const active = filters.querySelector('[aria-pressed="true"]');

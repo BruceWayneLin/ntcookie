@@ -106,8 +106,15 @@
   .spc-st.on { background: #e3f1e6; color: #2f6b3d; }
   .spc-acts { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 12px; }
   .spc-acts .btn { margin: 0; padding-left: 0; padding-right: 0; text-align: center; }
-  .addbar { position: fixed; left: 50%; bottom: 0; z-index: 40; transform: translateX(-50%); width: min(100vw, var(--page)); padding: 10px 14px calc(10px + env(safe-area-inset-bottom, 0px)); box-sizing: border-box;
+  /* 最下面那條「＋ 新增」：跟著內容排（sticky），不釘在螢幕上（fixed）。iPhone 收起鍵盤之後，釘在螢幕上的按鈕會點不到 */
+  .addbar { position: sticky; bottom: 0; z-index: 30; margin: 14px -14px 0; padding: 10px 14px calc(10px + env(safe-area-inset-bottom, 0px));
     background: rgba(248, 237, 231, .96); box-shadow: 0 -4px 14px rgba(120, 70, 40, .12); }
+  .catban.tile { aspect-ratio: 1.94; margin: 0; }
+  .banbox .ban-t { margin: 0 0 8px; font: 800 15px/1.3 var(--sans); }
+  .banbox .ban-t small { display: block; margin-top: 3px; font: 500 12.5px/1.45 var(--sans); color: var(--muted); }
+  .banbox .ban-acts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .banbox .ban-acts .btn { margin: 0; }
+  #g-head h2 small { margin-left: 8px; font: 600 12.5px/1 var(--sans); color: var(--muted); }
   .addbar .btn { margin: 0; }
   .grow { display: flex; align-items: center; gap: 6px; margin: 0 0 8px; }
   .grow input { flex: 1; min-width: 0; padding: 10px 12px; border: 1.5px solid #e3cdbf; border-radius: 10px; font: 600 16px var(--sans); background: #fff; }
@@ -191,7 +198,7 @@
 <main class="wrap" id="app"><div class="spinner"></div></main>
 <p class="note" id="ver" style="text-align:center;margin:0 0 24px;color:var(--muted)"></p>
 <script src="js/config.js?v=1122-pink-edges"></script>
-<script src="js/app.js?v=1122c"></script>
+<script src="js/app.js?v=1122d"></script>
 <script src="js/cookie-photo.js?v=1122-pink-edges"></script>
 <script>
 (async function () {
@@ -500,10 +507,17 @@
     if (!chips.some(([k]) => k === ckFilter)) ckFilter = 'all';
     const shown = all.filter((x) => ckFilter === 'all' || (ckFilter === 'off' ? !liveOf(x.id) : ckFilter === 'none' ? noGroup(x) : inGroup(x, ckFilter)));
     const gname = (x) => (x.groups || []).map((g) => groups.find((y) => y.id === g)?.name).filter(Boolean).join('、') || '未分類';
+    const cur = groups.find((g) => g.id === ckFilter); const curTitle = cur ? (/餅乾$/.test(cur.name) ? cur.name : `${cur.name}造型餅乾`) : ''; // 現在看的是哪一個風格
+    const curLive = cur && all.some((x) => inGroup(x, cur.id) && liveOf(x.id));
+    const head = cur ? `<section class="panel" id="g-head"><h2>${esc(cur.name)}<small>造型餅乾的風格</small></h2>${banBlock(`g-${cur.id}`, curTitle)}
+        <p class="note" style="margin:10px 0 8px">${curLive ? '這個風格有餅乾上架，客人在商店頁看得到。' : '這個風格還沒有餅乾上架，客人在商店頁還看不到它；下面新增商品並上架之後就會出現。'}</p>
+        <button type="button" class="btn ghost small" id="g-edit" style="margin:0">改名稱・刪除這個風格</button></section>`
+      : ckFilter === 'all' ? `<p class="note" style="margin:0 0 12px">點上面的風格（例如「${esc(groups[0]?.name || '卡通・收涎')}」）可以換那個風格在商店頁的橫幅，也可以直接在裡面新增商品。</p>` : '';
     const dupName = (x) => all.filter((y) => (y.name || '').trim() === (x.name || '').trim()).length > 1; // 兩個商品同名：很容易改到另一個
     const orphans = products.filter((p) => p.category === 'cookie' && !all.some((x) => x.id === p.series));
     return `<label class="ck-search">${SEARCH_ICON}<input id="ck-q" type="search" enterkeyhint="search" placeholder="搜尋商品或餅乾名稱" value="${esc(ckQuery)}"></label>
       <div class="statusbar one" id="ck-f" style="margin-bottom:12px">${chips.map(([k, t]) => `<button type="button" data-f="${esc(k)}" class="${k === ckFilter ? 'on' : ''}">${esc(t)}</button>`).join('')}<button type="button" id="ck-order" class="gear">⇅ 排順序</button><button type="button" id="ck-groups" class="gear">⚙ 管理分類</button></div>
+      ${head}
       <div id="ck-list">${shown.map((x) => { const ps = piecesOf(x.id); const on = liveOf(x.id); const so = ps.filter((p) => p.soldOut).length;
         return `<article class="spc" data-sid="${esc(x.id)}" data-q="${esc([x.name, ...ps.map((p) => p.name)].join(' ').toLowerCase())}">
           <button type="button" class="spc-top" data-edit><img src="${esc(asset(coverOf(x) || 'assets/favicon.png'))}" alt="" loading="lazy">
@@ -514,7 +528,8 @@
             <a class="btn ghost small" href="cookies.html?s=${esc(x.id)}&preview=1" target="_blank" rel="noopener">預覽</a>
             <button type="button" class="btn small" data-edit>編輯</button></div></article>`; }).join('')}<p class="note" id="ck-empty" style="text-align:center;margin:20px 0" hidden></p></div>
       ${orphans.length ? `<section class="panel"><h2>造型餅乾・（系列已刪除）</h2><p class="note" style="margin:0 0 8px">這些餅乾的系列被刪掉了，客人看不到。編輯後選一個系列就會回來。</p>${orphans.map(prodRow).join('')}</section>` : ''}
-      <div style="height:80px"></div><div class="addbar"><button type="button" class="btn block" id="ck-new">＋ 新增商品</button></div>`;
+      ${ckFilter === 'all' ? `<details class="panel ed-more" id="ban-custom"${banOpen ? ' open' : ''}><summary>商店頁「客製造型餅乾」那張卡片</summary><div style="margin-top:10px">${banBlock('custom', '客製造型餅乾')}</div></details>` : ''}
+      <div class="addbar"><button type="button" class="btn block" id="ck-new">＋ 新增商品${cur ? `到「${esc(cur.name)}」` : ''}</button></div>`;
   }
   // 存完回到列表：捲到剛剛那個商品、閃一下（新商品排在最後面，不捲過去會以為沒存到）
   const showCard = (sid) => {
@@ -554,7 +569,9 @@
     qi.oninput = () => { ckQuery = qi.value; applyQ(); }; // filter in place: re-rendering while typing would break 注音 input
     applyQ();
     app.querySelectorAll('#ck-f [data-f]').forEach((b) => (b.onclick = () => { ckFilter = b.dataset.f; renderProducts(); }));
-    $('#ck-groups').onclick = editGroups;
+    $('#ck-groups').onclick = editGroups; if ($('#g-edit')) $('#g-edit').onclick = editGroups;
+    { const f = $('#ck-f'); const on = f.querySelector('button.on'); if (on) f.scrollLeft += on.getBoundingClientRect().left - f.getBoundingClientRect().left - (f.clientWidth - on.offsetWidth) / 2; } // 選到的風格捲到看得到的地方
+    { const bc = $('#ban-custom'); if (bc) bc.ontoggle = () => { banOpen = bc.open; }; }
     $('#ck-order').onclick = orderSeries;
     $('#ck-new').onclick = () => editSeriesPage(null);
     app.querySelectorAll('.spc [data-edit]').forEach((b) => (b.onclick = () => editSeriesPage(settings.cookie.series.find((y) => y.id === b.closest('.spc').dataset.sid))));
@@ -603,7 +620,7 @@
       <p class="note" style="margin:0 0 10px">客人在造型餅乾頁最上面可以切換分類，順序照這裡。</p>
       <div id="g-list"></div>
       <button type="button" class="btn ghost block small" id="g-add" style="margin:6px 0 12px">＋ 新增分類</button>
-      <p class="note" style="margin:0 0 12px">「${esc(groupsOf().find((g) => g.id === 'character')?.name || '卡通・收涎')}」「${esc(groupsOf().find((g) => g.id === 'birthday')?.name || '慶生・抓週')}」是首頁兩張大卡片連過去的分類，不能刪。大卡片上的字是圖片，改名後首頁的圖要另外換。</p>
+      <p class="note" style="margin:0 0 12px">「${esc(groupsOf().find((g) => g.id === 'character')?.name || '卡通・收涎')}」「${esc(groupsOf().find((g) => g.id === 'birthday')?.name || '慶生・抓週')}」是商店頁兩張大卡片連過去的分類，不能刪。卡片上的字是圖片：改名之後，點那個風格就可以換一張自己的橫幅。</p>
       <button type="button" class="btn block" id="g-save">儲存</button>`);
     const paint = () => {
       el.querySelector('#g-list').innerHTML = gs.map((g, i) => `<div class="grow" data-i="${i}"><input class="g-name" maxlength="12" value="${esc(g.name)}" placeholder="分類名稱，例如：中國風">
@@ -932,8 +949,30 @@
   const catOf = (c) => myCats().find((x) => x.id === c);
   const catName = (c) => CATS[c] || catOf(c)?.name || '商品';
   // 「＋ 新增分類」：先問要開哪一種。造型餅乾的新風格＝餅乾自己的分類（裡面是系列和每一片）；其他商品＝一個一個的商品
+  // 商店頁上每個分類的那張橫幅：店主可以換成自己的圖。key＝canele、meringue、custom（客製）、g-<造型餅乾風格 id>
+  const BAN0 = { canele: 'assets/v2/03-homepage/category-canele.webp', meringue: 'assets/v2/03-homepage/category-meringue-cookies.webp', 'g-character': 'assets/v2/03-homepage/category-character-cookies.webp', 'g-birthday': 'assets/v2/03-homepage/category-birthday-cookies.webp', 'g-chinese': 'assets/card-chinese.webp', custom: 'assets/shop/custom-orders-banner.jpg' }; // 網站原本的圖
+  const banOf = (key) => settings?.banners?.[key] || '';
+  const banLive = (key) => !key.startsWith('g-') || seriesList().some((x) => inGroup(x, key.slice(2)) && liveOf(x.id)); // 這張橫幅現在在商店頁看不看得到
+  let banOpen = false; // 「客製造型餅乾」那一塊有沒有打開（重畫後維持原樣）
+  const banShot = {}; // 剛傳上去的圖：先用手機裡這一份顯示，不用等伺服器那一張慢慢載入（不然會空白一下，以為沒換到）
+  const banBlock = (key, name) => { const own = banOf(key); const pic = own || BAN0[key];
+    return `<div class="banbox" data-ban="${esc(key)}" data-name="${esc(name)}"><p class="ban-t">商店頁的橫幅<small>客人在商店頁看到「${esc(name)}」的那一張圖${own ? '（現在用的是你放的圖）' : ''}</small></p>
+      <div class="catban tile">${pic ? `<img src="${esc(banShot[pic] || asset(pic))}" alt="">` : `<span>還沒有放橫幅<small>${key === 'custom' ? '現在用的是網站原本的卡片（餅乾圖案加上「客製造型餅乾」）' : '沒放的話，商店頁會用第一個商品的照片加上名稱，自動做一張卡片'}</small></span>`}</div>
+      <div class="ban-acts"><label class="btn small">${own ? '換一張' : pic ? '換成自己的圖' : '放橫幅照片'}<input type="file" accept="image/*" class="ban-file" hidden></label>${own ? `<button type="button" class="btn ghost small ban-reset">${BAN0[key] || key === 'custom' ? '用回原本的圖' : '拿掉橫幅'}</button>` : ''}<a class="btn ghost small" href="shop.html" target="_blank" rel="noopener">看商店頁 ›</a></div>
+      <p class="note" style="margin:8px 0 0">用橫的圖（寬大約是高的 2 倍），名稱要寫在圖上：客人在商店頁只會看到這張圖。上面看到的就是客人看到的樣子，換了馬上生效。</p></div>`; };
+  const wireBans = () => app.querySelectorAll('.banbox').forEach((box) => { const key = box.dataset.ban; const name = box.dataset.name;
+    const save = async (photo, msg) => { settings = (await NTC.api(`/admin/banners/${key}`, { method: 'PUT', body: { photo } })).settings; const y = window.scrollY; renderProducts(); window.scrollTo(0, y); NTC.toast(msg, 3600); };
+    box.querySelector('.ban-file').onchange = async (e) => { const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+      NTC.loading(true, '上傳橫幅…');
+      try { const dataUrl = await shrink(f, 1400); const photo = (await NTC.api('/admin/images', { method: 'POST', body: { dataUrl } })).url; banShot[photo] = dataUrl;
+        await save(photo, banLive(key) ? `「${name}」的橫幅換好了，客人現在就看得到` : `「${name}」的橫幅放好了。這個風格有餅乾上架之後，商店頁就會出現這張圖`); }
+      catch (err) { NTC.toast(err.message || '照片上傳失敗，請再試一次', 3500); } finally { NTC.loading(false); } };
+    const back = box.querySelector('.ban-reset'); if (back) back.onclick = async () => { if (!confirm(BAN0[key] || key === 'custom' ? `「${name}」的橫幅要用回網站原本的圖嗎？` : `要拿掉「${name}」的橫幅嗎？`)) return;
+      NTC.loading(true, '儲存中…');
+      try { await save('', BAN0[key] || key === 'custom' ? '已經用回原本的圖' : '橫幅拿掉了'); } catch (err) { NTC.toast(err.message, 3500); } finally { NTC.loading(false); } };
+  });
   // 馬林糖兩種包裝在頁面上的名稱（店主可以改）
-  const PACKS0 = { jar: { name: '小罐裝', note: '約 120 g', extra: '' }, bag: { name: '大包裝', note: '超過 200 g', extra: '每包至少 50 顆' } };
+  const PACKS0 = { jar: { name: '小罐裝', note: '約 30 顆', extra: '' }, bag: { name: '大包裝', note: '至少 50 顆', extra: '' } };
   const packs = () => ({ jar: { ...PACKS0.jar, ...(settings?.packs?.jar || {}) }, bag: { ...PACKS0.bag, ...(settings?.packs?.bag || {}) } });
   const packsPanel = () => { const k = packs(); const row = (id, t, x, unit) => `<p style="font:800 14px var(--sans);margin:10px 0 6px">${t}（單位「${unit}」的商品）</p>
       <div class="grid2"><label class="field"><span>名稱</span><input id="pk-${id}-name" maxlength="10" value="${esc(x.name)}"></label><label class="field"><span>後面的小字</span><input id="pk-${id}-note" maxlength="16" value="${esc(x.note)}"></label></div>
@@ -955,7 +994,7 @@
     el.querySelector('#k-line').onclick = () => { close(); setTimeout(() => editCat(), 280); };
     el.querySelector('#k-cookie').onclick = async () => {
       close(); await new Promise((r) => setTimeout(r, 280));
-      const name = ((await askSheet('造型餅乾的新風格', { hint: '最多 12 個字，例如：人妻風。客人會看到「人妻風造型餅乾」。', max: 12, ok: '新增' })) || '').trim().slice(0, 12); if (!name) return;
+      const name = ((await askSheet('造型餅乾的新風格', { hint: '最多 12 個字，例如：貓貓狗狗。客人會看到「貓貓狗狗造型餅乾」。', max: 12, ok: '新增' })) || '').trim().slice(0, 12); if (!name) return;
       NTC.loading(true, '新增中…');
       try {
         if (!settings) await loadSettings();
@@ -966,7 +1005,8 @@
           settings = (await NTC.api('/admin/settings', { method: 'PUT', body: { cookie: { ...settings.cookie, series: undefined, groups: [...groupsOf(), g] } } })).settings;
         }
         prodCat = 'cookie'; ckFilter = g.id; ckQuery = ''; renderProducts(); window.scrollTo(0, 0);
-        NTC.toast(`「${name}」開好了。按下面「＋ 新增商品」放第一組餅乾；有餅乾上架，商店頁就會自動出現「${/餅乾$/.test(name) ? name : `${name}造型餅乾`}」。`, 6500);
+        NTC.toast(`「${name}」開好了：先放橫幅，再按「＋ 新增商品」`, 3200);
+        setTimeout(() => window.scrollTo(0, 0), 400); // iPhone：鍵盤收起來之後，畫面再對齊一次
       } catch (e) { NTC.toast(e.message, 3500); } finally { NTC.loading(false); }
     };
   }
@@ -1025,24 +1065,24 @@
     const cnt = (c) => { const l = products.filter((p) => p.category === c); return `${l.filter((p) => p.active).length}／${l.length} 上架`; };
     if (prodCat !== 'cookie' && !CATS[prodCat] && !catOf(prodCat)) prodCat = 'canele'; // 這個分類剛被刪掉
     const mine = catOf(prodCat); const mineLive = mine && products.some((p) => p.category === mine.id && p.active);
-    const simple = (c) => `<section class="panel"><h2>${esc(catName(c))}</h2>
-      ${mine ? `<div class="catban">${mine.photo ? `<img src="${esc(asset(mine.photo))}" alt="">` : '<span>還沒有橫幅照片<small>放一張，這個分類那一頁的最上面和商店頁的卡片都會用它</small></span>'}<label class="btn small">${mine.photo ? '換橫幅照片' : '放橫幅照片'}<input type="file" accept="image/*" id="cat-ban" hidden></label></div>` : ''}
+    const simple = (c) => `${mine ? '' : `<section class="panel">${banBlock(c, c === 'canele' ? 'N.T Canelé 可麗露專區' : '馬林糖一口酥')}</section>`}<section class="panel"><h2>${esc(catName(c))}</h2>
+      ${mine ? `<div class="catban">${mine.photo ? `<img src="${esc(banShot[mine.photo] || asset(mine.photo))}" alt="">` : '<span>還沒有橫幅照片<small>放一張橫的圖（名稱寫在圖上），商店頁的卡片和這個分類那一頁的最上面都會用它</small></span>'}<label class="btn small">${mine.photo ? '換橫幅照片' : '放橫幅照片'}<input type="file" accept="image/*" id="cat-ban" hidden></label></div>` : ''}
       ${mine ? `<p class="note" style="margin:-2px 0 10px">${mine.temp === 'frozen' ? '冷凍宅配' : '常溫宅配'}・單位「${esc(mine.unit)}」・${mineLive ? `<a href="category.html?c=${esc(mine.id)}" target="_blank" rel="noopener" id="cat-pv">看客人看到的樣子 ›</a>` : '還沒有商品上架，客人看不到這個分類'}</p>` : ''}
       ${products.filter((p) => p.category === c).sort(bySort).map(prodRow).join('') || `<p class="note">還沒有商品${mine ? '，按下面「＋ 新增商品」放第一個' : ''}</p>`}
       <div class="row" style="gap:8px;margin-top:10px;flex-wrap:wrap"><button type="button" class="btn ghost small" data-order="${c}">⇅ 排順序</button>${mine ? '<button type="button" class="btn ghost small" id="cat-edit">分類設定</button>' : ''}</div></section>
-      <div style="height:80px"></div><div class="addbar"><button type="button" class="btn block add" data-c="${c}">＋ 新增${c === 'canele' ? '口味' : '商品'}</button></div>`;
+      <div class="addbar"><button type="button" class="btn block add" data-c="${c}">＋ 新增${c === 'canele' ? '口味' : '商品'}</button></div>`;
     app.innerHTML = `<div class="seg">${[...CAT_TABS, ...myCats().map((c) => [c.id, esc(c.name)])].map(([c, t]) => `<button type="button" data-cat="${c}" class="${prodCat === c ? 'on' : ''}">${t}<small>${cnt(c)}</small></button>`).join('')}<button type="button" class="newcat" id="cat-new">＋ 新增分類<small>新風格・新商品</small></button></div>`
       + (prodCat === 'cookie' ? cookiePanels() : simple(prodCat))
       + (prodCat === 'meringue' ? packsPanel() : '')
       + (prodCat === 'cookie' ? '' : mine ? '<p class="note">「上架」關掉＝客人看不到；「售完」打開＝看得到但不能買。點「編輯」可以改名稱、價格、照片。這個分類裡只要有一個商品上架，商店頁和選單就會自動出現這個分類；全部下架就自動消失。</p>'
         : '<p class="note">「上架」關掉＝客人看不到；「售完」打開＝看得到但不能買。點「編輯」可以改名稱、價格、照片。改名字或價格後，那張卡會改用文字顯示（設計圖上的字是印在圖裡的）。</p>');
-    $('#cat-new').onclick = newCat; wirePacks();
+    $('#cat-new').onclick = newCat; wirePacks(); wireBans();
     if ($('#cat-edit')) $('#cat-edit').onclick = () => editCat(mine);
     if ($('#cat-ban')) $('#cat-ban').onchange = async (e) => { // 橫幅一換就存
       const f = e.target.files[0]; e.target.value = ''; if (!f) return;
       NTC.loading(true, '上傳橫幅…');
       try {
-        const photo = (await NTC.api('/admin/images', { method: 'POST', body: { dataUrl: await shrink(f, 1400) } })).url;
+        const dataUrl = await shrink(f, 1400); const photo = (await NTC.api('/admin/images', { method: 'POST', body: { dataUrl } })).url; banShot[photo] = dataUrl;
         settings = (await NTC.api(`/admin/categories/${mine.id}`, { method: 'PUT', body: { photo } })).settings; renderProducts();
         NTC.toast(mineLive ? '橫幅換好了，客人現在就看得到' : '橫幅換好了（這個分類還沒有商品上架，客人看不到）', 3600);
       } catch (err) { NTC.toast(err.message || '照片上傳失敗', 3500); } finally { NTC.loading(false); }

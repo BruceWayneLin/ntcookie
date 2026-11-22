@@ -133,16 +133,27 @@
     if (NTC.isDev()) { h['x-dev-key'] = sess.get('ntc-devkey'); h['x-dev-user'] = encodeURIComponent(sess.get('ntc-devuser')); }
     else if (adm && NTC.preferAdmin && !asLine) h.authorization = 'Bearer ' + adm;
     else { const t = await NTC.idToken().catch(() => null); if (t) h.authorization = 'Bearer ' + t; else if (adm) h.authorization = 'Bearer ' + adm; }
+    // A phone's network often drops an idle connection without telling anyone: the request goes out and no answer ever comes.
+    // Reading (GET): give up on that connection after 8 s and ask once more on a new one. Writing: stop after 45 s and say so (never sent twice).
+    const send = async (ms) => {
+      const ac = typeof AbortController === 'function' ? new AbortController() : null; const timer = ac ? setTimeout(() => ac.abort(), ms) : 0;
+      try { return await fetch(API + path, { method, headers: h, body: body !== undefined ? JSON.stringify(body) : undefined, signal: ac ? ac.signal : undefined }); }
+      finally { clearTimeout(timer); }
+    };
     let r;
-    try { r = await fetch(API + path, { method, headers: h, body: body !== undefined ? JSON.stringify(body) : undefined }); }
-    catch (e) { throw new Error('網路連線不穩，請再試一次'); }
+    try { r = await send(method === 'GET' ? 8000 : 45000); }
+    catch (e) {
+      if (method !== 'GET') throw new Error(e && e.name === 'AbortError' ? '連線太久沒有回應。請重新整理看看剛剛的有沒有存好，再試一次' : '網路連線不穩，請再試一次');
+      try { r = await send(15000); } catch (e2) { throw new Error('網路連線不穩，請再試一次'); }
+    }
     const data = await r.json().catch(() => ({}));
     if (r.status === 401 && adm && h.authorization === 'Bearer ' + adm) NTC.setAdminToken(''); // passcode session expired or the passcode changed
     if (!r.ok) { const e = new Error(data.error || '系統忙碌中，請稍後再試'); e.status = r.status; throw e; }
     return data;
   };
   let catP = null;
-  NTC.catalog = () => (catP ||= NTC.api('/catalog').then((c) => { c.byId = Object.fromEntries(c.products.map((p) => [p.id, p])); return c; }));
+  NTC.catalog = () => (catP ||= NTC.api('/catalog').then((c) => { c.byId = Object.fromEntries(c.products.map((p) => [p.id, p])); return c; })
+    .catch((e) => { catP = null; throw e; })); // a failed load is not remembered: the next call asks again
 
   // ---------------- cart (kept in this browser)
   const CK = 'ntc-cart-v1';

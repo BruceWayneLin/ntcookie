@@ -154,9 +154,12 @@ const cleanCats = (list) => { const ids = new Set(); return (Array.isArray(list)
   .filter((c) => c.id && c.name && !BUILT_IN.includes(c.id) && !ids.has(c.id) && ids.add(c.id)).sort((a, b) => a.sort - b.sort); };
 const catsOf = (s) => cleanCats(s.categories);
 // 馬林糖兩種包裝（單位「罐」＝jar、「包」＝bag）在頁面上的名稱、後面的小字、再下面一行：店主可以改。沒設定過就用原本的字
-const DEFAULT_PACKS = { jar: { name: '小罐裝', note: '約 120 g', extra: '' }, bag: { name: '大包裝', note: '超過 200 g', extra: '每包至少 50 顆' } };
+const DEFAULT_PACKS = { jar: { name: '小罐裝', note: '約 30 顆', extra: '' }, bag: { name: '大包裝', note: '至少 50 顆', extra: '' } };
 const cleanPacks = (p) => Object.fromEntries(['jar', 'bag'].map((k) => { const x = p?.[k]; const d = DEFAULT_PACKS[k];
   return [k, { name: str(x?.name, 10) || d.name, note: x?.note === undefined ? d.note : str(x.note, 16), extra: x?.extra === undefined ? d.extra : str(x.extra, 20) }]; }));
+// 商店頁每個分類那張橫幅（店主自己換的圖）：key＝canele、meringue、custom（客製）、g-<造型餅乾風格 id>。沒有的就用網站原本的圖
+const cleanBanners = (b) => Object.fromEntries(Object.entries(b && typeof b === 'object' && !Array.isArray(b) ? b : {})
+  .filter(([k, v]) => /^[a-z0-9-]{1,26}$/.test(k) && typeof v === 'string' && v.length <= 300 && IMG_URL.test(v)).slice(0, 40));
 const catIds = (s) => new Set([...BUILT_IN, ...catsOf(s).map((c) => c.id)]);
 const cleanSeries = (x, i, groupIds) => {
   const photos = [...new Set((Array.isArray(x.photos) ? x.photos : []).map((u) => str(u, 300)).filter((u) => IMG_URL.test(u)))].slice(0, 9);
@@ -217,6 +220,7 @@ function publicSettings(s, admin = false, products = null) {
     cookie: { minPieces: s.cookie.minPieces, shipping: s.cookie.shipping, groups: cookieGroups(s), series: products ? visibleSeries(s, products, admin) : [] },
     categories: catsOf(s), // 店主自己開的商品分類
     packs: cleanPacks(s.packs), // 馬林糖兩種包裝在頁面上的名稱
+    banners: cleanBanners(s.banners), // 商店頁的橫幅（店主換過的那幾張）
     preview: admin ? { closed: !!s.pauseOrders, testMode: !!s.testMode } : undefined, // 店家登入時：客人實際看到的狀態
   };
 }
@@ -1102,6 +1106,16 @@ async function route(event) {
         const next = { ...settings, categories: cats.sort((x, y) => x.sort - y.sort), pk: 'SETTINGS', sk: 'main' };
         await put(next);
         return json(200, { category: one, settings: adminView(next) });
+      }
+      // 商店頁上一個分類的橫幅換成店主自己的圖；photo 空的＝用回網站原本的圖。一次改一張
+      if (method === 'PUT' && seg[1] === 'banners' && seg[2]) {
+        const key = seg[2].toLowerCase(); if (!/^[a-z0-9-]{1,26}$/.test(key)) throw bad('橫幅代號不正確');
+        const photo = str(parseBody(event).photo, 300); if (photo && !IMG_URL.test(photo)) throw bad('照片網址不正確');
+        const banners = cleanBanners(settings.banners); if (photo) banners[key] = photo; else delete banners[key];
+        if (Object.keys(banners).length > 40) throw bad('橫幅太多了，先把用不到的拿掉');
+        const next = { ...settings, banners, pk: 'SETTINGS', sk: 'main' };
+        await put(next);
+        return json(200, { settings: adminView(next) });
       }
       // 刪掉一個自訂分類，裡面的商品一起刪（訂單上已經記下品名和價格，不受影響）
       if (method === 'DELETE' && seg[1] === 'categories' && seg[2]) {
