@@ -18,6 +18,12 @@
 <link rel="preload" as="image" href="assets/cookies/ui/header.webp" type="image/webp">
 <link rel="stylesheet" href="css/app.css?v=1122c">
 <link rel="stylesheet" href="css/cookie-selection.css?v=photoSwipe1">
+<style>/* the baby's birthday is typed: year, month, day in three boxes */
+.tf-ymd { display: flex; align-items: center; gap: 6px; }
+.tf-ymd input { flex: 1 1 0; width: auto; min-width: 0; padding-left: 4px; padding-right: 4px; text-align: center; font-variant-numeric: tabular-nums; }
+.tf-ymd input[data-ymd="y"] { flex-grow: 1.7; }
+.tf-ymd span { flex: none; padding-right: 4px; color: var(--ink2); font: 700 15px/1 var(--sans); }
+.tf-ymd input::placeholder { color: #c9b5a9; }</style>
 </head>
 <body class="ckd-body">
 <main class="ckd" id="page">
@@ -288,12 +294,26 @@
       NTC.toast(ck < min ? `已加入 ${n} 片，再選 ${min - ck} 片就能結帳（${min} 片起訂）` : `已加入 ${n} 片到購物車 ♡`, 3200);
     };
     if (!needText.length) return done();
-    // 名字 and 日期 are asked separately; the date comes from a calendar and is written in 民國 style like the shop's cookies (115.03.23)
+    // 名字 and 日期 are asked separately. The date is the baby's birthday: the customer types year, month and day (no calendar),
+    // and it is written in 民國 style like the shop's cookies (115.03.23)
     const has = (p, w) => (p.textLabel || '').includes(w);
     const nameLabelRaw = (p) => p.textLabel.replace(/[＋+]\s*日期|日期\s*[＋+]|^日期$/, '').trim();
     const nameLabel = (p) => nameLabelRaw(p) || '名字';
-    const kind = (p) => (has(p, '日期') ? (nameLabelRaw(p) ? 'nd' : 'd') : 'n'); // any label + 日期 → name field and calendar
-    const roc = (ymd) => { const [y, m, d] = ymd.split('-').map(Number); return `${y - 1911}.${String(m).padStart(2, '0')}.${String(d).padStart(2, '0')}`; };
+    const kind = (p) => (has(p, '日期') ? (nameLabelRaw(p) ? 'nd' : 'd') : 'n'); // any label + 日期 → name field and birthday
+    const DATE_HINT = '年可以輸入西元（例如 2026）或民國（例如 115）。餅乾上會寫成 115.03.23';
+    const digits = (s) => s.replace(/[０-９]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 65248)).replace(/\D/g, '');
+    // what was typed in the three boxes → { text: '115.03.23' } | { empty: true } | { error, at: the box to go back to }
+    const birthday = (box) => {
+      const [y, m, d] = ['y', 'm', 'd'].map((k) => digits(box.querySelector(`[data-ymd="${k}"]`).value));
+      if (!y && !m && !d) return { empty: true };
+      if (!y || !m || !d) return { error: '年、月、日都要輸入', at: !y ? 'y' : !m ? 'm' : 'd' };
+      const year = y.length === 4 && +y >= 1912 && +y <= 2100 ? +y : y.length <= 3 && +y >= 90 && +y <= 189 ? +y + 1911 : 0;
+      if (!year) return { error: '年請輸入西元（例如 2026）或民國（例如 115）', at: 'y' };
+      if (year > new Date().getFullYear() + 2) return { error: `${y} 年好像太遠了，請再看一下`, at: 'y' }; // a slip of the finger (2206), not a birthday
+      if (+m < 1 || +m > 12) return { error: '月請輸入 1 到 12', at: 'm' };
+      if (+d < 1 || +d > new Date(year, +m, 0).getDate()) return { error: `${+m} 月沒有 ${+d} 日，請再看一下`, at: 'd' };
+      return { text: `${year - 1911}.${String(+m).padStart(2, '0')}.${String(+d).padStart(2, '0')}` };
+    };
     const opt = (p) => (p.textOptional ? '（選填，不填就照圖上的字）' : '（必填）');
     const field = (p, index) => {
       const k = kind(p); const head = `<p class="tf-head">${esc(p.name)} × ${pick[p.id]}${opt(p)}</p>`;
@@ -306,16 +326,17 @@
         <input id="${nameId}" data-part="name" maxlength="${nameMax}" placeholder="${has(p, '名字') ? '例：林羽澄' : '例：4 months'}" autocomplete="off" ${required}>
         <small class="tf-error" id="${nameId}-error" hidden>請填寫${label}</small>
         </div>`;
-      const dateIn = `<div class="field">
-        <label class="tf-label" for="${dateId}">日期（點一下用日曆選）</label>
-        <input id="${dateId}" type="date" data-part="date" aria-describedby="${dateId}-hint" ${required}>
-        <small class="tf-hint" id="${dateId}-hint">餅乾上會寫成民國日期，例如 115.03.23</small>
-        <small class="tf-error" id="${dateId}-error" hidden>請用日曆選日期</small>
+      const ymd = (k, max, example, word) => `<input ${k === 'y' ? `id="${dateId}"` : ''} data-ymd="${k}" inputmode="numeric" pattern="[0-9]*" maxlength="${max}" placeholder="${example}" autocomplete="off" aria-label="${word}"><span aria-hidden="true">${word}</span>`;
+      const dateIn = `<div class="field tf-date" data-part="date" ${p.textOptional ? '' : 'data-required'}>
+        <label class="tf-label" id="${dateId}-label" for="${dateId}">寶寶生日（輸入年、月、日）</label>
+        <div class="tf-ymd" role="group" aria-labelledby="${dateId}-label" aria-describedby="${dateId}-hint">${ymd('y', 4, '2026', '年')}${ymd('m', 2, '3', '月')}${ymd('d', 2, '23', '日')}</div>
+        <small class="tf-hint" id="${dateId}-hint">${DATE_HINT}</small>
+        <small class="tf-error" id="${dateId}-error" hidden>請輸入寶寶生日</small>
         </div>`;
       return `<div class="tf" data-id="${esc(p.id)}">${head}${k !== 'd' ? nameIn : ''}${k !== 'n' ? dateIn : ''}</div>`;
     };
     const allNames = needText.every((p) => has(p, '名字'));
-    const { el, close } = NTC.sheet(`<h2 id="cookie-personalization-title">${allNames ? (needText.some((p) => has(p, '日期')) ? '填寫寶寶名字與日期' : '填寫寶寶名字') : '填寫餅乾上的字'}</h2>
+    const { el, close } = NTC.sheet(`<h2 id="cookie-personalization-title">${allNames ? (needText.some((p) => has(p, '日期')) ? '填寫寶寶名字與生日' : '填寫寶寶名字') : '填寫餅乾上的字'}</h2>
       <p class="sub">我們會照您填的內容手繪在餅乾上。每片要不同的字，請分次加入購物車。</p>
       <form class="cookie-personalization" novalidate>
         ${needText.map(field).join('')}
@@ -333,10 +354,24 @@
       else input.removeAttribute('aria-describedby');
       error.hidden = !invalid;
     };
-    form.addEventListener('input', ({ target }) => {
-      if (target.dataset.part === 'date') {
-        target.parentElement.querySelector('.tf-hint').textContent = target.value
-          ? `餅乾上會寫成：${roc(target.value)}` : '餅乾上會寫成民國日期，例如 115.03.23';
+    const dateError = (box, message) => { // the three birthday boxes share one message
+      const error = box.querySelector('.tf-error');
+      for (const input of box.querySelectorAll('input')) { if (message) input.setAttribute('aria-invalid', 'true'); else input.removeAttribute('aria-invalid'); }
+      if (message) error.textContent = message;
+      box.querySelector('.tf-ymd').setAttribute('aria-describedby', [box.querySelector('.tf-hint').id, message ? error.id : ''].filter(Boolean).join(' '));
+      error.hidden = !message;
+    };
+    form.addEventListener('input', (event) => {
+      const { target } = event;
+      if (target.dataset.ymd) {
+        const typed = digits(target.value); if (!event.isComposing && typed !== target.value) target.value = typed; // numbers only (full-width ones too); never rewritten in the middle of an input-method composition
+        const box = target.closest('.tf-date'); const b = birthday(box);
+        box.querySelector('.tf-hint').textContent = b.text ? `餅乾上會寫成：${b.text}` : DATE_HINT;
+        if (!b.error && !box.querySelector('.tf-error').hidden) dateError(box, '');
+        // a finished year or month moves on to the next box, so the three boxes type like one
+        const next = target.dataset.ymd === 'y' ? (typed.length === 4 ? 'm' : '') : target.dataset.ymd === 'm' ? (typed.length === 2 || +typed > 1 ? 'd' : '') : '';
+        if (next && !event.isComposing && document.activeElement === target) box.querySelector(`[data-ymd="${next}"]`).focus();
+        return;
       }
       if (target.matches('input[aria-invalid]') && target.value.trim()) setError(target, false);
     });
@@ -347,12 +382,21 @@
       let firstInvalid = null;
       for (const box of form.querySelectorAll('.tf')) {
         const parts = [];
-        for (const input of box.querySelectorAll('input')) {
-          const value = input.value.trim().replace(/\s+/g, ' ');
-          const invalid = input.required && !value;
-          setError(input, invalid);
-          if (invalid) firstInvalid ||= input;
-          if (value) parts.push(input.type === 'date' ? roc(value) : value);
+        const name = box.querySelector('[data-part="name"]');
+        if (name) {
+          const value = name.value.trim().replace(/\s+/g, ' ');
+          const invalid = name.required && !value;
+          setError(name, invalid);
+          if (invalid) firstInvalid ||= name;
+          if (value) parts.push(value);
+        }
+        const date = box.querySelector('.tf-date');
+        if (date) {
+          const b = birthday(date);
+          const message = b.error || (b.empty && date.hasAttribute('data-required') ? '請輸入寶寶生日' : '');
+          dateError(date, message);
+          if (message) firstInvalid ||= date.querySelector(`[data-ymd="${b.at || 'y'}"]`);
+          if (b.text) parts.push(b.text);
         }
         if (parts.length) texts[box.dataset.id] = parts.join(' ');
       }
