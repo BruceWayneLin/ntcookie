@@ -271,3 +271,20 @@ html:has(.storefront) { background: #faf4ed; }
 .store-rules dt { margin-top: 12px; font: 700 .9375rem/1.4 var(--serif); color: var(--store-accent); }
 .store-rules dt:first-child { margin-top: 0; }
 .store-rules dd { margin: 3px 0 0; font-size: .875rem; line-height: 1.65; color: var(--store-ink); }
+
+@media (max-width: 639px) {
+  .store-collections {
+    margin-inline: calc(6px - var(--store-gutter));
+    gap: 12px 7px;
+  }
+  .store-collections .shop-tile-title {
+    right: .6%;
+    width: 43%;
+    font-size: 6.8cqw;
+    line-height: 1.23;
+    letter-spacing: .025em;
+  }
+  .store-collections .shop-tile-art[data-art="custom"] .shop-tile-title {
+    top: 41%;
+  }
+}
