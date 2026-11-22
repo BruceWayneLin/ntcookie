@@ -111,6 +111,109 @@
     return result;
   }
 
+  // Follow a smooth shadow inward from the silhouette. Reject a whole patch if
+  // it would consume a broad area of similarly colored icing.
+  function clearShadows(pixels, outside, stack, outsideCount, w, r, g, b) {
+    const n = outside.length, patch = new Uint8Array(n);
+    const tone = [r, g, b], hi = tone.indexOf(Math.max(...tone)), lo = tone.indexOf(Math.min(...tone));
+    const chroma = tone[hi] - tone[lo], dark = tone[hi] < 65;
+    const followsSurface = (from, to) => {
+      const p = from * 4, q = to * 4;
+      const dr = pixels[q] - r, dg = pixels[q + 1] - g, db = pixels[q + 2] - b;
+      const low = Math.min(dr, dg, db), high = Math.max(dr, dg, db);
+      if (high > (dark ? 80 : 10) || low < -125 || high - low > 15 + (dark ? high : -low) * .16) return false;
+      if (chroma > 20 && pixels[q + hi] - pixels[q + lo] < chroma - 6) return false;
+      return Math.abs(pixels[q] - pixels[p]) <= 14 && Math.abs(pixels[q + 1] - pixels[p + 1]) <= 14 && Math.abs(pixels[q + 2] - pixels[p + 2]) <= 14;
+    };
+    let tail = 0;
+    for (let i = 0; i < n; i++) {
+      if (outside[i]) continue;
+      neighbors(i, w, n, j => {
+        if (!patch[i] && outside[j] && followsSurface(j, i)) { patch[i] = 1; stack[tail++] = i; }
+      });
+    }
+    for (let k = 0; k < tail; k++) {
+      const i = stack[k];
+      neighbors(i, w, n, j => {
+        if (!outside[j] && !patch[j] && followsSurface(i, j)) { patch[j] = 1; stack[tail++] = j; }
+      });
+    }
+    for (let i = 0; i < n; i++) {
+      if (patch[i] !== 1) continue;
+      let exposed = 0, count = 1;
+      stack[0] = i; patch[i] = 2;
+      for (let k = 0; k < count; k++) {
+        let atEdge = false;
+        neighbors(stack[k], w, n, j => {
+          if (outside[j]) atEdge = true;
+          if (patch[j] === 1) { patch[j] = 2; stack[count++] = j; }
+        });
+        if (atEdge) exposed++;
+      }
+      if (count <= exposed * 20 && count <= (n - outsideCount) * .18) {
+        for (let k = 0; k < count; k++) outside[stack[k]] = 1;
+      }
+    }
+  }
+
+  // A previously cut photo can have a pale island of the original tabletop on a
+  // colored card. Peel it only when the exposed edge follows a baked cookie rim.
+  function clearTabletop(pixels, outside, stack, outsideCount, w) {
+    const n = outside.length, rim = new Uint8Array(n), pale = new Uint8Array(n);
+    for (let i = 0; i < n; i++) {
+      const p = i * 4;
+      if (outside[i] || pixels[p] - pixels[p + 2] <= 50 || pixels[p + 1] - pixels[p + 2] <= 13) continue;
+      rim[i] = 1;
+      neighbors(i, w, n, j => { rim[j] = 1; });
+    }
+    for (let i = 0; i < n; i++) {
+      if (outside[i] || rim[i]) continue;
+      const p = i * 4, r = pixels[p], g = pixels[p + 1], b = pixels[p + 2];
+      const low = Math.min(r, g, b);
+      pale[i] = low >= 80 && Math.max(r, g, b) - low < 50;
+    }
+    for (let i = 0; i < n; i++) {
+      if (pale[i] !== 1) continue;
+      let exposed = 0, edge = 0, baked = 0, length = 1;
+      let left = w, right = 0, top = n, bottom = 0;
+      stack[0] = i; pale[i] = 2;
+      for (let k = 0; k < length; k++) {
+        const x = stack[k] % w, y = Math.floor(stack[k] / w);
+        left = Math.min(left, x); right = Math.max(right, x);
+        top = Math.min(top, y); bottom = Math.max(bottom, y);
+        let touchesSurface = false;
+        neighbors(stack[k], w, n, j => {
+          if (outside[j]) touchesSurface = true;
+          else if (pale[j] === 1) { pale[j] = 2; stack[length++] = j; }
+          else if (!pale[j]) { edge++; baked += rim[j]; }
+        });
+        if (touchesSurface) exposed++;
+      }
+      // Score each connected patch separately: a white icing cap and a grey
+      // shadow under the same cookie can have completely different boundaries.
+      const width = right - left + 1, height = bottom - top + 1;
+      const fringe = length < width * height * .46 || Math.max(width, height) > Math.min(width, height) * 3;
+      if (fringe && exposed >= length * .05 && edge && baked >= edge * .85 && length <= (n - outsideCount) * .25) {
+        for (let k = 0; k < length; k++) outside[stack[k]] = 1;
+      }
+    }
+  }
+
+  function perimeter(w, h) {
+    const ring = [];
+    for (let k = 0; k < 20; k++) {
+      const x = Math.round((w - 1) * k / 19), y = Math.round((h - 1) * k / 19);
+      ring.push(x, (h - 1) * w + x, y * w, y * w + w - 1);
+    }
+    return ring;
+  }
+
+  function flatTone(pixels, offsets) {
+    const color = [0, 1, 2].map(c => median(offsets.map(p => pixels[p + c])));
+    const matches = offsets.filter(p => pixels[p + 3] > 240 && color.every((v, c) => Math.abs(v - pixels[p + c]) <= 14));
+    return matches.length >= offsets.length * .95 ? color : null;
+  }
+
   function mask(source) {
     const scale = Math.min(1, 540 / Math.max(source.width, source.height));
     const w = Math.max(1, Math.round(source.width * scale)), h = Math.max(1, Math.round(source.height * scale));
@@ -125,15 +228,20 @@
       if (pixels[p + 3] <= 16) transparent++;
       else { fringe.push(p); rgb.forEach((channel, c) => channel.push(pixels[p + c])); }
     }
-    if (transparent === 24) return source;
+    // In close-ups the inset samples can hit black or white icing. A uniform
+    // perimeter gives a more reliable background color in that case.
+    const border = perimeter(w, h).map(i => i * 4);
+    if (transparent === 24 || border.every(p => pixels[p + 3] <= 16)) return source;
     if (transparent > 6) return null;
-    const [r, g, b] = rgb.map(median);
+    const flat = flatTone(pixels, border);
+    const useBorder = flat && fringe.some(p => flat.every((v, c) => Math.abs(v - pixels[p + c]) <= 12));
+    const [r, g, b] = useBorder ? flat : rgb.map(median);
     // Reduce the influence of lightness so soft shadows stay with the discarded background.
     const distance = (p) => {
       const dr = pixels[p] - r, dg = pixels[p + 1] - g, db = pixels[p + 2] - b;
       return Math.hypot((dr + dg + db) / 4.5, (dr - dg) * .9, (db - dg) * .9);
     };
-    const spread = fringe.map(distance).sort((a, b) => a - b);
+    const spread = (useBorder ? border : fringe).map(distance).sort((a, b) => a - b);
     const drift = spread[Math.floor(spread.length * .8)];
     if (drift > 30) return null;
     const threshold = drift < 4 ? 6 : Math.max(14, drift * 1.7 + 6);
@@ -170,6 +278,8 @@
     for (let x = 0; x < w; x++) { queue(x); queue((h - 1) * w + x); }
     for (let y = 0; y < h; y++) { queue(y * w); queue(y * w + w - 1); }
     for (let i = 0; i < length; i++) neighbors(stack[i], w, n, queue);
+    clearShadows(pixels, outside, stack, length, w, r, g, b);
+    if (Math.max(r, g, b) - Math.min(r, g, b) > 20) clearTabletop(pixels, outside, stack, length, w);
     const output = ctx.createImageData(w, h);
     for (let i = 0; i < n; i++) {
       if (outside[i]) continue;
@@ -183,6 +293,19 @@
     cut.globalCompositeOperation = 'destination-in';
     cut.drawImage(sample, 0, 0, isolated.width, isolated.height);
     return isolated;
+  }
+
+  function maskCloseUp(source) {
+    const w = source.width, h = source.height;
+    const data = source.getContext('2d').getImageData(0, 0, w, h).data;
+    const color = flatTone(data, perimeter(w, h).map(i => i * 4));
+    if (!color) return null;
+    const pad = Math.ceil(Math.max(w, h) * .16);
+    const padded = createCanvas(w + 2 * pad, h + 2 * pad), ctx = padded.getContext('2d');
+    ctx.fillStyle = 'rgb(' + color.join(',') + ')';
+    ctx.fillRect(0, 0, padded.width, padded.height);
+    ctx.drawImage(source, pad, pad);
+    return mask(padded);
   }
 
   function card(subject) {
@@ -283,6 +406,7 @@
       const full = await load(file), inner = trim(full);
       let source = inner, subject = mask(inner);
       if (!subject && inner !== full) { source = full; subject = mask(full); } // trimming did not help: carry on with the whole picture
+      if (!subject) subject = maskCloseUp(source);
       const canvas = (subject && card(subject)) || (allowTrace ? await trace(source) : null);
       return canvas ? encode(canvas) : null;
     },

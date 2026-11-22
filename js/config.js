@@ -7,7 +7,7 @@ window.NTC_CONFIG = {
   home: 'index.html',
   cookiePhotoSize: 900,
   cookiePhotoBackground: '#FAD7DC', // 造型餅乾單片固定粉紅底
-  version: '2026-11-22 V10.8', // 每次上版改這裡，後台最下面會顯示
+  version: '2026-11-22 V10.9', // 每次上版改這裡，後台最下面會顯示
 };
 
 document.documentElement.style.setProperty('--cookie-photo-background', window.NTC_CONFIG.cookiePhotoBackground);

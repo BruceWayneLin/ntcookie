@@ -146,8 +146,9 @@
   .eo:last-child { border-bottom: 0; }
   .eo.off .o-ph img { opacity: .45; }
   .eo.bad { margin: 0 -8px; padding: 12px 8px; border-radius: 12px; background: #fff1ef; box-shadow: inset 0 0 0 1.5px #e3a19b; }
-  .eo .o-ph { position: relative; flex: none; display: flex; align-items: center; justify-content: center; width: 62px; height: 62px; border: 1.5px dashed #d9b7a6; border-radius: 12px; overflow: hidden; background: #fffaf7; color: #b0604a; font: 700 11.5px var(--sans); cursor: pointer; }
-  .eo .o-ph.has { border: 0; background: #f3e4db; }
+  .eo .o-ph { position: relative; flex: none; display: flex; align-items: center; justify-content: center; width: 62px; height: 62px; border: 1.5px dashed #d9b7a6; border-radius: 12px; overflow: hidden; background: var(--cookie-photo-background); color: #b0604a; font: 700 11.5px var(--sans); cursor: pointer; }
+  .eo .o-ph.has { border: 0; }
+  .cookie-product-preview { background: var(--cookie-photo-background); }
   .eo .o-ph img { width: 100%; height: 100%; object-fit: cover; }
   .eo .o-mid { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
   .eo input.o-name, .eo input.o-price { box-sizing: border-box; width: 100%; padding: 8px 10px; border: 1.5px solid #e3cdbf; border-radius: 10px; background: #fff; font: 600 16px var(--sans); color: var(--ink); }
@@ -189,9 +190,9 @@
 <div class="shopbar" id="shopbar" hidden></div>
 <main class="wrap" id="app"><div class="spinner"></div></main>
 <p class="note" id="ver" style="text-align:center;margin:0 0 24px;color:var(--muted)"></p>
-<script src="js/config.js?v=custom-cookie-icon"></script>
+<script src="js/config.js?v=1122-pink-edges"></script>
 <script src="js/app.js?v=1122c"></script>
-<script src="js/cookie-photo.js?v=1122c"></script>
+<script src="js/cookie-photo.js?v=1122-pink-edges"></script>
 <script>
 (async function () {
   const { $, esc, money, asset } = NTC;
@@ -1068,7 +1069,7 @@
   function editProduct(p) {
     const { el, close } = NTC.sheet(`
       <h2>${p.isNew ? '新增' : '編輯'}・${p.category === 'canele' ? '可麗露口味' : p.category === 'cookie' ? '造型餅乾' : esc(catOf(p.category)?.name || '馬林糖')}</h2>
-      <div class="row" style="margin:6px 0 12px"><img id="e-img" src="${esc(asset(p.photo || p.card || 'assets/favicon.png'))}" style="width:96px;height:96px;border-radius:14px;object-fit:cover" alt="">
+      <div class="row" style="margin:6px 0 12px"><img id="e-img" class="${p.category === 'cookie' ? 'cookie-product-preview' : ''}" src="${esc(asset(p.photo || p.card || 'assets/favicon.png'))}" style="width:96px;height:96px;border-radius:14px;object-fit:cover" alt="">
         <label class="btn ghost small">換照片<input type="file" accept="image/*" id="e-file" hidden></label></div>
       <label class="field"><span>名稱</span><input id="e-name" value="${esc(p.name || '')}" maxlength="40"></label>
       ${p.category === 'cookie' ? `<label class="field"><span>系列</span><select id="e-series">${(settings?.cookie?.series || []).map((x) => `<option value="${esc(x.id)}" ${x.id === p.series ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select></label>` : ''}
