@@ -364,6 +364,7 @@
       let source = inner, subject = mask(inner);
       if (!subject && inner !== full) { source = full; subject = mask(full); } // trimming did not help: carry on with the whole picture
       if (!subject) subject = maskCloseUp(source);
+      if (subject && NTC.cookieEdge) subject = NTC.cookieEdge(source, subject); // clean the edge: no pale line of the old background (js/cookie-edge.js)
       // A busy scene with no reliable silhouette keeps its complete photo in the pink card.
       const canvas = (subject && card(subject)) || card(inner);
       if (!canvas) throw new Error('照片中沒有可用的圖像，請換一張');
