@@ -16,7 +16,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/app.css?v=1122c">
-<link rel="stylesheet" href="css/meringue-packs.css?v=4">
+<link rel="stylesheet" href="css/meringue-packs.css?v=5">
 </head>
 <body><main class="bags-page">
 <h1 class="sr-only">馬林糖一口酥大包裝</h1>
@@ -39,7 +39,7 @@
 <section aria-label="口味選擇" class="bags-grid" id="bags" aria-busy="true"></section>
 <a class="nt-back" data-return-to-jars href="meringue.html#packs"><i aria-hidden="true"></i>返回上一頁</a>
 </main>
-<script src="js/config.js?v=1122c"></script><script src="js/app.js?v=1122d"></script><script src="js/shop.js?v=1122c"></script>
+<script src="js/config.js?v=2026-11-22V10.14"></script><script src="js/app.js?v=1122d"></script><script src="js/shop.js?v=1122c"></script>
 <script>
 const jarsUrl = new URL('meringue.html#packs', location.href);
 const referrer = document.referrer ? new URL(document.referrer) : null;
@@ -66,12 +66,36 @@ NTC.catalog().then(catalog => {
     button.dataset.id = product.id;
     button.disabled = product.soldOut;
     button.setAttribute('aria-label', product.name + '，每包 ' + product.price + ' 元' + (product.soldOut ? '，售完' : ''));
-    const art = product.card && product.cardPrice === product.price && product.cardName === product.name;
-    const photo = new Image(); photo.alt = ''; photo.src = NTC.asset(art ? product.card : product.photo);
-    button.append(photo);
-    if (!art) {
+    const cardOnly = !product.photo && product.card && product.cardPrice === product.price && product.cardName === product.name;
+    if (product.photo || cardOnly) {
+      const photo = new Image();
+      photo.alt = '';
+      photo.src = NTC.asset(product.photo || product.card);
+      button.append(photo);
+    }
+    if (!cardOnly) {
       button.classList.add('bag-custom');
-      const caption = document.createElement('span'); caption.textContent = product.name + '　' + NTC.money(product.price) + '／包';
+      const flavor = product.name.replace(/\s*[（(]\s*大包裝\s*[）)]\s*$/u, '').trim();
+      const caption = document.createElement('span');
+      caption.className = 'bag-caption';
+      const name = document.createElement('span');
+      name.className = 'bag-flavor';
+      const note = flavor.match(/[（(][^（）()]+[）)]$/u);
+      if (note) {
+        name.append(flavor.slice(0, note.index));
+        const detail = document.createElement('small');
+        detail.textContent = note[0];
+        name.append(detail);
+      } else {
+        name.textContent = flavor;
+      }
+      const size = document.createElement('span');
+      size.className = 'bag-size';
+      size.textContent = '（大包裝）';
+      const price = document.createElement('span');
+      price.className = 'bag-price';
+      price.textContent = NTC.money(product.price) + '／包';
+      caption.append(name, size, price);
       button.append(caption);
     }
     if (product.soldOut) {
