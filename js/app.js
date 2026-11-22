@@ -11,7 +11,7 @@
   // between pages never shows an old one.
   const show = () => document.documentElement.classList.remove('vchk');
   let latestV = (CFG.version || '').replace(/\s+/g, '');
-  (function () {
+  function checkVersion() {
     fetch('js/config.js?t=' + Date.now(), { cache: 'no-store' }).then((r) => (r.ok ? r.text() : '')).then((t) => {
       const latest = (/version:\s*'([^']+)'/.exec(t) || [])[1];
       if (!latest || latest === CFG.version) return show();
@@ -21,7 +21,13 @@
       const u = new URL(location.href); u.searchParams.set('_v', latestV);
       location.replace(u.toString());
     }).catch(show);
-  })();
+  }
+  checkVersion();
+  if (location.pathname.endsWith('/shop.html')) {
+    window.addEventListener('pageshow', (event) => {
+      if (event.persisted) checkVersion();
+    });
+  }
   document.addEventListener('click', (e) => {
     const a = e.target.closest && e.target.closest('a[href]');
     if (!a || e.defaultPrevented || e.button || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || (a.target && a.target !== '_self') || a.hasAttribute('download')) return;
