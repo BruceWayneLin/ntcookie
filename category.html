@@ -43,13 +43,13 @@
 <body class="storefront">
 <header class="store-header">
   <a class="store-back" id="back" href="shop.html" aria-label="回線上商店"><span aria-hidden="true"></span>商店</a>
-  <p class="store-brand" lang="en">N.T Cookie</p>
+  <p class="store-brand" lang="en" data-edit="brand.name" data-edit-label="最上面的店名（商店、分類、預約三頁一起）">N.T Cookie</p>
   <a class="store-orders" href="orders.html">我的訂單</a>
 </header>
 <main class="store-main">
   <div class="cat-banner" id="cat-banner" hidden><img alt=""></div>
   <section class="store-intro" aria-labelledby="cat-title">
-    <p class="store-kicker">手作甜點・預訂商店</p>
+    <p class="store-kicker" data-edit="category.kicker" data-edit-label="標題上面的小字">手作甜點・預訂商店</p>
     <h1 id="cat-title">&nbsp;</h1>
     <p class="store-lead" id="cat-lead" hidden></p>
   </section>
@@ -59,8 +59,8 @@
   <a class="nt-back" id="back2" href="shop.html"><i aria-hidden="true"></i>返回上一頁</a>
 </main>
 <script src="js/config.js?v=1122c"></script>
-<script src="js/app.js?v=1122d"></script>
-<script src="js/shop.js?v=1122c"></script>
+<script src="js/app.js?v=1123k"></script>
+<script src="js/shop.js?v=1123k"></script>
 <script>
   NTC.$('#back2').addEventListener('click', (event) => {
     if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;

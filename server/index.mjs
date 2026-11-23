@@ -160,6 +160,24 @@ const cleanPacks = (p) => Object.fromEntries(['jar', 'bag'].map((k) => { const x
 // 商店頁每個分類那張橫幅（店主自己換的圖）：key＝canele、meringue、custom（客製）、g-<造型餅乾風格 id>。沒有的就用網站原本的圖
 const cleanBanners = (b) => Object.fromEntries(Object.entries(b && typeof b === 'object' && !Array.isArray(b) ? b : {})
   .filter(([k, v]) => /^[a-z0-9-]{1,26}$/.test(k) && typeof v === 'string' && v.length <= 300 && IMG_URL.test(v)).slice(0, 40));
+// 商店頁的每一格分類（11-23 j）：店主排的順序、隱藏、內建分類的名稱、名稱下面的小字。key＝canele、meringue、custom、g-<造型餅乾分類 id>、c-<其他商品分類 id>
+const TILE_KEY = /^(canele|meringue|custom|g-[a-z0-9-]{1,20}|c-[a-z0-9-]{1,20})$/;
+const cleanTile = (t) => { const o = {};
+  if (t && t.sort !== undefined && t.sort !== null && t.sort !== '') o.sort = int(t.sort, 999);
+  if (t && t.hidden) o.hidden = true;
+  if (t && str(t.name, 16)) o.name = str(t.name, 16);
+  if (t && Array.isArray(t.sub)) o.sub = t.sub.map((l) => str(l, 12)).filter(Boolean).slice(0, 2);
+  return o; };
+const cleanTiles = (m) => Object.fromEntries(Object.entries(m && typeof m === 'object' && !Array.isArray(m) ? m : {})
+  .filter(([k]) => TILE_KEY.test(k)).map(([k, v]) => [k, cleanTile(v)]).filter(([, v]) => Object.keys(v).length).slice(0, 80));
+// 網站上的字、圖、連結（11-23 k）：店主在網頁上直接改（編輯模式）。key＝<頁>.<位置>，例如 shop.title、home.hero；t＝text／img／link；l、p＝後台列表顯示的「哪一頁・哪裡」
+const SITE_KEY = /^[a-z0-9-]{1,20}\.[a-z0-9-]{1,30}$/;
+const SITE_LINK = /^(https?:\/\/[^\s"'<>]+|[a-z0-9-]+\.html(\?[^\s"'<>]*)?(#[\w-]*)?|line(:[^\n]{0,200})?)$/;
+const siteVal = (t, v) => (t === 'text' ? String(v ?? '').replace(/\r\n?/g, '\n').replace(/\s+$/, '').slice(0, 800) : str(v, 400));
+const cleanSite = (m) => Object.fromEntries(Object.entries(m && typeof m === 'object' && !Array.isArray(m) ? m : {})
+  .filter(([k, x]) => SITE_KEY.test(k) && x && typeof x === 'object' && typeof x.v === 'string')
+  .map(([k, x]) => { const t = ['text', 'img', 'link'].includes(x.t) ? x.t : 'text'; return [k, { t, v: siteVal(t, x.v), l: str(x.l, 40), p: str(x.p, 30) }]; })
+  .filter(([, x]) => x.v.trim() && (x.t === 'img' ? IMG_URL.test(x.v) : x.t === 'link' ? SITE_LINK.test(x.v) : true)).slice(0, 300));
 const catIds = (s) => new Set([...BUILT_IN, ...catsOf(s).map((c) => c.id)]);
 const cleanSeries = (x, i, groupIds) => {
   const photos = [...new Set((Array.isArray(x.photos) ? x.photos : []).map((u) => str(u, 300)).filter((u) => IMG_URL.test(u)))].slice(0, 9);
@@ -221,6 +239,8 @@ function publicSettings(s, admin = false, products = null) {
     categories: catsOf(s), // 店主自己開的商品分類
     packs: cleanPacks(s.packs), // 馬林糖兩種包裝在頁面上的名稱
     banners: cleanBanners(s.banners), // 商店頁的橫幅（店主換過的那幾張）
+    tiles: cleanTiles(s.tiles), // 商店頁每一格分類的順序、隱藏、名稱（11-23 j）
+    site: Object.fromEntries(Object.entries(cleanSite(s.site)).map(([k, x]) => [k, x.v])), // 店主在網頁上改過的字、圖、連結（11-23 k）
     preview: admin ? { closed: !!s.pauseOrders, testMode: !!s.testMode } : undefined, // 店家登入時：客人實際看到的狀態
   };
 }
@@ -1106,6 +1126,43 @@ async function route(event) {
         const next = { ...settings, categories: cats.sort((x, y) => x.sort - y.sort), pk: 'SETTINGS', sk: 'main' };
         await put(next);
         return json(200, { category: one, settings: adminView(next) });
+      }
+      // 網站上的一個地方（11-23 k）：改字／換圖／改連結；value 空的＝用回網站原本的
+      if (method === 'PUT' && seg[1] === 'site' && seg[2]) {
+        const key = decodeURIComponent(seg[2]).toLowerCase(); if (!SITE_KEY.test(key)) throw bad('位置代號不正確');
+        const b = parseBody(event); const t = ['text', 'img', 'link'].includes(b.t) ? b.t : 'text'; const v = siteVal(t, b.value);
+        const site = cleanSite(settings.site);
+        if (!v.trim()) delete site[key];
+        else {
+          if (t === 'img' && !IMG_URL.test(v)) throw bad('照片網址不正確');
+          if (t === 'link' && !SITE_LINK.test(v)) throw bad('連結要是 https:// 開頭的網址，或網站裡的一頁');
+          site[key] = { t, v, l: str(b.l, 40), p: str(b.p, 30) };
+        }
+        if (Object.keys(site).length > 300) throw bad('改過的地方太多了，先把用不到的用回原本的');
+        const next = { ...settings, site, pk: 'SETTINGS', sk: 'main' };
+        await put(next);
+        return json(200, { settings: adminView(next) });
+      }
+      // 商店頁的分類（11-23 j）：一次排好全部的順序 {order: [key…]}
+      if (method === 'PUT' && seg[1] === 'tiles' && !seg[2]) {
+        const order = parseBody(event).order; if (!Array.isArray(order)) throw bad('順序不正確');
+        const tiles = cleanTiles(settings.tiles);
+        order.filter((k) => typeof k === 'string' && TILE_KEY.test(k)).slice(0, 80).forEach((k, i) => { tiles[k] = { ...(tiles[k] || {}), sort: (i + 1) * 10 }; });
+        const next = { ...settings, tiles: cleanTiles(tiles), pk: 'SETTINGS', sk: 'main' };
+        await put(next);
+        return json(200, { settings: adminView(next) });
+      }
+      // 一格分類：隱藏／顯示、名稱（內建的可麗露、馬林糖、客製）、名稱下面的小字。sub: null＝用回原本的小字；name: ''＝用回原本的名稱
+      if (method === 'PUT' && seg[1] === 'tiles' && seg[2]) {
+        const key = seg[2].toLowerCase(); if (!TILE_KEY.test(key)) throw bad('分類代號不正確');
+        const b = parseBody(event); const tiles = cleanTiles(settings.tiles); const t = { ...(tiles[key] || {}) };
+        if (b.hidden !== undefined) { if (b.hidden) t.hidden = true; else delete t.hidden; }
+        if (b.name !== undefined) { if (str(b.name, 16)) t.name = str(b.name, 16); else delete t.name; }
+        if (b.sub !== undefined) { if (Array.isArray(b.sub)) t.sub = b.sub; else delete t.sub; }
+        const one = cleanTile(t); if (Object.keys(one).length) tiles[key] = one; else delete tiles[key];
+        const next = { ...settings, tiles: cleanTiles(tiles), pk: 'SETTINGS', sk: 'main' };
+        await put(next);
+        return json(200, { settings: adminView(next) });
       }
       // 商店頁上一個分類的橫幅換成店主自己的圖；photo 空的＝用回網站原本的圖。一次改一張
       if (method === 'PUT' && seg[1] === 'banners' && seg[2]) {

@@ -21,13 +21,13 @@
   <header class="ckd-head">
     <button class="ckd-hot" id="back" aria-label="返回" style="left:0;top:0;width:calc(130*var(--u));height:max(calc(96*var(--u)),48px)"></button>
     <a class="ckd-cart" href="cart.html" aria-label="購物車"><svg viewBox="0 0 48 44"><path d="M3 5h7l6 24h22l5-17H13"/><circle cx="19" cy="37" r="3.3"/><circle cx="35" cy="37" r="3.3"/></svg><span class="badge" data-cart-count></span></a>
-    <h1 class="ckd-pill" style="--n:6">客製造型餅乾</h1>
+    <h1 class="ckd-pill" style="--n:6" data-edit="custom.title" data-edit-label="客製頁最上面的標題">客製造型餅乾</h1>
   </header>
 </div>
 <main class="ck" id="app"><div class="spinner"></div></main>
 <script src="js/config.js?v=1122c"></script>
-<script src="js/app.js?v=1122d"></script>
-<script src="js/shop.js?v=1122c"></script>
+<script src="js/app.js?v=1123k"></script>
+<script src="js/shop.js?v=1123k"></script>
 <script>
 (function () {
   const { $, esc } = NTC;
@@ -58,7 +58,7 @@
     const S = cat.settings; const min = NTC.addDays(S.today, S.leadDays || 0);
     const c = me?.contact || {};
     app.innerHTML = `${head}
-      <section class="panel"><p class="note" style="margin:0">每一組客製餅乾都是手繪的。告訴我們用途、日期、想要的圖案，附上參考照片，<b>我們會在 LINE 跟您討論細節並報價</b>，確認後才開始製作。</p></section>
+      <section class="panel"><p class="note" style="margin:0" data-edit="custom.intro" data-edit-label="客製頁最上面的說明">每一組客製餅乾都是手繪的。告訴我們用途、日期、想要的圖案，附上參考照片，<b>我們會在 LINE 跟您討論細節並報價</b>，確認後才開始製作。</p></section>
       <section class="panel"><h2>用途</h2><div class="chips" id="purpose">${PURPOSES.map((p) => `<button type="button" class="chip${p === purpose ? ' on' : ''}" data-p="${p}">${p}</button>`).join('')}</div></section>
       <section class="panel"><h2>想要的圖案</h2>
         <label class="field"><span>主題、角色、顏色、數量搭配…（必填）</span><textarea id="design" maxlength="1000" rows="4" placeholder="例：寶可夢收涎餅乾，皮卡丘 2 片、伊布 2 片、寶貝球名字牌 1 片，粉色系"></textarea></label>
@@ -75,7 +75,7 @@
         <p class="note" style="margin:0">我們會用 LINE 回覆您（LINE：${esc(me?.user?.name || '')}）。</p></section>
       <button class="btn block" id="send" style="margin-top:6px">送出客製詢問</button>
       <button type="button" class="nt-back" id="back2"><i aria-hidden="true"></i>返回上一頁</button>`;
-    $('#back2').onclick = NTC.back;
+    $('#back2').onclick = NTC.back; NTC.applySite(); // her own words (11-23 k)
     app.querySelectorAll('#purpose .chip').forEach((b) => (b.onclick = () => { purpose = b.dataset.p; app.querySelectorAll('#purpose .chip').forEach((x) => x.classList.toggle('on', x === b)); }));
     const paintThumbs = () => {
       $('#thumbs').innerHTML = photos.map((d, i) => `<div class="ph-item"><img src="${d}" alt=""><button type="button" data-i="${i}" aria-label="移除">✕</button></div>`).join('');

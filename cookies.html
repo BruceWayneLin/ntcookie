@@ -40,8 +40,8 @@
 <div class="ckd-bar" id="bar" hidden></div>
 <p class="sr-only" id="cookie-selection-status" role="status"></p>
 <script src="js/config.js?v=1122c"></script>
-<script src="js/app.js?v=1122d"></script>
-<script src="js/shop.js?v=1122c"></script>
+<script src="js/app.js?v=1123k"></script>
+<script src="js/shop.js?v=1123k"></script>
 <script>
 (function () {
   const { $, esc, money, asset } = NTC;
@@ -79,7 +79,7 @@
     const se = q.get('s') && series.find((x) => x.id === q.get('s'));
     if (se) return renderSeries(se);
     const groups = groupsAll(); const inG = (x, id) => (x.groups || []).includes(id);
-    const tabs = groups.filter((x) => series.some((y) => inG(y, x.id))); // categories that have something to show
+    const tabs = groups.filter((x) => series.some((y) => inG(y, x.id)) && !((cat.settings.tiles || {})[`g-${x.id}`] || {}).hidden); // categories that have something to show (and that the owner has not hidden, 11-23 j)
     const gObj = groups.find((x) => x.id === gSel) || tabs[0] || groups[0];
     const g = gObj.id;
     const list = series.filter((x) => inG(x, g));

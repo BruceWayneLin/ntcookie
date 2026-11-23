@@ -375,6 +375,76 @@
     if (img.tagName === 'IMG' && /\.webp$/.test(img.src) && !img.dataset.fb) { img.dataset.fb = 1; img.src = img.src.replace(/\.webp$/, '.png'); }
   }, true);
 
+  // ---------------- 商店頁的分類（11-23 j）：網站原本的六格＋店主自己開的造型餅乾分類、其他商品分類，照她在後台排的順序。
+  // 商店頁、☰ 選單、後台都用這一份。key＝g-<造型餅乾分類 id>、meringue、canele、custom、c-<其他商品分類 id>；settings.tiles[key]＝{ sort, hidden, name, sub }
+  NTC.TILE0 = { meringue: { name: '馬林糖一口酥', sub: ['送禮小點'] }, canele: { name: 'N.T Canelé', sub: ['可麗露專區'] }, custom: { name: '客製專區', sub: ['寵物・精品', '紀念造型'] } };
+  NTC.TILE_ORDER = ['g-character', 'g-birthday', 'meringue', 'canele', 'g-chinese', 'custom']; // 還沒排過的時候：網站原本的順序，新開的排在後面
+  NTC.shopTiles = (S, products = []) => {
+    S = S || {}; const T = S.tiles || {}; const banners = S.banners || {}; const ck = S.cookie || {}; const series = ck.series || [];
+    const liveS = new Set(products.filter((p) => p.category === 'cookie' && p.active).map((p) => p.series));
+    const out = [];
+    const add = (key, o) => { const t = T[key] || {}; const d = NTC.TILE0[key] || {};
+      out.push({ banner: typeof banners[key] === 'string' ? banners[key] : '', ...o, key, name: o.name || t.name || d.name || '', sub: Array.isArray(t.sub) ? t.sub : o.sub || d.sub || [], hidden: !!t.hidden, sort: t.sort, i: out.length }); };
+    for (const g of ck.groups || []) { const mine = series.filter((x) => (x.groups || []).includes(g.id) && liveS.has(x.id)); const c = mine.find((x) => x.photo || (x.photos && x.photos[0]));
+      add(`g-${g.id}`, { kind: 'cookie', id: g.id, name: g.name, sub: ['造型餅乾'], href: `cookies.html?g=${encodeURIComponent(g.id)}`, collection: 'cookie',
+        live: g.id === 'character' || g.id === 'birthday' || mine.length > 0, cover: c ? c.photo || c.photos[0] : '' }); }
+    add('meringue', { kind: 'meringue', href: 'meringue.html', collection: 'gift', live: true });
+    add('canele', { kind: 'canele', href: 'canele.html', collection: 'canele', live: true });
+    add('custom', { kind: 'custom', href: 'custom.html', collection: 'cookie', live: true });
+    for (const c of S.categories || []) { const mine = products.filter((p) => p.category === c.id && p.active);
+      add(`c-${c.id}`, { kind: 'line', id: c.id, name: c.name, sub: [], href: `category.html?c=${encodeURIComponent(c.id)}`, collection: c.temp === 'frozen' ? 'frozen' : 'gift',
+        live: mine.length > 0, banner: c.photo || '', cover: (mine.find((p) => p.photo) || {}).photo || '' }); }
+    const rank = (t) => (t.sort != null ? t.sort : NTC.TILE_ORDER.includes(t.key) ? (NTC.TILE_ORDER.indexOf(t.key) + 1) * 10 : 100000 + t.i);
+    return out.sort((a, b) => rank(a) - rank(b) || a.i - b.i);
+  };
+  NTC.tileShown = (t) => !t.hidden && t.live; // 客人看不看得到這一格
+  NTC.tileLabel = (t) => (t.kind === 'cookie' ? (/餅乾$/.test(t.name) ? t.name : `${t.name}造型餅乾`) : t.kind === 'custom' ? `${t.name}（詢問報價）` : t.kind === 'canele' ? `${t.name} ${t.sub[0] || ''}`.trim() : t.name);
+
+  // ---------------- 網站上的字、圖、連結（11-23 k）：店主在網頁上直接改（後台 → 網站 → 打開那一頁）。
+  // data-edit="key"（字）、data-edit-img="key"（圖）、data-edit-href="key"（按鈕連到哪）；沒改過的維持網站原本的。這支手機記住上次的，下次打開直接是新的
+  const SITE_IMG = /^(https:\/\/[^\s"'<>]+|assets\/[\w./-]+)$/;
+  const SITE_LINK = /^(https?:\/\/[^\s"'<>]+|[a-z0-9-]+\.html(\?[^\s"'<>]*)?(#[\w-]*)?|line(:[^\n]{0,200})?)$/;
+  NTC.site = (() => { try { const m = JSON.parse(localStorage.getItem('ntc-site') || '{}'); return m && typeof m === 'object' ? m : {}; } catch (e) { return {}; } })();
+  NTC.linkHref = (v) => (v === 'line' ? NTC.chatUrl('') : v.startsWith('line:') ? NTC.chatUrl(v.slice(5)) : v);
+  const siteOrig = new WeakMap();
+  NTC.applySite = (map) => {
+    if (map && typeof map === 'object') { NTC.site = map; try { localStorage.setItem('ntc-site', JSON.stringify(map)); } catch (e) { /* this phone cannot remember */ } }
+    const m = NTC.site || {};
+    document.querySelectorAll('[data-edit]').forEach((el) => {
+      if (!siteOrig.has(el)) siteOrig.set(el, { html: el.innerHTML, n: el.style.getPropertyValue('--n') });
+      const v = m[el.dataset.edit]; const o = siteOrig.get(el);
+      if (typeof v === 'string' && v.trim()) {
+        if (el.getAttribute('data-edit-own') === v) return;
+        if (el.hasAttribute('data-edit-heart')) { const ch = [...v.trim()]; const tail = ch.splice(-2).join(''); el.innerHTML = `${NTC.esc(ch.join(''))}<span class="store-title-end">${NTC.esc(tail)}<span class="store-title-heart" aria-hidden="true">♥&#xfe0e;</span></span>`; }
+        else el.textContent = v;
+        if (o.n) el.style.setProperty('--n', String(Math.max(...v.split('\n').map((l) => [...l].length))));
+        el.style.whiteSpace = 'pre-line'; el.setAttribute('data-edit-own', v);
+      } else if (el.hasAttribute('data-edit-own')) { el.innerHTML = o.html; if (o.n) el.style.setProperty('--n', o.n); el.style.whiteSpace = ''; el.removeAttribute('data-edit-own'); }
+    });
+    document.querySelectorAll('[data-edit-img]').forEach((el) => {
+      if (!siteOrig.has(el)) siteOrig.set(el, { src: el.getAttribute('src'), width: el.getAttribute('width'), height: el.getAttribute('height') });
+      const v = m[el.dataset.editImg]; const o = siteOrig.get(el);
+      if (typeof v === 'string' && SITE_IMG.test(v)) { if (el.getAttribute('data-edit-own') !== v) { el.removeAttribute('width'); el.removeAttribute('height'); el.src = NTC.asset(v); el.setAttribute('data-edit-own', v); } }
+      else if (el.hasAttribute('data-edit-own')) { el.src = o.src; for (const a of ['width', 'height']) if (o[a]) el.setAttribute(a, o[a]); el.removeAttribute('data-edit-own'); }
+    });
+    document.querySelectorAll('[data-edit-href]').forEach((el) => {
+      if (!siteOrig.has(el)) siteOrig.set(el, { href: el.getAttribute('href') });
+      const v = m[el.dataset.editHref]; const base = el.dataset.href0 || siteOrig.get(el).href;
+      if (typeof v === 'string' && SITE_LINK.test(v)) { el.setAttribute('href', NTC.linkHref(v)); el.setAttribute('data-edit-own', v); }
+      else if (el.hasAttribute('data-edit-own')) { if (base) el.setAttribute('href', base); el.removeAttribute('data-edit-own'); }
+    });
+  };
+  const siteBoot = () => {
+    const tagged = () => document.querySelector('[data-edit], [data-edit-img], [data-edit-href], [data-edit-ban]');
+    if (tagged()) { NTC.applySite(); NTC.catalog().then((c) => NTC.applySite((c.settings && c.settings.site) || {})).catch(() => {}); }
+    // 編輯模式：後台「網站」打開 ?edit=1；換頁也一直開著，按「完成」才關（只有店家帳號存得了）
+    try {
+      if (/[?&]edit=1(&|$)/.test(location.search)) sessionStorage.setItem('ntc-site-edit', '1');
+      if (sessionStorage.getItem('ntc-site-edit') === '1' && !/admin\.html$/.test(location.pathname)) { const s = document.createElement('script'); s.src = 'js/site-edit.js?v=1123k'; document.body.appendChild(s); }
+    } catch (e) { /* no session storage: no edit mode */ }
+  };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', siteBoot); else siteBoot();
+
   // ---------------- warm up LINE login on every page (non-blocking)
   NTC.liff();
 })();

@@ -20,19 +20,19 @@
 <body class="storefront reserve-page">
 <header class="store-header">
   <a class="store-back" id="back" href="index.html" aria-label="返回上一頁"><span aria-hidden="true"></span></a>
-  <p class="store-brand" lang="en">N.T Cookie</p>
+  <p class="store-brand" lang="en" data-edit="brand.name" data-edit-label="最上面的店名（商店、分類、預約三頁一起）">N.T Cookie</p>
   <a class="store-orders reserve-cart" href="cart.html">購物車 <span class="badge" data-cart-count></span></a>
 </header>
 <main class="store-main reserve-main">
   <section class="store-intro" aria-labelledby="reserve-title">
-    <p class="store-kicker">手作甜點・預訂商店</p>
-    <h1 id="reserve-title">預約／訂購</h1>
+    <p class="store-kicker" data-edit="reserve.kicker" data-edit-label="標題上面的小字">手作甜點・預訂商店</p>
+    <h1 id="reserve-title" data-edit="reserve.title" data-edit-label="預約頁的標題">預約／訂購</h1>
   </section>
   <div id="app" aria-busy="true"><p class="reserve-loading" role="status">正在查詢可預約日期…</p></div>
 </main>
 <script src="js/config.js?v=1122c"></script>
-<script src="js/app.js?v=1122d"></script>
-<script src="js/shop.js?v=1122c"></script>
+<script src="js/app.js?v=1123k"></script>
+<script src="js/shop.js?v=1123k"></script>
 <script>
 (async function () {
   const { $, esc } = NTC;

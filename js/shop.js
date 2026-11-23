@@ -163,12 +163,8 @@
       <a class="opt" href="${NTC.chatUrl('您好，我想詢問')}" style="text-decoration:none"><span class="t">聯絡客服（LINE 聊天）</span><span class="r">›</span></a></div>`);
     // what the shop sells follows the live catalog: every cookie group with something on sale, then the product lines the owner opened herself (admin → 商品 → ＋ 新增分類)
     NTC.catalog().then((c) => {
-      const live = (c.settings.cookie?.series || []).filter((x) => x.active);
-      const groups = (c.settings.cookie?.groups || []).filter((g) => live.some((x) => (x.groups || []).includes(g.id)));
-      const cats = (c.settings.categories || []).filter((k) => c.products.some((p) => p.category === k.id));
-      const box = el.querySelector('#menu-shop'); if (!box) return;
-      box.innerHTML = [...groups.map((g) => [`cookies.html?g=${encodeURIComponent(g.id)}`, esc(/餅乾$/.test(g.name) ? g.name : `${g.name}造型餅乾`)]), ...fixed,
-        ...cats.map((k) => [`category.html?c=${encodeURIComponent(k.id)}`, esc(k.name)])].map(row).join('');
+      const box = el.querySelector('#menu-shop'); if (!box) return; // 11-23 j: the shop's own list, in her order, hidden ones left out
+      box.innerHTML = NTC.shopTiles(c.settings, c.products).filter(NTC.tileShown).map((t) => [t.href, esc(NTC.tileLabel(t))]).map(row).join('');
     }).catch(() => {});
     return el;
   };

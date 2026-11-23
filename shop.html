@@ -15,20 +15,23 @@
 <link rel="stylesheet" href="css/app.css?v=1122c">
 <link rel="stylesheet" href="css/shop-tiles.css?v=1011">
 <link rel="stylesheet" href="css/storefront.css?v=shop-tiles-1013">
+<style>/* 11-23 j: a category card made from its first photo: the small line under its name */
+.store-category-sub { color: var(--store-muted); font: 600 .875rem/1.35 var(--serif); }
+</style>
 <title>線上商店｜N.T Cookie × N.T Canelé</title>
 <meta name="description" content="N.T Cookie × N.T Canelé 線上商店：可麗露禮盒、馬林糖一口酥，線上下單、LINE Pay 付款。">
 </head>
 <body class="storefront">
 <header class="store-header">
   <a class="store-back" id="back" href="index.html" aria-label="回首頁"><span aria-hidden="true"></span>首頁</a>
-  <p class="store-brand" lang="en">N.T Cookie</p>
+  <p class="store-brand" lang="en" data-edit="brand.name" data-edit-label="最上面的店名（商店、分類、預約三頁一起）">N.T Cookie</p>
   <a class="store-orders" href="orders.html">我的訂單</a>
 </header>
 <main class="store-main">
   <section class="store-intro" aria-labelledby="store-title">
-    <p class="store-kicker">手作甜點・預訂商店</p>
-    <h1 id="store-title">每一份精緻，都有<span class="store-title-end">堅持<span class="store-title-heart" aria-hidden="true">♥&#xfe0e;</span></span></h1>
-    <p class="store-lead">嚴選食材・細膩製作・專屬設計</p>
+    <p class="store-kicker" data-edit="shop.kicker" data-edit-label="標題上面的小字">手作甜點・預訂商店</p>
+    <h1 id="store-title" data-edit="shop.title" data-edit-heart data-edit-label="商店頁的標題（最後面的小愛心會自己留著）">每一份精緻，都有<span class="store-title-end">堅持<span class="store-title-heart" aria-hidden="true">♥&#xfe0e;</span></span></h1>
+    <p class="store-lead" data-edit="shop.lead" data-edit-label="標題下面那一行">嚴選食材・細膩製作・專屬設計</p>
   </section>
   <div class="store-filters" role="group" aria-label="篩選甜點分類" hidden>
     <button type="button" data-filter="all" aria-controls="collections" aria-pressed="true">全部</button>
@@ -80,7 +83,7 @@
 <footer class="store-footer" aria-label="購物資訊">
   <button type="button" id="show-shopping-info" aria-haspopup="dialog" hidden>購物須知</button>
   <a href="https://line.me/R/oaMessage/%40ntcookie/">聯絡我們</a>
-  <a href="https://shopee.tw/shop/3945339" target="_blank" rel="noopener">蝦皮賣場 <span aria-hidden="true">↗</span></a>
+  <a href="https://shopee.tw/shop/3945339" target="_blank" rel="noopener" data-edit-href="shop.link-shopee" data-edit-label="「蝦皮賣場」連到哪裡">蝦皮賣場 <span aria-hidden="true">↗</span></a>
 </footer>
 <dialog class="store-info" id="shopping-info" aria-labelledby="shopping-title">
   <h2 id="shopping-title">購物須知</h2>
@@ -91,9 +94,9 @@
   <form method="dialog"><button type="submit" autofocus>關閉</button></form>
 </dialog>
 <script src="js/config.js?v=2026-11-22V10.13"></script>
-<script src="js/app.js?v=1122d"></script>
-<script src="js/shop-tiles.js?v=1011"></script>
-<script src="js/shop.js?v=1122c"></script>
+<script src="js/app.js?v=1123k"></script>
+<script src="js/shop-tiles.js?v=1123k"></script>
+<script src="js/shop.js?v=1123k"></script>
 <script>
   // top-left 「首頁」 always goes to the main menu; 返回上一頁 at the bottom goes back to wherever the customer came from
   NTC.$('#back2').addEventListener('click', (event) => {
@@ -101,46 +104,63 @@
     event.preventDefault();
     NTC.back();
   });
-
+  // 11-23 j: the tiles follow the owner's own list (admin → 商品): her order, her names, hidden ones left out, every category she opens added by itself.
+  // The six house tiles keep the designer's art (taken from the markup above); a category with her own banner shows that picture;
+  // any other gets a card made from its first photo and its name. Remembered on this phone, so the next visit opens in her order straight away.
   const filters = NTC.$('.store-filters');
-  const buttons = [...filters.querySelectorAll('button')];
   const collections = NTC.$('#collections');
-  const chinese = collections.querySelector('[data-group="chinese"]');
-  // the owner's own banners (admin → 商品 → 商店頁的橫幅): her picture takes the place of a tile's own art.
-  // Remembered on this phone, so the next visit shows it straight away instead of swapping after the catalogue arrives.
-  const tileKey = (a) => { const h = a.getAttribute('href') || ''; const g = /^cookies\.html\?g=([\w-]+)/.exec(h); return g ? `g-${g[1]}` : (/^(meringue|canele|custom)\.html/.exec(h) || [])[1] || ''; };
-  const tiles = [...collections.querySelectorAll(':scope > li > a')].map(a => {
-    const key = tileKey(a), image = a.querySelector('img');
-    image.outerHTML = NTC.shopTileArt(key, image.outerHTML);
-    return { a, key, html: a.innerHTML, cls: a.className, name: a.querySelector('h2').textContent };
-  });
-  const ownTile = (src, name) => `<img src="${NTC.esc(NTC.asset(src))}" alt="" style="object-fit:cover"><h2 class="sr-only">${NTC.esc(name)}</h2>`;
-  function applyBanners(map) {
-    for (const t of tiles) {
-      const src = t.key && map && typeof map[t.key] === 'string' ? map[t.key] : '';
-      if (src) { if (t.a.dataset.own !== src) { t.a.className = ''; t.a.innerHTML = ownTile(src, t.name); t.a.dataset.own = src; } }
-      else if (t.a.dataset.own) { t.a.className = t.cls; t.a.innerHTML = t.html; delete t.a.dataset.own; }
+  const e = NTC.esc;
+  const keyOf = (a) => { const h = a.getAttribute('href') || ''; const g = /^cookies\.html\?g=([\w-]+)/.exec(h); return g ? `g-${g[1]}` : (/^(meringue|canele|custom)\.html/.exec(h) || [])[1] || ''; };
+  const house = {}; // key → the designer's own tile
+  for (const li of [...collections.children]) { const a = li.querySelector('a'); const k = a && keyOf(a); if (k && !house[k]) house[k] = li.cloneNode(true); }
+  const FILTERS = [['cookie', '造型餅乾'], ['gift', '送禮小點'], ['canele', '可麗露'], ['frozen', '冷凍甜點']];
+  const tileLi = (t) => {
+    const lines = t.name ? [t.name, ...(t.sub || [])] : null; let li;
+    if (t.banner) { // her own banner: the whole picture is the tile (the name is written on it)
+      li = document.createElement('li');
+      li.innerHTML = `<a href="${e(t.href)}"><img src="${e(NTC.asset(t.banner))}" alt="" style="object-fit:cover"><h2 class="sr-only">${e(lines ? lines.join(' ') : '')}</h2></a>`;
+    } else if (house[t.key]) {
+      li = house[t.key].cloneNode(true); const a = li.querySelector('a'); const img = a.querySelector('img');
+      img.outerHTML = NTC.shopTileArt(t.key, img.outerHTML, lines);
+      const h = a.querySelector('h2'); if (h && lines) h.textContent = lines.join(' ');
+    } else {
+      const cover = t.cover || ''; li = document.createElement('li'); li.className = 'store-feature';
+      li.innerHTML = `<a class="store-category-card${cover ? '' : ' no-photo'}" href="${e(t.href)}">
+        ${cover ? `<span class="store-category-photo"><img src="${e(NTC.asset(cover))}" alt="" loading="lazy"></span>` : ''}
+        <span class="store-category-copy"><h2>${e(t.name)}</h2>${(t.sub || []).length ? `<span class="store-category-sub">${e(t.sub.join('・'))}</span>` : ''}<span class="store-category-action">${t.kind === 'cookie' ? '選購款式' : '選購商品'}</span></span></a>`;
     }
+    li.dataset.collection = t.collection || (house[t.key] && house[t.key].dataset.collection) || 'gift'; li.dataset.tile = t.key;
+    return li;
+  };
+  function applyFilter() {
+    const b = filters.querySelector('[aria-pressed="true"]'); const c = b ? b.dataset.filter : 'all'; let n = 0;
+    for (const li of collections.children) { li.hidden = c !== 'all' && li.dataset.collection !== c; if (!li.hidden) n++; }
+    NTC.$('#filter-status').textContent = `${b ? b.textContent : '全部'}，共 ${n} 個分類`;
   }
-  try { applyBanners(JSON.parse(localStorage.getItem('ntc-banners') || '{}')); } catch (err) { /* nothing remembered yet */ }
-  let hasChinese = true;
-  function filterCollections(category, name) {
-    let count = 0;
-    for (const collection of collections.children) {
-      collection.hidden = (collection === chinese && !hasChinese) || (category !== 'all' && collection.dataset.collection !== category);
-      if (!collection.hidden) count++;
-    }
-    NTC.$('#filter-status').textContent = `${name}，共 ${count} 個分類`;
+  let painted = '';
+  function paint(list) {
+    const sig = JSON.stringify(list.map((t) => [t.key, t.name, t.sub, t.banner, t.cover, t.collection]));
+    if (sig === painted) return; painted = sig;
+    collections.replaceChildren(...list.map(tileLi));
+    const have = FILTERS.filter(([c]) => [...collections.children].some((li) => li.dataset.collection === c));
+    const was = filters.querySelector('[aria-pressed="true"]'); const cur = was ? was.dataset.filter : 'all';
+    filters.innerHTML = [['all', '全部'], ...have].map(([c, n]) => `<button type="button" data-filter="${c}" aria-controls="collections" aria-pressed="${c === cur}">${n}</button>`).join('');
+    if (!filters.querySelector('[aria-pressed="true"]')) filters.firstElementChild.setAttribute('aria-pressed', 'true');
+    filters.style.gridTemplateColumns = `repeat(${have.length + 1}, minmax(0, 1fr))`;
+    filters.hidden = have.length < 2;
+    applyFilter();
   }
   filters.addEventListener('click', (event) => {
     const selected = event.target.closest('button[data-filter]');
     if (!selected || selected.getAttribute('aria-pressed') === 'true') return;
-    const category = selected.dataset.filter;
-    buttons.forEach((button) => button.setAttribute('aria-pressed', String(button === selected)));
-    filterCollections(category, selected.textContent);
+    filters.querySelectorAll('button').forEach((button) => button.setAttribute('aria-pressed', String(button === selected)));
+    applyFilter();
   });
-  filters.hidden = false;
-
+  { // first paint: what this phone saw last time, or the house tiles
+    let seen = null; let bans = {};
+    try { seen = JSON.parse(localStorage.getItem('ntc-shop-tiles') || 'null'); bans = JSON.parse(localStorage.getItem('ntc-banners') || '{}') || {}; } catch (err) { /* nothing remembered yet */ }
+    paint(Array.isArray(seen) && seen.length ? seen : Object.keys(house).map((k) => ({ key: k, banner: typeof bans[k] === 'string' ? bans[k] : '', href: house[k].querySelector('a').getAttribute('href') })));
+  }
   const info = NTC.$('#shopping-info');
   const infoButton = NTC.$('#show-shopping-info');
   if (typeof info.showModal === 'function') {
@@ -149,50 +169,13 @@
   }
   NTC.mountCartBar();
   NTC.$('.cartbar .go').textContent = '去結帳';
-
   // 購物須知: written from the shop's settings; the owner can rewrite, hide or add notes in the admin (設定 → 購物須知)
   NTC.catalog().then((c) => {
-    const cookie = c.settings.cookie || {};
-    const live = (cookie.series || []).filter((series) => series.active);
-    const cookieGroups = (cookie.groups || []).filter((group) => live.some((series) => (series.groups || []).includes(group.id)));
-    hasChinese = cookieGroups.some((group) => group.id === 'chinese');
-    const builtIn = new Set(['character', 'birthday', 'chinese']);
-    const e = NTC.esc;
     const banners = c.settings.banners || {};
-    applyBanners(banners);
-    try { localStorage.setItem('ntc-banners', JSON.stringify(banners)); } catch (err) { /* this phone cannot remember: the tiles just swap a moment later next time */ }
-    for (const group of cookieGroups) {
-      if (builtIn.has(group.id)) continue;
-      const series = live.find((item) => (item.groups || []).includes(group.id) && (item.photo || item.photos?.[0]));
-      const cover = series?.photo || series?.photos?.[0];
-      const title = /餅乾$/.test(group.name) ? group.name : `${group.name}造型餅乾`;
-      const tile = document.createElement('li');
-      tile.dataset.collection = 'cookie';
-      const own = banners[`g-${group.id}`];
-      if (own) tile.innerHTML = `<a href="cookies.html?g=${encodeURIComponent(group.id)}">${ownTile(own, title)}</a>`; // her own banner: a tile like the built-in ones
-      else { tile.className = 'store-feature'; tile.innerHTML = `<a class="store-category-card${cover ? '' : ' no-photo'}" href="cookies.html?g=${encodeURIComponent(group.id)}">
-        ${cover ? `<span class="store-category-photo"><img src="${e(NTC.asset(cover))}" alt="" loading="lazy"></span>` : ''}
-        <span class="store-category-copy"><h2>${e(title)}</h2><span class="store-category-action">選購款式</span></span>
-      </a>`; }
-      collections.append(tile);
-    }
-    // product lines the owner opened herself (admin → 商品 → ＋ 新增分類): one card each, as soon as something in it is on sale
-    for (const line of c.settings.categories || []) {
-      const items = c.products.filter((item) => item.category === line.id);
-      if (!items.length) continue;
-      const cover = items.find((item) => item.photo)?.photo;
-      const tile = document.createElement('li');
-      tile.dataset.collection = line.temp === 'frozen' ? 'line' : 'gift';
-      tile.dataset.line = line.id;
-      if (line.photo) tile.innerHTML = `<a href="category.html?c=${encodeURIComponent(line.id)}">${ownTile(line.photo, line.name)}</a>`; // her banner: a tile like the built-in ones
-      else { tile.className = 'store-feature'; tile.innerHTML = `<a class="store-category-card${cover ? '' : ' no-photo'}" href="category.html?c=${encodeURIComponent(line.id)}">
-        ${cover ? `<span class="store-category-photo"><img src="${e(NTC.asset(cover))}" alt="" loading="lazy"></span>` : ''}
-        <span class="store-category-copy"><h2>${e(line.name)}</h2><span class="store-category-action">選購商品</span></span>
-      </a>`; }
-      collections.append(tile);
-    }
-    const active = filters.querySelector('[aria-pressed="true"]');
-    filterCollections(active.dataset.filter, active.textContent);
+    try { localStorage.setItem('ntc-banners', JSON.stringify(banners)); } catch (err) { /* the 可麗露／馬林糖 pages read this too */ }
+    const list = NTC.shopTiles(c.settings, c.products).filter(NTC.tileShown);
+    paint(list);
+    try { localStorage.setItem('ntc-shop-tiles', JSON.stringify(list.map(({ key, kind, name, sub, href, collection, banner, cover }) => ({ key, kind, name, sub, href, collection, banner, cover })))); } catch (err) { /* this phone cannot remember */ }
     const rows = NTC.shopNotes(c.settings).filter((r) => !r.hidden && (r.title || r.text));
     NTC.$('#shopping-body').innerHTML = `<dl class="store-rules">${rows.map((r) => `<dt>${e(r.title)}</dt><dd>${e(r.text).replace(/\n/g, '<br>')}</dd>`).join('')}</dl>`;
     if (location.hash === '#notes' && typeof info.showModal === 'function') info.showModal(); // the admin's 「看客人看到的樣子」
