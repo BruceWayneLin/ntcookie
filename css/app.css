@@ -248,37 +248,40 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
   max-width: 90vw; text-align: center; opacity: 0; pointer-events: none; transition: opacity .2s ease, transform .2s ease;
 }
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
-/* One canelé for navigation, pending page content and action overlays. */
-:root { --loading-pastry: url("../assets/v2/01-canele/spinning-canele.webp"); }
+/* The same illustrated cookie and wordmark appear on every loading backdrop. */
+:root {
+  --loading-art: url("../assets/v2/01-canele/cookie-loader.svg");
+  --loading-art-width: min(236px, 64vw, 60dvh);
+}
 @media (prefers-reduced-motion: reduce) {
-  :root { --loading-pastry: url("../assets/v2/01-canele/still-canele.webp"); }
+  :root { --loading-art: url("../assets/v2/01-canele/cookie-loader.svg#still"); }
 }
 .vchk body, .liffgo body { visibility: hidden; }
 html::before, .loading-cover {
   position: fixed;
   inset: 0;
   z-index: 90;
-  background-color: #faf4ed;
+  background-color: #fff4f3;
   cursor: progress;
 }
 @supports (backdrop-filter: blur(5px)) {
   html::before, .loading-cover {
-    background-color: rgba(250, 244, 237, .9);
+    background-color: rgba(255, 244, 243, .94);
     backdrop-filter: blur(5px);
   }
 }
 html:is(.page-opening, .vchk, .liffgo)::before,
 html:has(main [aria-busy="true"], main .spinner)::before {
   content: "";
-  background-image: var(--loading-pastry);
+  background-image: var(--loading-art);
   background-position: center;
-  background-size: 56px 56px;
+  background-size: var(--loading-art-width) auto;
   background-repeat: no-repeat;
 }
 html:not(.vchk, .liffgo):has(.loading-cover.show)::before { content: none; }
-.loading-cover { display: none; align-items: center; justify-content: center; flex-direction: column; gap: 10px; font-weight: 700; color: var(--ink2); }
+.loading-cover { display: none; align-items: center; justify-content: center; flex-direction: column; gap: 6px; font-weight: 700; color: var(--ink2); }
 .loading-cover.show { display: flex; }
-.loading-cover .spinner { width: 56px; height: 56px; background: var(--loading-pastry) center / contain no-repeat; }
+.loading-cover .spinner { width: var(--loading-art-width); aspect-ratio: 240 / 216; background: var(--loading-art) center / contain no-repeat; }
 @media (prefers-reduced-motion: reduce) { .pcard, .sheet, .sheet-mask, .cartbar, .toast { transition: none; } }
 
 /* ---------------------------------------------------------------- 造型餅乾 cookies.html（照店主範例稿：線上購物／系列／單片選購） */
