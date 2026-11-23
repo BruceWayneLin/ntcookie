@@ -54,7 +54,24 @@ function siteBase(candidate) {
 }
 
 // ---------------------------------------------------------------- data
-const get = async (pk, sk) => (await ddb.send(new GetCommand({ TableName: TABLE, Key: { pk, sk } }))).Item;
+// 後台的請求一律讀「最新的」資料（11-23 l）：剛存完馬上再讀，如果讀到的是前一刻的舊資料，就會把舊的當成現在的再存回去（改好的東西又變回去）。客人那邊照舊。
+let STRONG = false;
+const get = async (pk, sk) => (await ddb.send(new GetCommand({ TableName: TABLE, Key: { pk, sk }, ConsistentRead: STRONG }))).Item;
+// 會改「設定」的後台請求一次只跑一個：設定是整份讀出來、改完整份寫回去，兩個同時跑的話，後寫的會把先寫的蓋掉（剛新增的系列不見）
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+async function lockSettings() {
+  const id = crypto.randomBytes(9).toString('hex');
+  for (let i = 0; i < 70; i++) {
+    try {
+      await ddb.send(new PutCommand({ TableName: TABLE, Item: { pk: 'LOCK', sk: 'settings', id, until: Date.now() + 25000 },
+        ConditionExpression: 'attribute_not_exists(pk) OR #u < :now', ExpressionAttributeNames: { '#u': 'until' }, ExpressionAttributeValues: { ':now': Date.now() } }));
+      return id;
+    } catch (e) { if (e.name !== 'ConditionalCheckFailedException') throw e; await sleep(70 + Math.random() * 60); }
+  }
+  throw new HttpError(503, '系統忙碌中，請再按一次');
+}
+const unlockSettings = (id) => ddb.send(new DeleteCommand({ TableName: TABLE, Key: { pk: 'LOCK', sk: 'settings' }, ConditionExpression: '#i = :i', ExpressionAttributeNames: { '#i': 'id' }, ExpressionAttributeValues: { ':i': id } })).catch(() => {});
+const SETTINGS_WRITES = /^\/admin\/(settings|cookie-series|cookie-trash|categories|tiles|site|banners|requests)(\/|$)/;
 const putRaw = (item) => ddb.send(new PutCommand({ TableName: TABLE, Item: item }));
 // every settings save also keeps the admins' rich menu in step (see syncAdminMenus)
 const put = async (item) => { const r = await putRaw(item); if (item.pk === 'SETTINGS') await syncAdminMenus(item).catch(() => {}); return r; };
@@ -77,7 +94,7 @@ const del = (pk, sk) => ddb.send(new DeleteCommand({ TableName: TABLE, Key: { pk
 async function queryAll(params) {
   const out = []; let ExclusiveStartKey;
   do {
-    const r = await ddb.send(new QueryCommand({ TableName: TABLE, ...params, ExclusiveStartKey }));
+    const r = await ddb.send(new QueryCommand({ TableName: TABLE, ConsistentRead: STRONG && !params.IndexName, ...params, ExclusiveStartKey }));
     out.push(...(r.Items || [])); ExclusiveStartKey = r.LastEvaluatedKey;
   } while (ExclusiveStartKey && out.length < 2000);
   return out;
@@ -142,6 +159,7 @@ async function getSettings() {
 // 造型餅乾系列沒有自己的開關（SK 11-19）：系列裡只要有一款餅乾「上架」，客人就看得到這個系列；一款都沒上架＝客人看不到。
 // 管理員看得到全部系列（預覽、下測試單用）；回傳的 active＝這個系列現在客人看不看得到。
 const seriesOf = (s) => [...(s.cookie?.series || [])].sort((a, b) => (a.sort ?? 999) - (b.sort ?? 999));
+const trashOf = (s) => (Array.isArray(s.cookie?.trash) ? s.cookie.trash : []).filter((x) => x && x.id); // 刪掉的系列（最多留 20 個，新的在前面）
 const cleanGroups = (list) => { const ids = new Set(); return (Array.isArray(list) ? list : []).slice(0, 12).map((g) => ({ id: str(g?.id, 20).toLowerCase().replace(/[^a-z0-9-]/g, ''), name: str(g?.name, 12) }))
   .filter((g) => g.id && g.name && !ids.has(g.id) && ids.add(g.id)); };
 const cookieGroups = (s) => { const g = cleanGroups(s.cookie?.groups); return g.length ? g : DEFAULT_SETTINGS.cookie.groups; };
@@ -392,13 +410,13 @@ function priceOrder(reqItems, products, settings, { admin = false } = {}) {
           if (!text && !p.textOptional) throw bad(`「${p.name}」請填寫${p.textLabel}`);
           if ([...text].length > int(p.textMax, 12)) throw bad(`「${p.name}」的${p.textLabel}最多 ${int(p.textMax, 12)} 個字`);
         }
-        lines.push({ type: 'product', productId: p.id, name: p.name, detail: se.name + (text ? `｜${p.textLabel}：${text}` : ''), text: text || undefined, unit: p.unit || '片', price: int(p.price), qty, temp: 'cookie', single: se.single ? true : undefined });
+        lines.push({ type: 'product', productId: p.id, name: p.name, detail: se.name + (text ? `｜${p.textLabel}：${text}` : ''), text: text || undefined, unit: p.unit || '片', price: int(p.price), qty, temp: 'cookie', single: se.single ? true : undefined, photo: p.photo || undefined });
       } else if (p.category === 'canele') {
         const min = int(settings.canele?.singleMinBoxes, 1);
         if (qty < min) throw bad(`單一口味禮盒 ${min} 盒起訂`);
-        lines.push({ type: 'product', productId: p.id, name: `${p.name}・單一口味禮盒`, detail: '每盒 6 顆・皆為相同口味', unit: '盒', price: int(p.price), qty, temp: 'frozen' });
+        lines.push({ type: 'product', productId: p.id, name: `${p.name}・單一口味禮盒`, detail: '每盒 6 顆・皆為相同口味', unit: '盒', price: int(p.price), qty, temp: 'frozen', photo: p.photo || p.card || undefined });
       } else {
-        lines.push({ type: 'product', productId: p.id, name: p.name, unit: p.unit || '個', price: int(p.price), qty, temp: TEMP[p.category] || catsOf(settings).find((c) => c.id === p.category)?.temp || 'ambient', line: BUILT_IN.includes(p.category) ? undefined : p.category }); // line＝店主自己開的分類
+        lines.push({ type: 'product', productId: p.id, name: p.name, unit: p.unit || '個', price: int(p.price), qty, temp: TEMP[p.category] || catsOf(settings).find((c) => c.id === p.category)?.temp || 'ambient', line: BUILT_IN.includes(p.category) ? undefined : p.category, photo: p.photo || p.card || undefined }); // line＝店主自己開的分類
       }
     } else if (it.type === 'canele-assorted') {
       const mode = (settings.canele?.modes || []).find((m) => m.id === it.mode);
@@ -412,6 +430,7 @@ function priceOrder(reqItems, products, settings, { admin = false } = {}) {
         type: 'canele-assorted', mode: mode.id, flavors: ids,
         name: `綜合口味禮盒（任選 ${mode.flavors} 種）`, detail: fl.map((p) => p.name).join('、') + `｜每種 ${mode.each} 顆`,
         unit: '盒', price: int(settings.canele.assortedPrice), qty, temp: 'frozen',
+        photos: fl.map((p) => p.photo || p.card).filter(Boolean), // 綜合禮盒：每一種口味一張小圖
       });
     } else throw bad('購物車資料不正確');
   }
@@ -480,6 +499,18 @@ function publicOrder(o, settings) {
   v.payment.label = PAY_LABEL[o.payment?.method] || '';
   if (o.payment?.method === 'transfer' && settings) v.bank = settings.bank;
   v.adminMessage = o.adminMessage || '';
+  return v;
+}
+// 訂單每一項的照片（11-24）：新訂單下單當時就記在訂單上；之前的訂單沒有記，用商品現在的照片補上（商品已經刪掉的就沒有圖）
+let photoMap = null; // 這一個請求裡查過一次就夠
+async function withPhotos(v) {
+  const list = Array.isArray(v) ? v : [v];
+  if (!list.some((o) => (o.lines || []).some((l) => (l.type === 'product' && !l.photo) || (l.type === 'canele-assorted' && !l.photos)))) return v;
+  photoMap ||= new Map((await listProducts()).map((p) => [p.id, p.photo || p.card || '']));
+  for (const o of list) {
+    o.lines = (o.lines || []).map((l) => (l.type === 'product' && !l.photo && photoMap.get(l.productId) ? { ...l, photo: photoMap.get(l.productId) }
+      : l.type === 'canele-assorted' && !l.photos ? { ...l, photos: (l.flavors || []).map((id) => photoMap.get(id)).filter(Boolean) } : l));
+  }
   return v;
 }
 const adminOrder = (o) => ({ ...publicOrder(o), byShop: !!o.byShop, token: o.token, user: o.user, payment: o.payment, adminNote: o.adminNote || '', adminMessage: o.adminMessage || '', history: o.history || [] });
@@ -867,6 +898,8 @@ async function route(event) {
   const method = event.requestContext?.http?.method || 'GET';
   const path = (event.rawPath || '/').replace(/\/+$/, '') || '/';
   const seg = path.split('/').filter(Boolean);
+  STRONG = seg[0] === 'admin'; photoMap = null;
+  let lock = null;
   try {
     // ---- public
     if (method === 'POST' && path === '/line/webhook') return await lineWebhook(event);
@@ -901,7 +934,7 @@ async function route(event) {
       const q = new URLSearchParams(event.rawQueryString || '');
       if (method === 'GET' && seg.length === 2) {
         const o = await loadOrder(seg[1], event, q.get('t'));
-        return json(200, { order: publicOrder(o, await getSettings()) });
+        return json(200, { order: await withPhotos(publicOrder(o, await getSettings())) });
       }
       const b = parseBody(event);
       if (method === 'POST' && seg[2] === 'transfer') {
@@ -914,7 +947,7 @@ async function route(event) {
         const n = await setOrder(o.orderNo, fields, `客人回報已匯款，末五碼 ${last5}`);
         const who = `${o.contact?.name || ''}${o.user?.name && o.user.name !== o.contact?.name ? `（LINE：${o.user.name}）` : ''}`;
         await notifyAdmins(`🏦 客人回報已轉帳\n訂單：${o.orderNo}\n客人：${who || '（未填）'}　${o.contact?.phone || ''}\n金額：$${o.total}\n帳號末五碼：${last5}\n\n請到網銀確認入帳後，在後台按「確認已收到款項」：\n${adminLink(o.orderNo)}`).catch(() => {});
-        return json(200, { order: publicOrder(n, await getSettings()) });
+        return json(200, { order: await withPhotos(publicOrder(n, await getSettings())) });
       }
       if (method === 'POST' && seg[2] === 'pay') { // retry / switch payment
         const o = await loadOrder(seg[1], event, b.t);
@@ -1024,7 +1057,8 @@ async function route(event) {
         if (rec.count) await del('LOGINFAIL', ip);
         return json(200, { token: signSession(s) });
       }
-      const { settings, user: me } = await requireAdmin(event);
+      let { settings, user: me } = await requireAdmin(event); // eslint-disable-line prefer-const
+      if (method !== 'GET' && SETTINGS_WRITES.test(path)) { lock = await lockSettings(); settings = await getSettings(); } // 排到了：從最新的設定開始改
       if (OWNER_IDS.has(me.sub)) {
         const cur = (settings.admins || []).find((a) => a.sub === me.sub);
         if (!cur || cur.name !== me.name || cur.picture !== me.picture) {
@@ -1036,7 +1070,7 @@ async function route(event) {
         const q = new URLSearchParams(event.rawQueryString || '');
         let orders = await queryAll({ KeyConditionExpression: 'pk = :p', ExpressionAttributeValues: { ':p': 'ORDER' }, ScanIndexForward: false });
         if (q.get('status')) orders = orders.filter((o) => o.status === q.get('status'));
-        return json(200, { orders: orders.map(adminOrder), statuses: STATUS, canDeleteReal: OWNER_IDS.has(me.sub) });
+        return json(200, { orders: await withPhotos(orders.map(adminOrder)), statuses: STATUS, canDeleteReal: OWNER_IDS.has(me.sub) });
       }
       if (method === 'PATCH' && seg[1] === 'orders' && seg[2]) {
         const o = await get('ORDER', seg[2]);
@@ -1066,7 +1100,7 @@ async function route(event) {
         const note = fields.adminMessage || o.adminMessage;
         if (fields.status === 'cancelled') await pushTo(o.user?.sub, `很抱歉，您的訂單 ${o.orderNo} 已由店家取消。${note ? `\n店家說明：${note}` : ''}\n如有任何問題，請聯絡客服：直接在這個聊天室留言即可 ♡`).catch(() => {});
         else if (fields.status && !['paid', 'reported'].includes(fields.status)) await pushTo(o.user?.sub, `您的訂單 ${o.orderNo} 狀態更新：${STATUS[fields.status]}${note ? `\n${note}` : ''}`).catch(() => {});
-        return json(200, { order: adminOrder(n) });
+        return json(200, { order: await withPhotos(adminOrder(n)) });
       }
       if (method === 'DELETE' && seg[1] === 'orders' && seg[2]) {
         // 店家測試單：管理員可以刪。客人的真實訂單：只有最大管理員（OWNER_LINE_IDS）能刪，而且要已取消、從沒付過款
@@ -1221,10 +1255,48 @@ async function route(event) {
         for (const p of gone) await del('PRODUCT', p.id);
         return json(200, { settings: adminView(next), products: await listProducts() });
       }
-      if (method === 'DELETE' && seg[1] === 'cookie-series' && seg[2]) { // only this series; its cookies stay (listed as 系列已刪除) so they can be moved to another series
-        const next = { ...settings, cookie: { ...settings.cookie, series: (settings.cookie.series || []).filter((x) => x.id !== seg[2]) }, pk: 'SETTINGS', sk: 'main' };
+      // 刪除一個系列（11-23 l）：不是真的丟掉，先放進 trash；裡面的餅乾原封不動（還掛在這個系列的代號上），按「復原」整個系列就跟原本一模一樣回來
+      if (method === 'DELETE' && seg[1] === 'cookie-series' && seg[2]) {
+        const gone = (settings.cookie.series || []).find((x) => x.id === seg[2]);
+        const next = { ...settings, cookie: { ...settings.cookie, series: (settings.cookie.series || []).filter((x) => x.id !== seg[2]), trash: gone ? [{ ...gone, deletedAt: new Date().toISOString() }, ...trashOf(settings).filter((x) => x.id !== gone.id)].slice(0, 20) : trashOf(settings) }, pk: 'SETTINGS', sk: 'main' };
         await put(next);
         return json(200, { settings: adminView(next), products: await listProducts() });
+      }
+      if (method === 'POST' && seg[1] === 'cookie-series' && seg[2] && seg[3] === 'restore') {
+        const back = trashOf(settings).find((x) => x.id === seg[2]);
+        if (!back) throw bad('找不到這個刪掉的商品，可能已經復原了');
+        const list = seriesOf(settings);
+        if (list.some((x) => x.id === back.id)) throw bad('這個商品已經在列表裡了');
+        if (list.length >= 80) throw bad('系列太多了（最多 80 個）');
+        const groupIds = new Set(cookieGroups(settings).map((g) => g.id));
+        const { deletedAt, ...same } = back; // 跟刪掉之前一模一樣放回去；只有已經不存在的分類會拿掉
+        const next = { ...settings, cookie: { ...settings.cookie, series: [...list, { ...same, groups: (same.groups || []).filter((g) => groupIds.has(g)) }], trash: trashOf(settings).filter((x) => x.id !== back.id) }, pk: 'SETTINGS', sk: 'main' };
+        await put(next);
+        return json(200, { settings: adminView(next), products: await listProducts() });
+      }
+      // 沒有系列的餅乾（系列被刪掉了）一次全部搬進這個系列，排在原本的後面；照片、名稱、價格、上架都不變
+      if (method === 'POST' && seg[1] === 'cookie-series' && seg[2] && seg[3] === 'adopt') {
+        const to = seg[2]; const from = str(parseBody(event).from, 40);
+        if (!seriesOf(settings).some((x) => x.id === to)) throw bad('找不到要搬進去的商品');
+        if (!from || from === to || seriesOf(settings).some((x) => x.id === from)) throw bad('這些餅乾的商品還在，不用搬');
+        const all = await listProducts(); const moving = all.filter((p) => p.category === 'cookie' && p.series === from);
+        const sort = Math.max(0, ...all.filter((p) => p.category === 'cookie' && p.series === to).map((p) => p.sort || 0)); const at = new Date().toISOString();
+        for (let i = 0; i < moving.length; i += 10) await Promise.all(moving.slice(i, i + 10).map((p, k) => ddb.send(new UpdateCommand({ TableName: TABLE, Key: { pk: 'PRODUCT', sk: p.id },
+          UpdateExpression: 'SET series = :to, #s = :sort, updatedAt = :at', ConditionExpression: 'series = :from', ExpressionAttributeNames: { '#s': 'sort' },
+          ExpressionAttributeValues: { ':to': to, ':from': from, ':sort': sort + (i + k + 1) * 10, ':at': at } })).catch((e) => { if (e.name !== 'ConditionalCheckFailedException') throw e; })));
+        const next = { ...settings, cookie: { ...settings.cookie, trash: trashOf(settings).filter((x) => x.id !== from) }, pk: 'SETTINGS', sk: 'main' };
+        await put(next);
+        return json(200, { settings: adminView(next), products: await listProducts(), moved: moving.length });
+      }
+      // 真的丟掉一個刪掉的系列：連同還掛在它上面的餅乾（搬走的不算）。這一步找不回來
+      if (method === 'DELETE' && seg[1] === 'cookie-trash' && seg[2]) {
+        const id = seg[2];
+        if (seriesOf(settings).some((x) => x.id === id)) throw bad('這個商品還在列表裡，不能丟');
+        const dead = (await listProducts()).filter((p) => p.category === 'cookie' && p.series === id);
+        for (const p of dead) await del('PRODUCT', p.id);
+        const next = { ...settings, cookie: { ...settings.cookie, trash: trashOf(settings).filter((x) => x.id !== id) }, pk: 'SETTINGS', sk: 'main' };
+        await put(next);
+        return json(200, { settings: adminView(next), products: await listProducts(), removed: dead.length });
       }
       if (method === 'DELETE' && seg[1] === 'products' && seg[2]) { await del('PRODUCT', seg[2]); return json(200, { ok: true }); }
       if (method === 'POST' && path === '/admin/images') return json(200, { url: await putImage(parseBody(event)) });
@@ -1256,12 +1328,13 @@ async function route(event) {
           const groupIds = new Set(groups.map((g) => g.id));
           const ids = new Set();
           let series = (Array.isArray(c.series) ? c.series : settings.cookie.series).slice(0, 80).map((x, i) => cleanSeries(x, i, groupIds));
-          if (Array.isArray(c.series)) { // an admin page opened before someone else added series sends a list without them: one save never drops more than one series
+          if (Array.isArray(c.series)) { // 這裡只排順序、不刪系列（刪除只有「刪除」那顆按鈕）：還開著舊頁面的手機送來的清單會少幾個，少的照樣留著
             const sent = new Set(series.map((x) => x.id)); const gone = seriesOf(settings).filter((x) => !sent.has(x.id));
-            if (gone.length > 1) series = [...series, ...gone.map((x, i) => cleanSeries(x, series.length + i, groupIds))];
+            if (gone.length) series = [...series, ...gone.map((x, i) => cleanSeries(x, series.length + i, groupIds))];
+            const binned = new Set(trashOf(settings).map((x) => x.id)); series = series.filter((x) => !binned.has(x.id)); // 也不會把剛刪掉（在回收區）的又加回來
           }
           for (const x of series) { if (!x.id || !x.name) throw bad('每個系列都要有名稱'); if (ids.has(x.id)) throw bad('系列代號重複'); ids.add(x.id); }
-          next.cookie = { minPieces: Math.min(200, Math.max(1, int(c.minPieces ?? settings.cookie.minPieces, 1))), shipping: { label: str(cs.label, 30) || DEFAULT_SETTINGS.cookie.shipping.label, tiers }, groups, series };
+          next.cookie = { minPieces: Math.min(200, Math.max(1, int(c.minPieces ?? settings.cookie.minPieces, 1))), shipping: { label: str(cs.label, 30) || DEFAULT_SETTINGS.cookie.shipping.label, tiers }, groups, series, trash: trashOf(settings) };
         }
         let token;
         if (b.newAdminPass !== undefined && env.ALLOW_PASSCODE !== '1') throw bad('後台只能用 LINE 帳號登入，沒有店家密碼');
@@ -1300,5 +1373,5 @@ async function route(event) {
     if (e instanceof HttpError) return json(e.status, { error: e.message });
     console.error(e);
     return json(500, { error: '系統忙碌中，請稍後再試' });
-  }
+  } finally { if (lock) await unlockSettings(lock); }
 }

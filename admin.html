@@ -12,7 +12,7 @@
 <link rel="preload" as="script" href="https://static.line-scdn.net/liff/edge/2/sdk.js">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css?v=1124-owner-canele">
+<link rel="stylesheet" href="css/app.css?v=1124b">
 <link rel="stylesheet" href="css/shop-tiles.css?v=1011">
 <style>
   :root { --page: 760px; }
@@ -108,9 +108,26 @@
   .acc.open .acc-h small { visibility: hidden; }
   .sn { padding: 10px 0 12px; border-top: 1px dashed var(--line, #ead9cf); } .sn:first-child { border-top: 0; padding-top: 0; }
   .sn .sn-auto { margin: 0 0 8px; padding: 8px 10px; border-radius: 10px; background: #fbf3ee; line-height: 1.6; } .sn .field { margin-bottom: 6px; } .sn textarea { min-height: 58px; } .sn.sn-x { border-top-style: solid; }
-  .savebar { position: fixed; left: 50%; bottom: 0; transform: translateX(-50%); z-index: 45; width: min(100vw, var(--page)); display: flex; align-items: center; gap: 10px;
+  .savebar { position: sticky; bottom: 0; z-index: 45; width: 100%; max-width: var(--page); margin: 0 auto; box-sizing: border-box; display: flex; align-items: center; gap: 10px; /* 跟著頁面走（sticky），不是固定在畫面上的一層：見 pageSheet */
     padding: 10px 14px calc(10px + env(safe-area-inset-bottom, 0px)); background: #fff8f0; border-top: 1px solid #e7cdb6; box-shadow: 0 -4px 14px rgba(120, 70, 40, .14); }
   .savebar span { flex: 1; font: 700 14px/1.3 var(--sans); color: #9a4f08; }
+  /* 訂單裡每一項的照片：一眼看出是哪一片；點一下放大 (11-24) */
+  .oline { gap: 10px; }
+  .o-th { flex: none; width: 68px; height: 68px; padding: 0; border: 0; border-radius: 12px; overflow: hidden; background: #f3e4db; cursor: zoom-in; }
+  .o-th img { display: block; width: 100%; height: 100%; object-fit: cover; }
+  .o-ths { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; } .o-ths img { width: 40px; height: 40px; border-radius: 8px; object-fit: cover; background: #f3e4db; }
+  /* 刪掉的商品（可以復原）、沒有商品可以放的餅乾（可以一次搬走）：排在列表最上面，一打開就看到 (11-23 l) */
+  .gone { border: 1.5px solid #e6b98f; background: #fff8ef; }
+  .gone-h { display: flex; gap: 12px; align-items: center; }
+  .gone-h img { flex: none; width: 60px; height: 60px; border-radius: 12px; object-fit: cover; background: #f3e4db; }
+  .gone-h b { display: block; font: 900 17px/1.35 var(--serif); color: #8a3c08; }
+  .gone-h span { display: block; margin-top: 3px; font: 600 13.5px/1.6 var(--sans); color: var(--ink2); }
+  .gone-acts { display: flex; gap: 10px; align-items: center; margin-top: 12px; flex-wrap: wrap; }
+  .gone-acts .btn { margin: 0; flex: 1 1 auto; }
+  .gone-acts [data-purge] { flex: 0 0 auto; color: var(--red); }
+  .gone-acts select { flex: 1 1 150px; min-width: 0; border: 1.5px solid #e3cdbf; border-radius: 12px; padding: 11px 10px; background: #fff; font: 700 15px var(--sans); color: var(--ink); }
+  .gone-list { margin-top: 12px; } .gone-list summary { cursor: pointer; font: 700 13.5px var(--sans); color: var(--ink2); }
+  .gone .prod .tg { display: none; } /* 沒有商品的餅乾不能上架：先搬進一個商品 */
   /* --- 造型餅乾 like Shopee's 我的商品 + a full-page 編輯商品 (11-20) */
   .ck-search { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; padding: 0 12px; border: 1.5px solid #e3cdbf; border-radius: 12px; background: #fff; color: var(--muted); }
   .ck-search input { flex: 1; min-width: 0; border: 0; outline: 0; background: none; padding: 11px 0; font: 500 16px var(--sans); color: var(--ink); }
@@ -229,8 +246,8 @@
 <div class="shopbar" id="shopbar" hidden></div>
 <main class="wrap" id="app"><div class="spinner"></div></main>
 <p class="note" id="ver" style="text-align:center;margin:0 0 24px;color:var(--muted)"></p>
-<script src="js/config.js?v=1124-owner-canele"></script>
-<script src="js/app.js?v=1123-canele-mask"></script>
+<script src="js/config.js?v=1124b"></script>
+<script src="js/app.js?v=1124b"></script>
 <script src="js/shop-tiles.js?v=1123k"></script>
 <script src="js/cookie-edge.js?v=1122e"></script>
 <script src="js/cookie-photo.js?v=1122e"></script>
@@ -238,6 +255,7 @@
 (async function () {
   const { $, esc, money, asset } = NTC;
   const app = $('#app');
+  NTC.sheetPage = true; // 後台每一張單子都是一整頁，不是蓋在畫面上的一層：iPhone 的 LINE 裡，鍵盤收起來之後，蓋在上面那一層會點不準（按「儲存」按到上面的欄位）
   try { history.scrollRestoration = 'manual'; } catch (e) { /* 舊瀏覽器沒有 */ } // 回到列表時捲到哪裡由這一頁自己決定
   // 後台所有填數字的欄位（價格、運費、天數、報價…）：點一下就全選，直接打新的數字，不用先刪舊的（不會 250 變 2504）
   document.addEventListener('focusin', (e) => { const t = e.target; if (!t || t.tagName !== 'INPUT' || t.classList.contains('o-price') || !(t.type === 'number' || t.inputMode === 'numeric')) return;
@@ -367,7 +385,7 @@
     const n = { orders: orders.filter((o) => o.status === 'reported').length, inq: (inqs || []).filter((x) => x.status === 'new').length };
     $('#tabs').querySelectorAll('button').forEach((b) => { const old = b.querySelector('.tb'); if (old) old.remove(); const k = n[b.dataset.t]; if (k) b.insertAdjacentHTML('beforeend', `<span class="tb">${k}</span>`); });
   }
-  function setDirty(v) { dirty = v; document.body.style.paddingBottom = v ? '76px' : ''; let bar = $('#savebar'); if (!v) { if (bar) bar.remove(); return; }
+  function setDirty(v) { dirty = v; let bar = $('#savebar'); if (!v) { if (bar) bar.remove(); return; }
     if (!bar) { document.body.insertAdjacentHTML('beforeend', '<div class="savebar" id="savebar"><span>設定有變更還沒儲存</span><button class="btn small" id="savebar-btn">儲存設定</button></div>'); $('#savebar-btn').onclick = () => $('#s-save') && $('#s-save').click(); } }
   async function show() {
     paintTabs(); if (settings) renderShopBar();
@@ -409,7 +427,7 @@
       <h2>${esc(o.orderNo)} <span class="status-pill ${esc(o.status)}">${esc(o.statusLabel)}</span></h2>
       <p class="sub">下單 ${new Date(o.createdAt).toLocaleString('zh-TW', { hour12: false })}${o.user ? `・LINE：${esc(o.user.name)}` : '・未登入 LINE'}</p>
       <div class="panel" style="padding:12px">
-        ${o.lines.map((l) => `<div class="row" style="padding:4px 0;align-items:flex-start"><div style="flex:1"><b>${esc(l.name)}</b> × ${l.qty}${l.detail ? `<div class="note">${esc(l.detail)}</div>` : ''}</div><b>${money(l.subtotal)}</b></div>`).join('')}
+        ${o.lines.map((l, i) => `<div class="row oline" style="padding:6px 0;align-items:flex-start">${l.photo ? `<button type="button" class="o-th" data-big="${i}" aria-label="放大看 ${esc(l.name)}"><img src="${esc(asset(l.photo))}" alt="" loading="lazy"></button>` : ''}<div style="flex:1;min-width:0"><b>${esc(l.name)}</b> × ${l.qty}${l.detail ? `<div class="note">${esc(l.detail)}</div>` : ''}${(l.photos || []).length ? `<div class="o-ths">${l.photos.map((u) => `<img src="${esc(asset(u))}" alt="" loading="lazy">`).join('')}</div>` : ''}</div><b>${money(l.subtotal)}</b></div>`).join('')}
         <div class="row" style="border-top:1px dashed #ead7cc;margin-top:6px;padding-top:6px"><span>運費 ${esc(o.shipping.label)}</span><span class="sp"></span><span>${money(o.shipping.fee)}</span></div>
         <div class="row"><b>合計</b><span class="sp"></span><b style="color:var(--red);font-size:18px">${money(o.total)}</b></div></div>
       <dl class="kv" style="margin-bottom:12px"><dt>日期</dt><dd>${NTC.fmtDate(o.date)} <input type="date" id="o-date" value="${esc(o.date)}" style="margin-left:6px;border:1px solid #e6d2c6;border-radius:8px;padding:2px 4px"></dd>
@@ -434,6 +452,8 @@
         return `<p style="font-weight:700;margin:14px 0 6px">這位客人的其他訂單（${same.length}）</p>${same.length ? same.map((x) => `<button class="ord" data-other="${esc(x.orderNo)}" style="padding:8px 12px;margin:0 0 6px"><div class="top"><b style="font-size:14px">${esc(x.orderNo)}</b><span class="status-pill ${esc(x.status)}">${esc(x.statusLabel)}</span><span class="sp"></span><span class="amt">${money(x.total)}</span></div><div class="mid" style="margin-top:2px">📅 ${NTC.fmtDate(x.date)}</div></button>`).join('') : '<p class="note" style="margin:0">沒有其他訂單</p>'}`;
       })()}
       <p style="font-weight:700;margin:14px 0 6px">紀錄</p><div class="hist">${(o.history || []).map((h) => `${new Date(h.at).toLocaleString('zh-TW', { hour12: false })}　${esc(h.note)}`).join('<br>')}</div>`);
+    el.querySelectorAll('.o-th').forEach((b) => (b.onclick = () => { const l = o.lines[+b.dataset.big]; // 放大看這一項的照片
+      NTC.sheet(`<h2>${esc(l.name)} × ${l.qty}</h2>${l.detail ? `<p class="sub">${esc(l.detail)}</p>` : ''}<img src="${esc(asset(l.photo))}" alt="" style="display:block;width:100%;border-radius:16px;background:#f3e4db">`).el.classList.add('big-sheet'); }));
     let status = o.status;
     el.querySelectorAll('#o-status button').forEach((b) => (b.onclick = () => { status = b.dataset.k; el.querySelectorAll('#o-status button').forEach((x) => x.classList.toggle('on', x === b)); }));
     const save = async (extra = {}) => {
@@ -547,8 +567,15 @@
     const curLive = cur && all.some((x) => inGroup(x, cur.id) && liveOf(x.id));
     const head = cur ? tileHead(tileOf(`g-${cur.id}`)) : `<p class="note" style="margin:0 0 12px">這裡是全部的造型餅乾。每個分類（例如「${esc(groups[0]?.name || '卡通・收涎')}」）都在上面那一排，點進去可以換橫幅、新增商品。</p>`;
     const dupName = (x) => all.filter((y) => (y.name || '').trim() === (x.name || '').trim()).length > 1; // 兩個商品同名：很容易改到另一個
-    const orphans = products.filter((p) => p.category === 'cookie' && !all.some((x) => x.id === p.series));
-    return `${cur ? head : ''}<label class="ck-search">${SEARCH_ICON}<input id="ck-q" type="search" enterkeyhint="search" placeholder="${cur ? '搜尋全部的造型餅乾' : '搜尋商品或餅乾名稱'}" value="${esc(ckQuery)}"></label>
+    const lost = {}; products.filter((p) => p.category === 'cookie' && !all.some((x) => x.id === p.series)).forEach((p) => { (lost[p.series || ''] = lost[p.series || ''] || []).push(p); }); // 餅乾還在，可是它的商品（系列）不在列表裡了
+    const trash = (settings?.cookie?.trash || []).filter((t) => !all.some((x) => x.id === t.id));
+    const gone = trash.map((t) => { const n = (lost[t.id] || []).length;
+      return `<section class="panel gone" data-gone="${esc(t.id)}"><div class="gone-h"><img src="${esc(asset(coverOf(t) || 'assets/favicon.png'))}" alt=""><div><b>「${esc(t.name)}」刪掉了</b><span>${n ? `裡面的 ${n} 款都還留著，只是客人看不到。` : ''}按「復原」，整個商品就跟原本一模一樣回來。</span></div></div>
+        <div class="gone-acts"><button type="button" class="btn" data-restore>復原</button><button type="button" class="btn ghost small" data-purge>不要了，永久刪除</button></div></section>`; }).join('')
+      + Object.entries(lost).filter(([sid]) => !trash.some((t) => t.id === sid)).map(([sid, ps]) => `<section class="panel gone" data-stray="${esc(sid)}"><div class="gone-h"><div><b>${ps.length} 款餅乾沒有商品可以放</b><span>它們原本的商品被刪掉了，客人看不到。選一個商品，按「全部搬過去」，${ps.length} 款一次放好；照片、名稱、價格都不會變。</span></div></div>
+        <div class="gone-acts"><select class="mv-to" aria-label="搬到哪個商品"><option value="">選一個商品…</option>${all.map((x) => `<option value="${esc(x.id)}">${esc(x.name)}</option>`).join('')}</select><button type="button" class="btn" data-adopt>全部搬過去</button></div>
+        <details class="gone-list"><summary>看這 ${ps.length} 款（也可以一片一片搬）</summary>${[...ps].sort(bySort).map(prodRow).join('')}</details></section>`).join('');
+    return `${cur ? head : ''}${gone}<label class="ck-search">${SEARCH_ICON}<input id="ck-q" type="search" enterkeyhint="search" placeholder="${cur ? '搜尋全部的造型餅乾' : '搜尋商品或餅乾名稱'}" value="${esc(ckQuery)}"></label>
       <div class="statusbar one" id="ck-f" style="margin-bottom:12px">${cur ? '' : chips.map(([k, t]) => `<button type="button" data-f="${esc(k)}" class="${k === ckFilter ? 'on' : ''}">${esc(t)}</button>`).join('')}<button type="button" id="ck-order" class="gear">⇅ ${cur ? '排這個分類的順序' : '排順序'}</button></div>
       ${cur ? '' : head}
       <div id="ck-list">${(cur ? all : shown).map((x) => { const ps = piecesOf(x.id); const on = liveOf(x.id); const so = ps.filter((p) => p.soldOut).length;
@@ -560,7 +587,6 @@
           <div class="spc-acts"><button type="button" class="btn ghost small" data-bulk="${on ? 'off' : 'on'}">${on ? '下架' : '上架'}</button>
             <a class="btn ghost small" href="cookies.html?s=${esc(x.id)}&preview=1" target="_blank" rel="noopener">預覽</a>
             <button type="button" class="btn small" data-edit>編輯</button></div></article>`; }).join('')}<p class="note" id="ck-empty" style="text-align:center;margin:20px 0" hidden></p></div>
-      ${orphans.length ? `<section class="panel"><h2>造型餅乾・（系列已刪除）</h2><p class="note" style="margin:0 0 8px">這些餅乾的系列被刪掉了，客人看不到。編輯後選一個系列就會回來。</p>${orphans.map(prodRow).join('')}</section>` : ''}
       <div class="addbar"><button type="button" class="btn block" id="ck-new">＋ 新增商品${cur ? `到「${esc(cur.name)}」` : ''}</button></div>`;
   }
   // 存完回到列表：捲到剛剛那個商品、閃一下（新商品排在最後面，不捲過去會以為沒存到）
@@ -572,6 +598,16 @@
   // 存不了的時候：要按過「知道了」才會消失（幾秒就不見的小字條容易沒看到，以為已經存了）
   const stopSheet = (title, text) => { const { el, close } = NTC.sheet(`<h2>${esc(title)}</h2><p id="st-msg" style="margin:0 0 14px;font:600 15.5px/1.7 var(--sans);white-space:pre-line">${esc(text)}</p><button type="button" class="btn block" id="st-ok">知道了</button>`); el.classList.add('stop-sheet'); el.querySelector('#st-ok').onclick = close; };
   // 編輯到一半的草稿：每改一下就存在這支手機裡。按了預覽、切去別的 app、LINE 把頁面重開，沒按「更新」的也找得回來 (11-21)
+  // 要想一下的事（刪除）：一整頁的確認，最大的按鈕是「不要」；不是系統的小視窗（跟別的確認長得一樣，容易順手按「好」）
+  function sure(title, text, okLabel, noLabel = '不要，回去') {
+    return new Promise((resolve) => {
+      const { el, close } = NTC.sheet(`<h2>${esc(title)}</h2><p id="su-msg" style="margin:0 0 16px;font:600 15.5px/1.75 var(--sans);white-space:pre-line">${esc(text)}</p>
+        <button type="button" class="btn block" id="su-no">${esc(noLabel)}</button><button type="button" class="btn ghost block" id="su-ok" style="margin-top:10px;color:var(--red)">${esc(okLabel)}</button>`);
+      el.classList.add('sure-sheet'); let done = false; const fin = (v) => { if (done) return; done = true; close(); resolve(v); };
+      el.querySelector('#su-no').onclick = () => fin(false); el.querySelector('#su-ok').onclick = () => fin(true);
+      el.querySelector('.close').addEventListener('click', () => fin(false));
+    });
+  }
   const DRAFT = 'ntc-ed-draft';
   const draftGet = () => { try { const d = JSON.parse(localStorage.getItem(DRAFT) || 'null'); return d && d.st && Date.now() - d.at < 3 * 864e5 ? d : null; } catch (e) { return null; } };
   const draftSet = (d) => { try { if (d) localStorage.setItem(DRAFT, JSON.stringify(d)); else localStorage.removeItem(DRAFT); } catch (e) { /* 這支手機不能存：就當沒有草稿 */ } };
@@ -606,6 +642,27 @@
     { const bc = $('#ban-custom'); if (bc) bc.ontoggle = () => { banOpen = bc.open; }; }
     $('#ck-order').onclick = orderSeries;
     $('#ck-new').onclick = () => editSeriesPage(null);
+    // 刪掉的商品：復原（跟原本一模一樣）／永久刪除；沒有商品的餅乾：一次全部搬進一個商品
+    app.querySelectorAll('.gone [data-restore]').forEach((b) => (b.onclick = async () => {
+      const id = b.closest('.gone').dataset.gone; const name = (settings.cookie.trash || []).find((t) => t.id === id)?.name || '';
+      NTC.loading(true, '復原中…');
+      try { const r = await NTC.api(`/admin/cookie-series/${id}/restore`, { method: 'POST' }); settings = r.settings; products = r.products; renderProducts(); showCard(id); NTC.toast(`「${name}」復原好了，跟原本一樣`, 3600); }
+      catch (e) { NTC.toast(e.message, 3500); } finally { NTC.loading(false); }
+    }));
+    app.querySelectorAll('.gone [data-purge]').forEach((b) => (b.onclick = async () => {
+      const id = b.closest('.gone').dataset.gone; const t = (settings.cookie.trash || []).find((y) => y.id === id) || {}; const n = products.filter((p) => p.category === 'cookie' && p.series === id).length;
+      if (!await sure(`永久刪除「${t.name || ''}」？`, `${n ? `裡面的 ${n} 款餅乾（照片、名稱、價格）也會一起刪掉，` : ''}刪掉就找不回來了。\n\n還想留著的話：按「不要，回去」，再按「復原」。`, n ? `永久刪除（連同 ${n} 款）` : '永久刪除')) return;
+      NTC.loading(true, '刪除中…');
+      try { const r = await NTC.api(`/admin/cookie-trash/${id}`, { method: 'DELETE' }); settings = r.settings; products = r.products; renderProducts(); NTC.toast('已永久刪除'); }
+      catch (e) { NTC.toast(e.message, 3500); } finally { NTC.loading(false); }
+    }));
+    app.querySelectorAll('.gone [data-adopt]').forEach((b) => (b.onclick = async () => {
+      const box = b.closest('.gone'); const to = box.querySelector('.mv-to').value; if (!to) return NTC.toast('先選要搬到哪個商品');
+      NTC.loading(true, '搬過去…');
+      try { const r = await NTC.api(`/admin/cookie-series/${to}/adopt`, { method: 'POST', body: { from: box.dataset.stray } }); settings = r.settings; products = r.products; renderProducts(); showCard(to);
+        NTC.toast(`${r.moved} 款都搬進「${settings.cookie.series.find((x) => x.id === to)?.name || ''}」了`, 3600); }
+      catch (e) { NTC.toast(e.message, 3500); } finally { NTC.loading(false); }
+    }));
     app.querySelectorAll('.spc [data-edit]').forEach((b) => (b.onclick = () => editSeriesPage(settings.cookie.series.find((y) => y.id === b.closest('.spc').dataset.sid))));
     app.querySelectorAll('.spc [data-bulk]').forEach((b) => (b.onclick = async () => {
       const sid = b.closest('.spc').dataset.sid; const x = settings.cookie.series.find((y) => y.id === sid); const on = b.dataset.bulk === 'on';
@@ -751,8 +808,9 @@
           <label class="field"><span>標題下的小字・第二行</span><input id="ed-l2" maxlength="40" value="${esc(st.lines[1] || '')}"></label>
           <label class="tg" style="display:flex;margin:2px 0 4px">這個商品一片就可以訂（不用湊滿 ${esc(settings.cookie.minPieces)} 片）<span class="sp"></span><input type="checkbox" id="ed-single" ${st.single ? 'checked' : ''}></label>
           <p class="note" style="margin:0">打開後，客人的購物車裡只要有這個商品，就不受「最少幾片起訂」限制。適合大片的，例如巨型匾額。</p>
+          ${isNew ? '' : `<button type="button" class="btn ghost block small" id="ed-del" style="margin-top:18px;color:var(--red)">刪除整個商品${st.opts.length ? `（${st.opts.length} 款一起）` : ''}</button>
+          <p class="note" style="margin:6px 0 0">只想拿掉其中一片：按那一片右邊的垃圾桶。只想暫時不賣：按下面的「下架」。</p>`}
         </details>
-        ${isNew ? '' : '<button type="button" class="btn ghost block" id="ed-del" style="color:var(--red)">刪除這個商品</button>'}
       </div>
       <footer class="ed-bar"><button type="button" class="btn ghost" id="ed-b1"></button><button type="button" class="btn" id="ed-b2"></button></footer>`;
     const backY = window.scrollY; // 列表原本捲到哪裡：關掉編輯頁時回到那裡
@@ -761,12 +819,15 @@
     const collect = () => { st.name = q1('#ed-name').value.trim(); st.desc = q1('#ed-desc').value; st.lines = [q1('#ed-l1').value.trim(), q1('#ed-l2').value.trim()].filter(Boolean); st.single = q1('#ed-single').checked; };
     collect(); const base = JSON.parse(JSON.stringify(st)); const start = () => shot(base); // base＝現在存在伺服器上的樣子；照片一換就存，存好就寫進這裡
     const dirty = () => { collect(); return snap() !== start(); };
+    if (draft && !isNew && draft.base !== start()) { // 這份沒存的編輯留下來之後，這個商品又改過了（換照片、改價格、搬餅乾…）：接著編輯再按「更新」會把舊的蓋回去，所以不用它
+      draftSet(null); draft = null; setTimeout(() => NTC.toast('上次沒存的編輯是舊的（之後這個商品又改過），已經丟掉，以現在的為準', 5200), 400);
+    }
     if (draft) { // 接著上次沒存的編輯
       Object.assign(st, { photos: draft.st.photos || [], groups: (draft.st.groups || []).filter((g) => groupsOf().some((y) => y.id === g)), opts: draft.st.opts || [], removed: draft.st.removed || [] });
       q1('#ed-name').value = draft.st.name || ''; q1('#ed-desc').value = draft.st.desc || ''; q1('#ed-l1').value = (draft.st.lines || [])[0] || ''; q1('#ed-l2').value = (draft.st.lines || [])[1] || ''; q1('#ed-single').checked = !!draft.st.single;
     }
     let dT = 0; let wrote = !!draft; // 草稿：有改就存，改回原樣或存好了就清掉
-    const keep = () => { collect(); if (snap() !== start()) { draftSet({ sid, isNew, at: Date.now(), name0: x?.name || '', st }); wrote = true; } else if (wrote) draftSet(null); };
+    const keep = () => { collect(); if (snap() !== start()) { draftSet({ sid, isNew, at: Date.now(), name0: x?.name || '', st, base: start() }); wrote = true; } else if (wrote) draftSet(null); };
     const sched = () => { clearTimeout(dT); dT = setTimeout(keep, 400); };
     const onHide = () => { if (document.visibilityState === 'hidden') keep(); };
     // ---- 照片一換就存
@@ -891,6 +952,8 @@
         ${askHtml(o)}
         <div class="grid2" style="gap:8px"><button type="button" class="btn ghost small" id="m-up" ${i ? '' : 'disabled'}>往前移</button><button type="button" class="btn ghost small" id="m-dn" ${i < st.opts.length - 1 ? '' : 'disabled'}>往後移</button></div>
         <button type="button" class="btn ghost block small" id="m-dup" style="margin-top:8px">複製一個一樣的選項</button>
+        ${o.id && seriesList().length > 1 ? `<label class="field" style="margin:16px 0 6px"><span>搬到別的商品（系列）</span><select id="m-to"><option value="">選一個商品…</option>${seriesList().filter((y) => y.id !== sid).map((y) => `<option value="${esc(y.id)}">${esc(y.name)}</option>`).join('')}</select></label>
+        <button type="button" class="btn ghost block small" id="m-move">把這一片搬過去</button><p class="note" style="margin:6px 0 4px">只搬這一片，馬上生效；照片、名稱、價格、上架都跟著過去。</p>` : ''}
         <button type="button" class="btn ghost block small" id="m-del" style="margin-top:8px;color:var(--red)">刪除這個選項</button>
         <button type="button" class="btn block" id="m-ok" style="margin-top:14px">完成</button>`);
       askWire(el);
@@ -900,6 +963,18 @@
       el.querySelector('#m-dn').onclick = () => { keep(); [st.opts[i + 1], st.opts[i]] = [st.opts[i], st.opts[i + 1]]; close(); paintOpts(); };
       el.querySelector('#m-dup').onclick = () => { keep(); const { id, key, ...rest } = o; st.opts.splice(i + 1, 0, { ...rest, key: `n${Math.random().toString(36).slice(2)}`, name: `${o.name || ''}（複製）`.slice(0, 40) }); close(); paintOpts(); };
       el.querySelector('#m-del').onclick = () => { if (delOpt(i)) close(); };
+      const mv = el.querySelector('#m-move');
+      if (mv) mv.onclick = async () => { // 這一片搬到別的商品：馬上存（不用按「更新」），排在那個商品的最後面
+        const to = el.querySelector('#m-to').value; if (!to) return NTC.toast('先選要搬到哪個商品');
+        const cur = products.find((y) => y.id === o.id); if (!cur) return NTC.toast('這一片還沒存過，先按「更新」', 3200);
+        keep(); NTC.loading(true, '搬過去…');
+        try {
+          const r = await NTC.api(`/admin/products/${o.id}`, { method: 'PUT', body: { ...cur, ...o, key: undefined, priceAuto: undefined, price: +o.price, category: 'cookie', series: to, sort: Math.max(0, ...piecesOf(to).map((y) => y.sort || 0)) + 10 } });
+          Object.assign(cur, r.product); st.opts.splice(st.opts.indexOf(o), 1); base.opts = base.opts.filter((y) => y.id !== o.id); photoSaves++;
+          close(); paintOpts(); sched();
+          NTC.toast(`「${cur.name}」搬到「${seriesList().find((y) => y.id === to)?.name || ''}」了`, 3600);
+        } catch (e) { NTC.toast(e.message, 3500); } finally { NTC.loading(false); }
+      };
     };
     const delOpt = (i) => { const o = st.opts[i]; if (o.id && !confirm(`刪除「${o.name}」？按「更新」後才會真的刪掉。（只想暫時不賣，關掉「上架」就好）`)) return false; if (o.id) st.removed.push(o.id); st.opts.splice(i, 1); paintOpts(); return true; };
     q1('#ed-add').onclick = () => {
@@ -966,9 +1041,10 @@
     q1('#ed-b2').onclick = () => save(isNew ? 'on' : undefined);
     const del = q1('#ed-del');
     if (del) del.onclick = async () => {
-      if (!confirm(`確定刪除「${x.name}」？\n網站上就看不到這個商品（裡面 ${st.opts.length} 款的資料會留在下面「系列已刪除」，之後可以搬回來）。只想暫時不賣的話，按「下架」就好。`)) return;
+      const n = piecesOf(x.id).length;
+      if (!await sure(`要刪掉整個「${x.name}」嗎？`, `這不是刪一片：整個商品${n ? `和裡面的 ${n} 款` : ''}都會從網站上消失。\n\n只想拿掉其中一片 → 回去，按那一片右邊的垃圾桶。\n只想暫時不賣 → 回去，按「下架」。\n\n刪錯了可以拿回來：刪掉之後，列表最上面會有「復原」。`, `刪掉整個商品${n ? `（${n} 款）` : ''}`)) return;
       NTC.loading(true, '刪除中…');
-      try { const r = await NTC.api(`/admin/cookie-series/${x.id}`, { method: 'DELETE' }); settings = r.settings; products = r.products; shut(); renderProducts(); NTC.toast('已刪除'); }
+      try { const r = await NTC.api(`/admin/cookie-series/${x.id}`, { method: 'DELETE' }); settings = r.settings; products = r.products; shut(); renderProducts(); window.scrollTo(0, 0); NTC.toast(`「${x.name}」刪掉了。刪錯的話，按最上面的「復原」`, 5200); }
       catch (e) { NTC.toast(e.message, 3500); } finally { NTC.loading(false); }
     };
     paintPhs(); paintGs(); paintOpts();
@@ -1309,14 +1385,14 @@
         <label class="btn ghost small">換照片<input type="file" accept="image/*" id="e-file" hidden></label></div>
       <label class="field"><span>名稱</span><input id="e-name" value="${esc(p.name || '')}" maxlength="40"></label>
       ${p.category !== 'canele' && p.category !== 'cookie' ? `<label class="field"><span>分類</span><select id="e-cat">${catOptions(p.category)}</select></label>` : ''}
-      ${p.category === 'cookie' ? `<label class="field"><span>系列</span><select id="e-series">${(settings?.cookie?.series || []).map((x) => `<option value="${esc(x.id)}" ${x.id === p.series ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select></label>` : ''}
+      ${p.category === 'cookie' ? `<label class="field"><span>放在哪個商品（系列）</span><select id="e-series">${!p.isNew && !(settings?.cookie?.series || []).some((x) => x.id === p.series) ? '<option value="">請選一個商品…</option>' : ''}${(settings?.cookie?.series || []).map((x) => `<option value="${esc(x.id)}" ${x.id === p.series ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select></label>` : ''}
       <div class="grid2"><label class="field"><span>${p.category === 'canele' ? '單一口味禮盒價格（每盒 6 顆）' : p.category === 'cookie' ? '每片價格' : '價格'}</span><input id="e-price" type="number" inputmode="numeric" value="${esc(p.price || '')}"></label>
         <label class="field"><span>單位</span>${p.category === 'meringue' ? `<select id="e-unit">${[...new Set(['罐', '包', p.unit].filter(Boolean))].map(u => `<option value="${esc(u)}" ${u === p.unit ? 'selected' : ''}>${esc(u === '罐' ? `${packs().jar.name}（罐）` : u === '包' ? `${packs().bag.name}（包）` : u)}</option>`).join('')}</select>` : `<input id="e-unit" value="${esc(p.unit || '')}" maxlength="4">`}</label></div>
       ${p.category === 'cookie' ? askHtml(p)
     : `<label class="field"><span>說明（選填，顯示在加入購物車的視窗）</span><textarea id="e-desc" maxlength="300">${esc(p.desc || '')}</textarea></label>`}
       <div class="row" style="gap:16px;margin-bottom:14px"><label class="tg">上架<input type="checkbox" id="e-active" ${p.active ? 'checked' : ''}></label><label class="tg red">售完<input type="checkbox" id="e-sold" ${p.soldOut ? 'checked' : ''}></label></div>
       <button class="btn block" id="e-save">儲存</button>
-      ${p.isNew ? '' : '<button class="btn ghost block" id="e-del" style="margin-top:10px;color:var(--red)">刪除這個商品</button>'}`);
+      ${p.isNew ? '' : `<button class="btn ghost block" id="e-del" style="margin-top:10px;color:var(--red)">${p.category === 'cookie' ? '刪除這一片' : '刪除這個商品'}</button>`}`);
     let photo = p.photo;
     const saveLabel = () => { if (p.isNew) el.querySelector('#e-save').textContent = el.querySelector('#e-active').checked ? '儲存並上架' : '儲存，先不上架'; }; // 新增時，按鈕直接寫按下去會怎樣
     el.querySelector('#e-active').addEventListener('change', saveLabel); saveLabel();
@@ -1343,6 +1419,7 @@
       if (!(+el.querySelector('#e-price').value > 0)) return NTC.toast('請填價格');
       if (p.category !== 'cookie' && el.querySelector('#e-active').checked && !photo && !p.card && !confirm('還沒放照片，客人會看到空白的圖。\n確定要上架嗎？（按「取消」回去放照片）')) return;
       const ser = el.querySelector('#e-series')?.value;
+      if (p.category === 'cookie' && !ser) return NTC.toast('請選這一片要放在哪個商品', 3200);
       const id = p.id || (p.category === 'cookie' ? `cookie-${ser}-${Date.now().toString(36)}` : `${p.category}-${Date.now().toString(36)}`);
       const body = { ...p, category: el.querySelector('#e-cat')?.value || p.category, id, name, price: +el.querySelector('#e-price').value, unit: el.querySelector('#e-unit').value.trim(), desc: el.querySelector('#e-desc')?.value.trim() ?? p.desc,
         ...(p.category === 'cookie' ? { series: ser, ...askRead(el) } : {}),
@@ -1350,11 +1427,14 @@
       if (photo !== p.photo) body.card = null; // a new photo replaces the designed card
       delete body.isNew;
       NTC.loading(true, '儲存中…');
-      try { const r = await NTC.api(`/admin/products/${id}`, { method: 'PUT', body }); const i = products.findIndex((x) => x.id === id); if (i >= 0) products[i] = r.product; else products.push(r.product); const y = window.scrollY; close(); renderProducts(); window.scrollTo(0, y); NTC.toast(!p.isNew ? (r.product.category !== p.category ? `已儲存，搬到「${catName(r.product.category)}」了` : '已儲存') : r.product.active ? `已儲存，「${r.product.name}」上架了，客人現在就看得到` : '已儲存（還沒上架，客人看不到）', p.isNew ? 3600 : 2200); }
+      try { const r = await NTC.api(`/admin/products/${id}`, { method: 'PUT', body }); const i = products.findIndex((x) => x.id === id); if (i >= 0) products[i] = r.product; else products.push(r.product); close(); const y = window.scrollY; renderProducts(); window.scrollTo(0, y); NTC.toast(!p.isNew ? (r.product.category !== p.category ? `已儲存，搬到「${catName(r.product.category)}」了` : '已儲存') : r.product.active ? `已儲存，「${r.product.name}」上架了，客人現在就看得到` : '已儲存（還沒上架，客人看不到）', p.isNew ? 3600 : 2200); }
       catch (e) { NTC.toast(e.message, 3500); } finally { NTC.loading(false); }
     };
     const d = el.querySelector('#e-del');
-    if (d) d.onclick = async () => { if (!confirm(`確定刪除「${p.name}」？（只想暫時不賣的話，用「上架」開關就好）`)) return; await NTC.api(`/admin/products/${p.id}`, { method: 'DELETE' }); products = products.filter((x) => x.id !== p.id); close(); renderProducts(); };
+    if (d) d.onclick = async () => { if (!confirm(`確定刪除「${p.name}」？（只想暫時不賣的話，用「上架」開關就好）`)) return;
+      NTC.loading(true, '刪除中…');
+      try { await NTC.api(`/admin/products/${p.id}`, { method: 'DELETE' }); products = products.filter((x) => x.id !== p.id); close(); const y = window.scrollY; renderProducts(); window.scrollTo(0, y); NTC.toast(`「${p.name}」刪掉了`); }
+      catch (e) { NTC.toast(e.message, 3500); } finally { NTC.loading(false); } };
   }
 
   // ================= 設定 =================

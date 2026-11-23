@@ -32,7 +32,8 @@ const BASE = { leadDays: 5, maxDays: 60, maxOrdersPerDay: 0, closedWeekdays: [],
   canele: { assortedPrice: 800, singleMinBoxes: 1, modes: [{ id: '3x2', flavors: 3, each: 2, minBoxes: 3 }, { id: '6x1', flavors: 6, each: 1, minBoxes: 6 }] } };
 
 section('auth & admin bootstrap');
-let r = await call('/catalog'); ok('catalog 200', r.status === 200 && r.json.products.length === 13, r.json?.products?.length);
+const SEEDED = 20; // what seed.mjs puts on sale: 8 canelé, 6 jars and 6 bags of meringue
+let r = await call('/catalog'); ok('catalog 200', r.status === 200 && r.json.products.length === SEEDED, r.json?.products?.length);
 r = await call('/admin/orders'); ok('admin without auth → 401', r.status === 401, r.status);
 r = await call('/admin/orders', { user: BOB }); ok('admin as non-admin → 403', r.status === 403, r.status);
 r = await call('/admin/claim', { method: 'POST', user: BOB, body: { invite: 'WRONG' } }); ok('claim with wrong invite → 403', r.status === 403, r.status);
@@ -210,7 +211,7 @@ section('products: 上架 / 下架 / 售完 / 改價');
 r = await call('/admin/products', { user: ADMIN }); const P = Object.fromEntries(r.json.products.map((p) => [p.id, p]));
 r = await call('/admin/products/meringue-cocoa', { method: 'PUT', user: BOB, body: { ...P['meringue-cocoa'], price: 1 } }); ok('non-admin cannot edit products', r.status === 403, r.status);
 r = await call('/admin/products/meringue-cocoa', { method: 'PUT', user: ADMIN, body: { ...P['meringue-cocoa'], active: false } });
-r = await call('/catalog'); ok('下架 → gone from the shop', !r.json.products.some((p) => p.id === 'meringue-cocoa') && r.json.products.length === 12, r.json.products.length);
+r = await call('/catalog'); ok('下架 → gone from the shop', !r.json.products.some((p) => p.id === 'meringue-cocoa') && r.json.products.length === SEEDED - 1, r.json.products.length);
 await bad('下架 product cannot be ordered', { items: [{ type: 'product', productId: 'meringue-cocoa', qty: 1 }] }, /無法訂購/);
 await call('/admin/products/meringue-cocoa', { method: 'PUT', user: ADMIN, body: { ...P['meringue-cocoa'], active: true, soldOut: true } });
 r = await call('/catalog'); ok('售完 → still shown, flagged sold out', r.json.products.find((p) => p.id === 'meringue-cocoa')?.soldOut === true, 'x');
@@ -224,7 +225,7 @@ await call('/admin/products/meringue-cocoa', { method: 'PUT', user: ADMIN, body:
 for (const [n, b] of [['no name', { category: 'meringue', name: '', price: 100 }], ['price 0', { category: 'meringue', name: 'x', price: 0 }], ['bad category', { category: 'cake', name: 'x', price: 100 }]]) { r = await call('/admin/products/qa-new', { method: 'PUT', user: ADMIN, body: b }); ok(`new product: ${n} rejected`, r.status === 400, r.status); }
 r = await call('/admin/products/qa-new', { method: 'PUT', user: ADMIN, body: { category: 'meringue', name: 'QA 新口味', price: 333, unit: '罐', active: true, sort: 99 } }); ok('new product saved', r.json?.product.id === 'qa-new', r.text);
 r = await order({ items: [{ type: 'product', productId: 'qa-new', qty: 2 }] }); ok('new product can be ordered (333×2+130)', r.json?.total === 796, r.json?.total);
-r = await call('/admin/products/qa-new', { method: 'DELETE', user: ADMIN }); r = await call('/catalog'); ok('deleted product is gone', r.json.products.length === 13 && !r.json.products.some((p) => p.id === 'qa-new'), r.json.products.length);
+r = await call('/admin/products/qa-new', { method: 'DELETE', user: ADMIN }); r = await call('/catalog'); ok('deleted product is gone', r.json.products.length === SEEDED && !r.json.products.some((p) => p.id === 'qa-new'), r.json.products.length);
 const png = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
 r = await call('/admin/images', { method: 'POST', user: BOB, body: { dataUrl: png } }); ok('non-admin cannot upload photos', r.status === 403, r.status);
 r = await call('/admin/images', { method: 'POST', user: ADMIN, body: { dataUrl: 'data:text/html;base64,PGI+' } }); ok('non-image upload rejected', r.status === 400, r.status);

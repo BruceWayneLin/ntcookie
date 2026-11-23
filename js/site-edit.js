@@ -62,7 +62,7 @@
     const r = await NTC.api(`/admin/site/${encodeURIComponent(key)}`, { method: 'PUT', body: { t, value, l: el ? labelOf(el) : '', p: PAGE } });
     site = r.settings.site || {}; NTC.applySite(publicMap());
   };
-  const sheet = (html) => { const s = NTC.sheet(html); s.el.classList.add('se-sheet'); return s; };
+  const sheet = (html) => { const s = NTC.sheet(html, { page: true }); s.el.classList.add('se-sheet'); return s; }; // 一整頁，不是蓋在上面的一層：iPhone 鍵盤收起來之後，蓋在上面那一層會點不準
 
   function editText(el) {
     const key = el.dataset.edit; const own = !!site[key];

@@ -11,7 +11,7 @@
 <link rel="icon" href="assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css?v=1124-owner-canele">
+<link rel="stylesheet" href="css/app.css?v=1124b">
 <style>/* 11-23 h: one-tap copy of the order number */
 .copy-no { position: relative; z-index: 1; display: inline-flex; align-items: center; gap: 4px; margin-left: 8px; padding: 0 11px; height: 30px; border: 0; border-radius: 999px; background: #f1e1d8; color: var(--brown); font: 700 12.5px/1 var(--sans); cursor: pointer; vertical-align: middle; -webkit-tap-highlight-color: transparent; }
 .copy-no::before { content: ""; position: absolute; inset: -8px -6px; }
@@ -31,8 +31,8 @@
 </header>
 <main class="wrap" id="app"><div class="spinner"></div></main>
 <button type="button" class="nt-back" onclick="if (history.length > 1 && document.referrer && new URL(document.referrer).origin === location.origin) history.back(); else location.href = 'orders.html'"><i aria-hidden="true"></i>返回上一頁</button>
-<script src="js/config.js?v=1124-owner-canele"></script>
-<script src="js/app.js?v=1123-canele-mask"></script>
+<script src="js/config.js?v=1124b"></script>
+<script src="js/app.js?v=1124b"></script>
 <script>
 (async function () {
   const { $, esc, money } = NTC;
@@ -112,7 +112,7 @@
       </section>
       <section class="panel"><h2>付款</h2>${payBlock()}</section>
       <section class="panel"><h2>商品</h2>
-        ${o.lines.map((l) => `<div class="line-item"><div class="info"><div class="nm">${esc(l.name)} × ${l.qty}</div>${l.detail ? `<div class="dt">${esc(l.detail)}</div>` : ''}</div><div class="pr">${money(l.subtotal)}</div></div>`).join('')}
+        ${o.lines.map((l) => `<div class="line-item">${l.photo ? `<img class="th" src="${esc(NTC.asset(l.photo))}" alt="" loading="lazy">` : ''}<div class="info"><div class="nm">${esc(l.name)} × ${l.qty}</div>${l.detail ? `<div class="dt">${esc(l.detail)}</div>` : ''}${(l.photos || []).length ? `<div class="ths">${l.photos.map((u) => `<img src="${esc(NTC.asset(u))}" alt="" loading="lazy">`).join('')}</div>` : ''}</div><div class="pr">${money(l.subtotal)}</div></div>`).join('')}
         <div class="totals" style="margin-top:6px">
           <div class="row"><span>商品小計</span><span class="sp"></span><span>${money(o.subtotal)}</span></div>
           <div class="row"><span>運費（${esc(o.shipping.label)}）</span><span class="sp"></span><span>${o.shipping.fee ? money(o.shipping.fee) : '免運'}</span></div>

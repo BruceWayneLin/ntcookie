@@ -288,7 +288,36 @@
   window.addEventListener('pageshow', () => NTC.refreshCart());
 
   // ---------------- bottom sheet
-  NTC.sheet = (html) => {
+  // 整頁的單子（後台、編輯模式）：不是蓋在畫面上的一層，而是把畫面換成這一頁；關掉就換回來、捲回原本的位置。
+  // iPhone 的 LINE 裡，蓋在上面的一層（position: fixed）在鍵盤收起來之後，畫出來的位置和點得到的位置會差一截：按「儲存」會按到上面的欄位 (11-23)。一般的頁面不會。
+  const pageSheet = (html) => {
+    const mask = document.createElement('div'); mask.className = 'sheet-mask'; mask.hidden = true; // 整頁沒有遮罩；留一個空的給還在找它的程式
+    const el = document.createElement('div'); el.className = 'sheet sheet-page show'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true');
+    el.innerHTML = `<div class="sheet-back"><button type="button" class="close" aria-label="返回">‹ 返回</button></div>${html}`;
+    const under = [...document.body.children].filter((x) => !/^(SCRIPT|STYLE|LINK|TEMPLATE)$/.test(x.tagName) && !x.matches('.toast, .loading-cover'));
+    const y = window.scrollY;
+    under.forEach((x) => { x.dataset.under = String((+x.dataset.under || 0) + 1); });
+    document.documentElement.classList.add('sheet-on');
+    document.body.append(mask, el); window.scrollTo(0, 0);
+    let open = true;
+    const close = () => {
+      if (!open) return; open = false;
+      const a = document.activeElement; const typing = !!a && el.contains(a) && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName);
+      if (typing) a.blur(); // 鍵盤先收
+      under.forEach((x) => { const n = (+x.dataset.under || 1) - 1; if (n > 0) x.dataset.under = String(n); else delete x.dataset.under; });
+      mask.remove(); el.remove();
+      if (!document.querySelector('.sheet-page')) document.documentElement.classList.remove('sheet-on');
+      window.scrollTo(0, y);
+      // iPhone：鍵盤收起來的時候畫面會自己再動一下。等它收完，如果她沒有碰畫面、位置卻跑掉了，就對回剛剛的位置（呼叫的人緊接著捲到別處的話，以那個為準）
+      if (typing) setTimeout(() => { const want = window.scrollY; let touched = false; const mark = () => { touched = true; };
+        window.addEventListener('touchstart', mark, { once: true, passive: true });
+        setTimeout(() => { window.removeEventListener('touchstart', mark); if (!touched && !document.querySelector('.sheet-page') && Math.abs(window.scrollY - want) > 2) window.scrollTo(0, want); }, 380); }, 0);
+    };
+    el.querySelector('.close').addEventListener('click', close);
+    return { el, close };
+  };
+  NTC.sheet = (html, opts) => {
+    if (NTC.sheetPage || (opts && opts.page)) return pageSheet(html);
     const mask = document.createElement('div'); mask.className = 'sheet-mask';
     const el = document.createElement('div'); el.className = 'sheet'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true');
     el.innerHTML = `<div class="grab"></div><button class="close" aria-label="關閉">✕</button>${html}`;
@@ -453,7 +482,7 @@
     // 編輯模式：後台「網站」打開 ?edit=1；換頁也一直開著，按「完成」才關（只有店家帳號存得了）
     try {
       if (/[?&]edit=1(&|$)/.test(location.search)) sessionStorage.setItem('ntc-site-edit', '1');
-      if (sessionStorage.getItem('ntc-site-edit') === '1' && !/admin\.html$/.test(location.pathname)) { const s = document.createElement('script'); s.src = 'js/site-edit.js?v=1123k'; document.body.appendChild(s); }
+      if (sessionStorage.getItem('ntc-site-edit') === '1' && !/admin\.html$/.test(location.pathname)) { const s = document.createElement('script'); s.src = 'js/site-edit.js?v=1124b'; document.body.appendChild(s); }
     } catch (e) { /* no session storage: no edit mode */ }
   };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', siteBoot); else siteBoot();
