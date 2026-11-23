@@ -2,6 +2,19 @@
 (function () {
   const CFG = window.NTC_CONFIG || {};
 
+  // Keep the pastry visible briefly on fast page loads. The page stays interactive.
+  let openingTimer;
+  function showPageOpening() {
+    const root = document.documentElement;
+    root.classList.add('page-opening');
+    clearTimeout(openingTimer);
+    requestAnimationFrame(() => {
+      openingTimer = setTimeout(() => root.classList.remove('page-opening'), 650);
+    });
+  }
+  showPageOpening();
+  window.addEventListener('pageshow', (event) => { if (event.persisted) showPageOpening(); });
+
   // Stale-page guard: LINE's browser can keep an old copy of a page for ~10 minutes after an update.
   // Every page load asks the server for the current version (a ~300-byte file); if this copy is older, reload it once
   // under a fresh URL. The reload is remembered per page + version, so it can never loop.

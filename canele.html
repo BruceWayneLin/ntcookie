@@ -4,30 +4,6 @@
 <meta charset="utf-8">
 <link rel="preconnect" href="https://n7tzxjzhjty5cngobe4wy7zlxe0efyyj.lambda-url.ap-northeast-1.on.aws" crossorigin>
 <script>/* stale-page guard, part 1 (see js/app.js) */try{(function(d){var n=performance.getEntriesByType&&performance.getEntriesByType('navigation')[0];if(n&&n.transferSize>0)return;d.className+=' vchk';setTimeout(function(){d.classList.remove('vchk')},1200)})(document.documentElement)}catch(e){}</script>
-<style>
-/* The version check can run before the page styles load. */
-.vchk body { visibility: hidden; }
-.vchk::before, .canele-selection .spinner {
-  width: 56px;
-  height: 56px;
-  background: url("assets/v2/01-canele/spinning-canele.webp") center / contain no-repeat;
-}
-.vchk::before {
-  content: "";
-  position: fixed;
-  left: 50%;
-  top: 50%;
-  margin: -28px 0 0 -28px;
-  opacity: 0;
-  animation: show-canele .15s .12s forwards;
-}
-@keyframes show-canele { to { opacity: 1; } }
-.canele-selection .spinner { animation: none; }
-.canele-selection:has(.loading-cover.show) #grid > .spinner { visibility: hidden; }
-@media (prefers-reduced-motion: reduce) {
-  .vchk::before, .canele-selection .spinner { background-image: url("assets/v2/01-canele/still-canele.webp"); }
-}
-</style>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>N.T Canelé 可麗露專區｜豪宅裡の可麗露</title>
 <meta name="description" content="N.T Canelé 豪宅裡の可麗露・六入可麗露禮盒。單一口味禮盒 $750 起、綜合口味禮盒 $800。">
@@ -39,7 +15,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <link rel="preload" as="image" href="assets/v2/01-canele/m-header.webp" type="image/webp">
-<link rel="stylesheet" href="css/app.css?v=1122c">
+<link rel="stylesheet" href="css/app.css?v=1123-canele-all">
 <link rel="stylesheet" href="css/canele-selection.css?v=1121i">
 <style>/* 11-23 i: the owner's own picture at the top (admin → 商品 → 可麗露 → 可麗露頁最上面的大圖) */
 .cm-head.own { height: auto; background: none; container-type: inline-size; }
@@ -70,8 +46,8 @@
 </main>
 <div class="cm-bar" id="bar" hidden></div>
 <dialog id="box-quantity" class="cm-quantity" aria-labelledby="quantity-title"></dialog>
-<script src="js/config.js?v=1123l"></script>
-<script src="js/app.js?v=1123k"></script>
+<script src="js/config.js?v=1123-canele-all"></script>
+<script src="js/app.js?v=1123-canele-all"></script>
 <script src="js/shop.js?v=1123k"></script>
 <script>
 (function () {
