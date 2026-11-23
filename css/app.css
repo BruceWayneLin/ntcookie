@@ -248,13 +248,13 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
   max-width: 90vw; text-align: center; opacity: 0; pointer-events: none; transition: opacity .2s ease, transform .2s ease;
 }
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
-/* The same illustrated cookie and wordmark appear on every loading backdrop. */
+/* The same meringue cookie and wordmark appear on every loading backdrop. */
 :root {
-  --loading-art: url("../assets/v2/01-canele/cookie-loader.svg");
-  --loading-art-width: min(236px, 64vw, 60dvh);
+  --loading-art: url("../assets/v2/02-meringue/meringue-loader.svg");
+  --loading-art-width: min(88px, 64vw, 60dvh);
 }
 @media (prefers-reduced-motion: reduce) {
-  :root { --loading-art: url("../assets/v2/01-canele/cookie-loader.svg#still"); }
+  :root { --loading-art: url("../assets/v2/02-meringue/meringue-loader.svg#still"); }
 }
 .vchk body, .liffgo body { visibility: hidden; }
 html::before, .loading-cover {
@@ -281,7 +281,7 @@ html:has(main [aria-busy="true"], main .spinner)::before {
 html:not(.vchk, .liffgo):has(.loading-cover.show)::before { content: none; }
 .loading-cover { display: none; align-items: center; justify-content: center; flex-direction: column; gap: 6px; font-weight: 700; color: var(--ink2); }
 .loading-cover.show { display: flex; }
-.loading-cover .spinner { width: var(--loading-art-width); aspect-ratio: 240 / 216; background: var(--loading-art) center / contain no-repeat; }
+.loading-cover .spinner { width: var(--loading-art-width); aspect-ratio: 88 / 94; background: var(--loading-art) center / contain no-repeat; }
 @media (prefers-reduced-motion: reduce) { .pcard, .sheet, .sheet-mask, .cartbar, .toast { transition: none; } }
 
 /* ---------------------------------------------------------------- 造型餅乾 cookies.html（照店主範例稿：線上購物／系列／單片選購） */
