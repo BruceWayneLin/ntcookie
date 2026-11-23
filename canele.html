@@ -18,6 +18,15 @@
 <link rel="preload" as="image" href="assets/v2/01-canele/m-header.webp" type="image/webp">
 <link rel="stylesheet" href="css/app.css?v=1122c">
 <link rel="stylesheet" href="css/canele-selection.css?v=1121i">
+<style>/* 11-23 i: the owner's own picture at the top (admin → 商品 → 可麗露 → 可麗露頁最上面的大圖) */
+.cm-head.own { height: auto; background: none; container-type: inline-size; }
+.cm-head .cm-own { display: none; }
+.cm-head.own .cm-own { display: block; width: 100%; height: auto; max-height: 75cqw; object-fit: cover; }
+.cm-head.own #back { left: 10px !important; top: 10px !important; width: 44px !important; height: 44px !important; border-radius: 50%; background: rgba(255, 248, 242, .92) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M15 5l-7 7 7 7' fill='none' stroke='%233a1d12' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 22px no-repeat; box-shadow: 0 2px 8px rgba(60, 30, 20, .18); }
+.cm-head.own .cm-cart { left: auto; right: 10px; top: 10px; width: 44px; height: 44px; border-radius: 50%; background: rgba(255, 248, 242, .92); box-shadow: 0 2px 8px rgba(60, 30, 20, .18); }
+.cm-head.own .cm-cart svg { width: 24px; height: 22px; min-width: 0; min-height: 0; }
+.cm-head.own .cm-cart .badge { right: -4px; top: -4px; }
+</style>
 </head>
 <body class="cm-body canele-selection">
 <!-- designer's mobile layout (nt-canele-mobile-ux-slices, 793 px wide): header art + live tabs, cards, notes and checkout bar -->
@@ -317,6 +326,21 @@
     grid.innerHTML = `<div class="cm-grid-message"><p>${esc(error.message)}</p><button type="button" class="cm-primary" id="flavor-retry">重新載入</button></div>`;
     $('#flavor-retry').onclick = () => location.reload();
   }).finally(() => panel.setAttribute('aria-busy', 'false'));
+})();
+</script>
+<script>/* 11-23 i: the owner's own picture at the top of this page; remembered on this phone so the next visit shows it straight away */
+(function () {
+  const head = document.querySelector('.cm-head'); if (!head) return;
+  const hero = (map) => {
+    const src = map && typeof map['page-canele'] === 'string' ? map['page-canele'] : '';
+    let im = head.querySelector('.cm-own');
+    if (src) {
+      if (!im) { im = document.createElement('img'); im.className = 'cm-own'; im.alt = ''; head.prepend(im); }
+      const u = NTC.asset(src); if (im.getAttribute('src') !== u) im.src = u; head.classList.add('own');
+    } else { if (im) im.remove(); head.classList.remove('own'); }
+  };
+  try { hero(JSON.parse(localStorage.getItem('ntc-banners') || '{}')); } catch (e) { /* nothing remembered on this phone yet */ }
+  NTC.catalog().then((c) => { const b = (c.settings && c.settings.banners) || {}; hero(b); try { localStorage.setItem('ntc-banners', JSON.stringify(b)); } catch (e) { /* */ } }).catch(() => {});
 })();
 </script>
 </body>

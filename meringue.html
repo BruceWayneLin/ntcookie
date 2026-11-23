@@ -17,6 +17,10 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/app.css?v=1122c">
 <link rel="stylesheet" href="css/meringue-packs.css?v=5">
+<style>/* 11-23 i: the owner's own picture at the top (admin → 商品 → 馬林糖 → 馬林糖頁最上面的大圖) */
+.meringue-art.own img { display: block; margin: 0; max-height: 75cqw; object-fit: cover; }
+.meringue-art.own .bag-banner-weight, .meringue-art.own .bag-banner-count { display: none; }
+</style>
 <style>
   .meringue-copy {
     margin: clamp(10px, 3.5vw, 22px) calc(22 * var(--u)) 0;
@@ -89,6 +93,24 @@
   NTC.mountCartBar();
   NTC.catalog().then((c) => NTC.renderGrid(NTC.$('#grid'), 'meringue', c.products.filter((p) => p.category === 'meringue' && p.unit !== '包')))
     .catch((e) => NTC.toast(e.message, 4000));
+</script>
+<script>/* 11-23 i: the owner's own picture at the top of this page; remembered on this phone so the next visit shows it straight away */
+(function () {
+  const art = document.querySelector('.meringue-art'); const im = art && art.querySelector('img'); if (!im) return;
+  const orig = { src: im.getAttribute('src'), alt: im.alt, w: im.getAttribute('width'), h: im.getAttribute('height') };
+  const hero = (map) => {
+    const src = map && typeof map['page-meringue'] === 'string' ? map['page-meringue'] : '';
+    if (src) {
+      const u = NTC.asset(src);
+      if (im.getAttribute('src') !== u) { im.removeAttribute('width'); im.removeAttribute('height'); im.src = u; }
+      im.alt = '馬林糖一口酥'; art.classList.add('own');
+    } else if (art.classList.contains('own')) {
+      im.src = orig.src; im.alt = orig.alt; im.setAttribute('width', orig.w); im.setAttribute('height', orig.h); art.classList.remove('own');
+    }
+  };
+  try { hero(JSON.parse(localStorage.getItem('ntc-banners') || '{}')); } catch (e) { /* nothing remembered on this phone yet */ }
+  NTC.catalog().then((c) => { const b = (c.settings && c.settings.banners) || {}; hero(b); try { localStorage.setItem('ntc-banners', JSON.stringify(b)); } catch (e) { /* */ } }).catch(() => {});
+})();
 </script>
 </body>
 </html>

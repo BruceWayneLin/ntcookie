@@ -120,6 +120,13 @@
   .banbox .ban-t small { display: block; margin-top: 3px; font: 500 12.5px/1.45 var(--sans); color: var(--muted); }
   .banbox .ban-acts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
   .banbox .ban-acts .btn { margin: 0; }
+  .banbox + .banbox { margin-top: 18px; padding-top: 16px; border-top: 1px dashed #e6d2c6; }
+  .herobox { position: relative; border-radius: 14px; overflow: hidden; background: #f3e3d8; container-type: inline-size; }
+  .herobox img { display: block; width: 100%; height: auto; }
+  .herobox.mg img { margin: -10.5% 0 -1.9%; } /* the meringue art carries a mock toolbar: the page hides it the same way */
+  .herobox.own img { margin: 0; max-height: 75cqw; object-fit: cover; }
+  .herobox .hb { position: absolute; top: 2.6%; width: 11.3%; aspect-ratio: 1; border-radius: 50%; background: rgba(255, 248, 242, .92); box-shadow: 0 1px 4px rgba(60, 30, 20, .2); }
+  .herobox .hb.l { left: 2.6%; } .herobox .hb.r { right: 2.6%; }
   #g-head h2 small { margin-left: 8px; font: 600 12.5px/1 var(--sans); color: var(--muted); }
   .addbar .btn { margin: 0; }
   .grow { display: flex; align-items: center; gap: 6px; margin: 0 0 8px; }
@@ -968,16 +975,25 @@
       <div class="catban tile">${pic ? (own ? image : NTC.shopTileArt(key, image)) : `<span>還沒有放橫幅<small>${key === 'custom' ? '現在用的是網站原本的卡片（餅乾圖案加上「客製造型餅乾」）' : '沒放的話，商店頁會用第一個商品的照片加上名稱，自動做一張卡片'}</small></span>`}</div>
       <div class="ban-acts"><label class="btn small">${own ? '換一張' : pic ? '換成自己的圖' : '放橫幅照片'}<input type="file" accept="image/*" class="ban-file" hidden></label>${own ? `<button type="button" class="btn ghost small ban-reset">${BAN0[key] || key === 'custom' ? '用回原本的圖' : '拿掉橫幅'}</button>` : ''}<a class="btn ghost small" href="shop.html" target="_blank" rel="noopener">看商店頁 ›</a></div>
       <p class="note" style="margin:8px 0 0">用橫的圖（寬大約是高的 2 倍），名稱要寫在圖上：客人在商店頁只會看到這張圖。上面看到的就是客人看到的樣子，換了馬上生效。</p></div>`; };
+  // 可麗露頁、馬林糖頁「最上面的大圖」：店主可以換成自己的圖（key＝page-canele、page-meringue，跟商店頁的橫幅存在一起；沒放＝網站原本的設計圖）
+  const HERO0 = { 'page-canele': { src: 'assets/v2/01-canele/m-header.webp', page: 'canele.html', name: '可麗露' }, 'page-meringue': { src: 'assets/v2/02-meringue/jar-and-bag-banner.jpg', page: 'meringue.html', name: '馬林糖' } };
+  const heroBlock = (key) => { const h = HERO0[key]; const own = banOf(key); const cn = key === 'page-canele';
+    const src = own ? (banShot[own] || asset(own)) : asset(h.src);
+    return `<div class="banbox" data-ban="${key}" data-name="${h.name}頁" data-label="${h.name}頁最上面的大圖"><p class="ban-t">${h.name}頁最上面的大圖<small>客人打開${h.name}頁${cn ? '' : '（小罐裝、大包裝兩頁）'}第一眼看到的圖${own ? '（現在用的是你放的圖）' : '（現在是網站原本的設計圖）'}</small></p>
+      <div class="herobox${own ? ' own' : cn ? '' : ' mg'}"><img src="${esc(src)}" alt="">${own && cn ? '<i class="hb l"></i><i class="hb r"></i>' : ''}</div>
+      <div class="ban-acts"><label class="btn small">${own ? '換一張' : '換成自己的圖'}<input type="file" accept="image/*" class="ban-file" hidden></label>${own ? '<button type="button" class="btn ghost small ban-reset">用回原本的圖</button>' : ''}<a class="btn ghost small" href="${h.page}" target="_blank" rel="noopener">看${h.name}頁 ›</a></div>
+      <p class="note" style="margin:8px 0 0">${cn ? '原本的圖上印著「六入可麗露禮盒・每盒 6 顆・手工製作」，換成你的圖之後這幾個字就沒有了，需要的話請寫在圖上。返回和購物車會變成兩顆白色圓鈕，蓋在圖的左上角和右上角。' : '最上面那一條（返回、店名、購物車）不變，你的圖放在它下面；大包裝那一頁原本貼在圖上的「大包裝 至少 50 顆」也會一起拿掉。'}用橫的圖最好；太高的圖只會顯示中間一段（高最多是寬的四分之三）。上面看到的就是客人看到的樣子，換了馬上生效。</p></div>`; };
   const wireBans = () => app.querySelectorAll('.banbox').forEach((box) => { const key = box.dataset.ban; const name = box.dataset.name;
+    const label = box.dataset.label || `「${name}」的橫幅`; const orig = BAN0[key] || HERO0[key] || key === 'custom';
     const save = async (photo, msg) => { settings = (await NTC.api(`/admin/banners/${key}`, { method: 'PUT', body: { photo } })).settings; const y = window.scrollY; renderProducts(); window.scrollTo(0, y); NTC.toast(msg, 3600); };
     box.querySelector('.ban-file').onchange = async (e) => { const f = e.target.files[0]; e.target.value = ''; if (!f) return;
       NTC.loading(true, '上傳橫幅…');
       try { const dataUrl = await shrink(f, 1400); const photo = (await NTC.api('/admin/images', { method: 'POST', body: { dataUrl } })).url; banShot[photo] = dataUrl;
-        await save(photo, banLive(key) ? `「${name}」的橫幅換好了，客人現在就看得到` : `「${name}」的橫幅放好了。這個風格有餅乾上架之後，商店頁就會出現這張圖`); }
+        await save(photo, banLive(key) ? `${label}換好了，客人現在就看得到` : `${label}放好了。這個風格有餅乾上架之後，商店頁就會出現這張圖`); }
       catch (err) { NTC.toast(err.message || '照片上傳失敗，請再試一次', 3500); } finally { NTC.loading(false); } };
-    const back = box.querySelector('.ban-reset'); if (back) back.onclick = async () => { if (!confirm(BAN0[key] || key === 'custom' ? `「${name}」的橫幅要用回網站原本的圖嗎？` : `要拿掉「${name}」的橫幅嗎？`)) return;
+    const back = box.querySelector('.ban-reset'); if (back) back.onclick = async () => { if (!confirm(orig ? `${label}要用回網站原本的圖嗎？` : `要拿掉${label}嗎？`)) return;
       NTC.loading(true, '儲存中…');
-      try { await save('', BAN0[key] || key === 'custom' ? '已經用回原本的圖' : '橫幅拿掉了'); } catch (err) { NTC.toast(err.message, 3500); } finally { NTC.loading(false); } };
+      try { await save('', orig ? '已經用回原本的圖' : '橫幅拿掉了'); } catch (err) { NTC.toast(err.message, 3500); } finally { NTC.loading(false); } };
   });
   // 馬林糖兩種包裝在頁面上的名稱（店主可以改）
   const PACKS0 = { jar: { name: '小罐裝', note: '約 30 顆', extra: '' }, bag: { name: '大包裝', note: '至少 50 顆', extra: '' } };
@@ -1073,7 +1089,7 @@
     const cnt = (c) => { const l = products.filter((p) => p.category === c); return `${l.filter((p) => p.active).length}／${l.length} 上架`; };
     if (prodCat !== 'cookie' && !CATS[prodCat] && !catOf(prodCat)) prodCat = 'canele'; // 這個分類剛被刪掉
     const mine = catOf(prodCat); const mineLive = mine && products.some((p) => p.category === mine.id && p.active);
-    const simple = (c) => `${mine ? '' : `<section class="panel">${banBlock(c, c === 'canele' ? 'N.T Canelé 可麗露專區' : '馬林糖一口酥')}</section>`}<section class="panel"><h2>${esc(catName(c))}</h2>
+    const simple = (c) => `${mine ? '' : `<section class="panel">${banBlock(c, c === 'canele' ? 'N.T Canelé 可麗露專區' : '馬林糖一口酥')}${heroBlock('page-' + c)}</section>`}<section class="panel"><h2>${esc(catName(c))}</h2>
       ${mine ? `<div class="catban">${mine.photo ? `<img src="${esc(banShot[mine.photo] || asset(mine.photo))}" alt="">` : '<span>還沒有橫幅照片<small>放一張橫的圖（名稱寫在圖上），商店頁的卡片和這個分類那一頁的最上面都會用它</small></span>'}<label class="btn small">${mine.photo ? '換橫幅照片' : '放橫幅照片'}<input type="file" accept="image/*" id="cat-ban" hidden></label></div>` : ''}
       ${mine ? `<p class="note" style="margin:-2px 0 10px">${mine.temp === 'frozen' ? '冷凍宅配' : '常溫宅配'}・單位「${esc(mine.unit)}」・${mineLive ? `<a href="category.html?c=${esc(mine.id)}" target="_blank" rel="noopener" id="cat-pv">看客人看到的樣子 ›</a>` : '還沒有商品上架，客人看不到這個分類'}</p>` : ''}
       ${products.filter((p) => p.category === c).sort(bySort).map(prodRow).join('') || `<p class="note">還沒有商品${mine ? '，按下面「＋ 新增商品」放第一個' : ''}</p>`}
