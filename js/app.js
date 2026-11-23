@@ -2,7 +2,7 @@
 (function () {
   const CFG = window.NTC_CONFIG || {};
 
-  // Keep the pastry visible briefly on fast page loads. The page stays interactive.
+  // Keep the loading backdrop visible briefly on fast page loads.
   let openingTimer;
   function showPageOpening() {
     const root = document.documentElement;
