@@ -248,13 +248,13 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
   max-width: 90vw; text-align: center; opacity: 0; pointer-events: none; transition: opacity .2s ease, transform .2s ease;
 }
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
-/* The meringue turns on its base, centered on the loading backdrop. */
+/* The original iced cookie spins at the center of the loading backdrop. */
 :root {
-  --loading-art: url("../assets/v2/02-meringue/meringue-upright-turn.webp");
+  --loading-art: url("../assets/loading-cookie.svg");
   --loading-art-width: 56px;
 }
 @media (prefers-reduced-motion: reduce) {
-  :root { --loading-art: url("../assets/v2/02-meringue/meringue-upright-still.webp"); }
+  :root { --loading-art: url("../assets/loading-cookie.svg#still"); }
 }
 .vchk body, .liffgo body { visibility: hidden; }
 html::before, .loading-cover {
