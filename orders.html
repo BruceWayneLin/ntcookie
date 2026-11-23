@@ -12,6 +12,16 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/app.css?v=1122c">
+<style>/* 11-23 h: one-tap copy of the order number */
+.copy-no { position: relative; z-index: 1; display: inline-flex; align-items: center; gap: 4px; margin-left: 8px; padding: 0 11px; height: 30px; border: 0; border-radius: 999px; background: #f1e1d8; color: var(--brown); font: 700 12.5px/1 var(--sans); cursor: pointer; vertical-align: middle; -webkit-tap-highlight-color: transparent; }
+.copy-no::before { content: ""; position: absolute; inset: -8px -6px; }
+.copy-no svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linejoin: round; }
+.copy-no.done { background: #e3f2e6; color: #2f7a43; }
+.ord { position: relative; }
+.ord .ord-go { color: inherit; text-decoration: none; letter-spacing: .02em; }
+.ord .ord-go::after { content: ""; position: absolute; inset: 0; border-radius: 14px; }
+.order-no { user-select: all; -webkit-user-select: all; }
+</style>
 <title>我的訂單｜N.T Cookie × N.T Canelé</title>
 <meta name="robots" content="noindex">
 </head>
@@ -27,7 +37,25 @@
   const { $, esc, money } = NTC;
   $('#back').onclick = NTC.back;
   const app = $('#app');
-  const row = (o, href) => `<a class="opt" style="text-decoration:none" href="${href}"><span class="t">${esc(o.orderNo || o.no)}<small>${o.date ? NTC.fmtDate(o.date) + '・' : ''}${money(o.total)}${o.lines ? '・' + esc(o.lines.map((l) => l.name).join('、')).slice(0, 40) : ''}</small></span>${o.statusLabel ? `<span class="status-pill ${esc(o.status)}">${esc(o.statusLabel)}</span>` : ''}<span class="r">›</span></a>`;
+  // 11-23 h: copy, with a fallback for in-app browsers that block the clipboard API
+  const copyText = async (v) => {
+    try { await navigator.clipboard.writeText(v); return true; } catch (e) { /* fall through */ }
+    const ta = document.createElement('textarea'); ta.value = v; ta.setAttribute('readonly', ''); ta.style.cssText = 'position:fixed;left:0;top:0;opacity:0;font-size:16px';
+    document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0, v.length);
+    let ok = false; try { ok = document.execCommand('copy'); } catch (e) { /* ignore */ }
+    ta.remove(); return ok;
+  };
+  const COPY_ICON = '<svg viewBox="0 0 16 16" aria-hidden="true"><rect x="5.5" y="5.5" width="8" height="8.5" rx="1.6"/><path d="M10.5 3.5V3A1.5 1.5 0 0 0 9 1.5H4A1.5 1.5 0 0 0 2.5 3v6A1.5 1.5 0 0 0 4 10.5h.5"/></svg>';
+  const copyNoBtn = (v) => `<button type="button" class="copy-no" data-copy="${esc(v)}" data-what="訂單編號" aria-label="複製訂單編號 ${esc(v)}">${COPY_ICON}複製</button>`;
+  const wireCopy = (root) => root.querySelectorAll('[data-copy]').forEach((b) => (b.onclick = async (e) => {
+    e.preventDefault(); e.stopPropagation();
+    const v = b.dataset.copy;
+    if (await copyText(v)) {
+      NTC.toast(`已複製${b.dataset.what || ''}${b.dataset.what ? ' ' + v : ''}`);
+      if (b.classList.contains('copy-no')) { b.classList.add('done'); b.lastChild.textContent = '已複製'; clearTimeout(b._t); b._t = setTimeout(() => { b.classList.remove('done'); b.lastChild.textContent = '複製'; }, 1600); }
+    } else NTC.toast(`請長按選取：${v}`, 4000);
+  }));
+  const row = (o, href) => `<div class="opt ord"><span class="t"><a class="ord-go" href="${href}">${esc(o.orderNo || o.no)}</a>${copyNoBtn(o.orderNo || o.no)}<small>${o.date ? NTC.fmtDate(o.date) + '・' : ''}${money(o.total)}${o.lines ? '・' + esc(o.lines.map((l) => l.name).join('、')).slice(0, 40) : ''}</small></span>${o.statusLabel ? `<span class="status-pill ${esc(o.status)}">${esc(o.statusLabel)}</span>` : ''}<span class="r" aria-hidden="true">›</span></div>`;
   let html = '';
   if (await NTC.loggedIn()) {
     try {
@@ -46,6 +74,7 @@
   if (local.length) html += `<div class="panel"><h2>這支手機下過的訂單</h2>${local.map((o) => row({ no: o.no, total: o.total }, `order.html?no=${o.no}&t=${o.t}`)).join('')}</div>`;
   if (!html.includes('class="opt"')) html += '<div class="empty" style="padding:16px 10px"><p class="note">這支手機還沒有訂單紀錄</p><a class="btn small" href="shop.html">去逛逛</a></div>';
   app.innerHTML = html;
+  wireCopy(app);
   const l = $('#login'); if (l) l.onclick = NTC.login;
   $('#lookup').onsubmit = async (e) => {
     e.preventDefault(); const err = $('#lk-err'); err.hidden = true;

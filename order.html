@@ -13,6 +13,16 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/app.css?v=1122c">
+<style>/* 11-23 h: one-tap copy of the order number */
+.copy-no { position: relative; z-index: 1; display: inline-flex; align-items: center; gap: 4px; margin-left: 8px; padding: 0 11px; height: 30px; border: 0; border-radius: 999px; background: #f1e1d8; color: var(--brown); font: 700 12.5px/1 var(--sans); cursor: pointer; vertical-align: middle; -webkit-tap-highlight-color: transparent; }
+.copy-no::before { content: ""; position: absolute; inset: -8px -6px; }
+.copy-no svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linejoin: round; }
+.copy-no.done { background: #e3f2e6; color: #2f7a43; }
+.ord { position: relative; }
+.ord .ord-go { color: inherit; text-decoration: none; letter-spacing: .02em; }
+.ord .ord-go::after { content: ""; position: absolute; inset: 0; border-radius: 14px; }
+.order-no { user-select: all; -webkit-user-select: all; }
+</style>
 </head>
 <body>
 <header class="topbar">
@@ -37,6 +47,24 @@
 
   const pay = q.get('pay');
   const copyBtn = (v) => `<button class="copy" data-copy="${esc(v)}">複製</button>`;
+  // 11-23 h: copy, with a fallback for in-app browsers that block the clipboard API
+  const copyText = async (v) => {
+    try { await navigator.clipboard.writeText(v); return true; } catch (e) { /* fall through */ }
+    const ta = document.createElement('textarea'); ta.value = v; ta.setAttribute('readonly', ''); ta.style.cssText = 'position:fixed;left:0;top:0;opacity:0;font-size:16px';
+    document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0, v.length);
+    let ok = false; try { ok = document.execCommand('copy'); } catch (e) { /* ignore */ }
+    ta.remove(); return ok;
+  };
+  const COPY_ICON = '<svg viewBox="0 0 16 16" aria-hidden="true"><rect x="5.5" y="5.5" width="8" height="8.5" rx="1.6"/><path d="M10.5 3.5V3A1.5 1.5 0 0 0 9 1.5H4A1.5 1.5 0 0 0 2.5 3v6A1.5 1.5 0 0 0 4 10.5h.5"/></svg>';
+  const copyNoBtn = (v) => `<button type="button" class="copy-no" data-copy="${esc(v)}" data-what="訂單編號" aria-label="複製訂單編號 ${esc(v)}">${COPY_ICON}複製</button>`;
+  const wireCopy = (root) => root.querySelectorAll('[data-copy]').forEach((b) => (b.onclick = async (e) => {
+    e.preventDefault(); e.stopPropagation();
+    const v = b.dataset.copy;
+    if (await copyText(v)) {
+      NTC.toast(`已複製${b.dataset.what || ''}${b.dataset.what ? ' ' + v : ''}`);
+      if (b.classList.contains('copy-no')) { b.classList.add('done'); b.lastChild.textContent = '已複製'; clearTimeout(b._t); b._t = setTimeout(() => { b.classList.remove('done'); b.lastChild.textContent = '複製'; }, 1600); }
+    } else NTC.toast(`請長按選取：${v}`, 4000);
+  }));
   const PAY_NAMES = { linepay: 'LINE Pay', ecpay: '信用卡／ATM／超商', transfer: '銀行轉帳' };
 
   function payBlock() {
@@ -74,12 +102,12 @@
   function render() {
     const fresh = q.get('new') === '1' || pay === 'ok';
     app.innerHTML = `
-      ${fresh && o.payment.method === 'transfer' && o.payment.status !== 'paid' ? `<div class="panel" style="background:#fff6ec"><b>請記下訂單編號 ${esc(o.orderNo)}</b><p class="note" style="margin:4px 0 10px">匯款後回到這一頁填末五碼。找不到這頁時：官網選單 →「我的訂單」→ 用訂單編號＋手機查詢；或按下面把訂單傳到 LINE 聊天室留著。</p>
+      ${fresh && o.payment.method === 'transfer' && o.payment.status !== 'paid' ? `<div class="panel" style="background:#fff6ec"><b>請記下訂單編號 <span class="order-no">${esc(o.orderNo)}</span></b>${copyNoBtn(o.orderNo)}<p class="note" style="margin:4px 0 10px">匯款後回到這一頁填末五碼。找不到這頁時：官網選單 →「我的訂單」→ 用訂單編號＋手機查詢；或按下面把訂單傳到 LINE 聊天室留著。</p>
         <a class="btn line block small" href="${NTC.chatUrl(`您好，我下了一張訂單\n訂單：${o.orderNo}\n金額：${money(o.total)}\n${location.href.replace(/&new=1|&pay=[a-z]+/g, '')}`)}">把訂單傳到 LINE（店家也會看到）</a></div>` : ''}
       ${fresh && o.payment.status === 'paid' ? '<div class="panel" style="text-align:center;background:#f3faf4"><p style="font:900 22px var(--serif);margin:4px 0">付款成功，謝謝您 ♡</p><p class="note" style="margin:0">我們會依日期為您手作，出貨時會再通知。</p></div>'
         : fresh ? '<div class="panel" style="text-align:center"><p style="font:900 22px var(--serif);margin:4px 0">訂單已送出 ♡</p><p class="note" style="margin:0">完成付款後就會開始安排製作。</p></div>' : ''}
       <section class="panel">
-        <div class="row"><b style="font:900 18px var(--serif);letter-spacing:.04em">${esc(o.orderNo)}</b><span class="sp"></span><span class="status-pill ${esc(o.status)}">${esc(o.statusLabel)}</span></div>
+        <div class="row"><b class="order-no" style="font:900 18px var(--serif);letter-spacing:.04em">${esc(o.orderNo)}</b>${copyNoBtn(o.orderNo)}<span class="sp"></span><span class="status-pill ${esc(o.status)}">${esc(o.statusLabel)}</span></div>
         <p class="note" style="margin:6px 0 0">下單時間 ${new Date(o.createdAt).toLocaleString('zh-TW', { hour12: false })}</p>
         ${o.adminMessage ? `<p style="margin:10px 0 0;padding:10px 12px;background:#fff6ec;border-radius:12px;font-size:14px">店家留言：${esc(o.adminMessage)}</p>` : ''}
       </section>
@@ -95,7 +123,7 @@
         <dl class="kv"><dt>日期</dt><dd>${NTC.fmtDate(o.date)}</dd><dt>收件人</dt><dd>${esc(o.contact.name)}</dd><dt>手機</dt><dd>${esc(o.contact.phone)}</dd><dt>地址</dt><dd>${esc(o.contact.address)}</dd><dt>備註</dt><dd style="font-weight:500;white-space:pre-wrap">${o.note ? esc(o.note) : '<span class="muted">（無）</span>'}</dd></dl>
       </section>
       <div class="row" style="gap:10px"><a class="btn ghost block" href="${NTC.chatUrl(`您好，我想詢問訂單 ${o.orderNo}`)}">聯絡店家</a><a class="btn block" href="index.html">繼續逛逛</a></div>`;
-    app.querySelectorAll('[data-copy]').forEach((b) => (b.onclick = async () => { try { await navigator.clipboard.writeText(b.dataset.copy); NTC.toast('已複製'); } catch (e) { NTC.toast(b.dataset.copy); } }));
+    wireCopy(app);
     const s5 = $('#sendLast5');
     if (s5) s5.onclick = async () => {
       const v = $('#last5').value.trim();
