@@ -12,7 +12,7 @@
 <link rel="preload" as="script" href="https://static.line-scdn.net/liff/edge/2/sdk.js">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css?v=1124b">
+<link rel="stylesheet" href="css/app.css?v=1124c">
 <link rel="stylesheet" href="css/shop-tiles.css?v=1011">
 <style>
   :root { --page: 760px; }
@@ -226,7 +226,7 @@
   .ed-more summary { cursor: pointer; font: 800 15px var(--sans); color: var(--ink2); }
   .ed-more[open] summary { margin-bottom: 12px; }
   .ed-top { position: sticky; top: 0; z-index: 3; }
-  .ed-body { overflow: visible; }
+  .ed-body { overflow: visible; padding-bottom: 96px; } /* 「下架／更新」那一列的正上方留空：點歪一點也不會點到別的按鈕 */
   .ed-bar { position: sticky; bottom: 0; z-index: 3; }
   .eo .o-pr { flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; cursor: text; }
   .eo input.o-name, .eo input.o-price { min-height: 44px; }
@@ -246,8 +246,8 @@
 <div class="shopbar" id="shopbar" hidden></div>
 <main class="wrap" id="app"><div class="spinner"></div></main>
 <p class="note" id="ver" style="text-align:center;margin:0 0 24px;color:var(--muted)"></p>
-<script src="js/config.js?v=1124b"></script>
-<script src="js/app.js?v=1124b"></script>
+<script src="js/config.js?v=1124c"></script>
+<script src="js/app.js?v=1124c"></script>
 <script src="js/shop-tiles.js?v=1123k"></script>
 <script src="js/cookie-edge.js?v=1122e"></script>
 <script src="js/cookie-photo.js?v=1122e"></script>
@@ -258,8 +258,19 @@
   NTC.sheetPage = true; // 後台每一張單子都是一整頁，不是蓋在畫面上的一層：iPhone 的 LINE 裡，鍵盤收起來之後，蓋在上面那一層會點不準（按「儲存」按到上面的欄位）
   try { history.scrollRestoration = 'manual'; } catch (e) { /* 舊瀏覽器沒有 */ } // 回到列表時捲到哪裡由這一頁自己決定
   // 後台所有填數字的欄位（價格、運費、天數、報價…）：點一下就全選，直接打新的數字，不用先刪舊的（不會 250 變 2504）
-  document.addEventListener('focusin', (e) => { const t = e.target; if (!t || t.tagName !== 'INPUT' || t.classList.contains('o-price') || !(t.type === 'number' || t.inputMode === 'numeric')) return;
-    setTimeout(() => { try { if (document.activeElement === t) t.select(); } catch (x) { /* 這個瀏覽器不能選 */ } }, 0); });
+  // （11-24）欄位一律是文字欄位＋數字鍵盤：type="number" 在 iPhone 上不能全選。
+  // iPhone 點下去的那一下，游標會在「全選」之後才落到手指的位置，把全選取消掉；所以隔一下再選兩次（只要她還在這一格、還沒打字）。
+  const selAll = (t) => { const v0 = t.value; [0, 90, 320].forEach((ms) => setTimeout(() => { if (document.activeElement !== t || t.value !== v0) return;
+    try { t.setSelectionRange(0, t.value.length); } catch (x) { try { t.select(); } catch (y) { /* 這個瀏覽器不能選 */ } } }, ms)); };
+  document.addEventListener('focusin', (e) => { const t = e.target; if (t && t.tagName === 'INPUT' && t.inputMode === 'numeric') selAll(t); });
+  // 只收數字（全形的數字轉成一般的）；選項的價格欄自己有一套（還會去掉開頭的 0）
+  document.addEventListener('input', (e) => { const t = e.target; if (!t || t.tagName !== 'INPUT' || t.inputMode !== 'numeric' || t.classList.contains('o-price')) return;
+    const v = t.value.replace(/[０-９]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 65248)).replace(/\D/g, ''); if (v !== t.value) t.value = v; }, true);
+  // 鍵盤收起來之後，把畫面動 1 點再放回去：iPhone 這時候貼在畫面邊上的那幾列（上面的返回、下面的「更新」）畫的位置和點得到的位置可能對不上，動一下就對齊了
+  document.addEventListener('focusout', (e) => { const t = e.target; if (!t || !/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)) return;
+    setTimeout(() => { const a = document.activeElement; if (a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) return; // 換到另一格：鍵盤還開著
+      const y = window.scrollY; const d = y < document.documentElement.scrollHeight - window.innerHeight ? 1 : -1;
+      window.scrollTo(0, y + d); requestAnimationFrame(() => window.scrollTo(0, y)); }, 150); });
   $('#ver').textContent = '版本 ' + (NTC_CONFIG.version || '');
   const q = new URLSearchParams(location.search);
   const PAY = { linepay: 'LINE Pay', ecpay: '綠界', transfer: '轉帳' };
@@ -516,7 +527,7 @@
         <p style="margin:8px 0 0"><b>${esc(x.contact.name)}</b>　<a href="tel:${esc(x.contact.phone)}">${esc(x.contact.phone)}</a>　LINE：${esc(x.user?.name || '')}</p></div>
       <p style="font-weight:700;margin:0 0 6px;font-size:13px;color:var(--ink2)">狀態</p>
       <div class="statusbar" id="i-st" style="margin-bottom:12px">${Object.entries(inqStatuses).map(([k, t]) => `<button type="button" data-k="${k}" class="${k === st ? 'on' : ''}">${t}</button>`).join('')}</div>
-      <label class="field"><span>報價金額（選填，只給店家看）</span><input id="i-quote" type="number" inputmode="numeric" value="${esc(x.quote || '')}"></label>
+      <label class="field"><span>報價金額（選填，只給店家看）</span><input id="i-quote" type="text" inputmode="numeric" pattern="[0-9]*" value="${esc(x.quote || '')}"></label>
       <label class="field"><span>店家備註（只給店家看）</span><textarea id="i-note" maxlength="1000">${esc(x.adminNote || '')}</textarea></label>
       <button class="btn block" id="i-save">儲存</button>
       <button class="btn ghost block" id="i-del" style="margin-top:10px;color:var(--red)">刪除這筆詢問（連同照片）</button>
@@ -742,7 +753,7 @@
       <p class="askt">下單時要客人填的資料</p>
       <label class="tg">要客人填名字（寫在餅乾上的字）<span class="sp"></span><input type="checkbox" id="e-tn" ${T.nameOn ? 'checked' : ''}></label>
       <div class="grid2" id="e-tnbox" ${T.nameOn ? '' : 'hidden'}><label class="field"><span>欄位名稱</span><input id="e-tl" value="${esc(T.nameLabel || '寶寶名字')}" maxlength="18"></label>
-        <label class="field"><span>最多幾個字</span><input id="e-tm" type="number" min="1" max="30" value="${T.nameMax}"></label></div>
+        <label class="field"><span>最多幾個字</span><input id="e-tm" type="text" inputmode="numeric" pattern="[0-9]*" min="1" max="30" value="${T.nameMax}"></label></div>
       <label class="tg">要客人輸入寶寶生日日期（寫在餅乾上）<span class="sp"></span><input type="checkbox" id="e-td" ${T.dateOn ? 'checked' : ''}></label>
       <label class="tg" id="e-toptrow" ${T.nameOn || T.dateOn ? '' : 'hidden'}>客人可以不填（選填）<span class="sp"></span><input type="checkbox" id="e-topt" ${p.textOptional ? 'checked' : ''}></label>
       <p class="note" style="margin:6px 0 0">兩個都沒開＝這片不用填，直接加入購物車。有開的欄位客人一定要填（除非勾「可以不填」）。生日由客人自己輸入年、月、日，餅乾上會寫成民國格式，例如 115.03.23。</p></div>`; };
@@ -754,7 +765,7 @@
   // a small question sheet: LINE's in-app browser does not always support prompt()
   const askSheet = (title, { value = '', number = false, hint = '', max = 40, ok = '確定' } = {}) => new Promise((resolve) => {
     const { el, close } = NTC.sheet(`<h2>${esc(title)}</h2>${hint ? `<p class="note" style="margin:0 0 10px">${esc(hint)}</p>` : ''}
-      <form><label class="field"><input id="ask-v" ${number ? 'type="number" inputmode="numeric" min="1"' : `maxlength="${max}"`} value="${esc(value)}" autocomplete="off"></label><button class="btn block">${esc(ok)}</button></form>`);
+      <form><label class="field"><input id="ask-v" ${number ? 'type="text" inputmode="numeric" pattern="[0-9]*" min="1"' : `maxlength="${max}"`} value="${esc(value)}" autocomplete="off"></label><button class="btn block">${esc(ok)}</button></form>`);
     let done = false; const fin = (v) => { if (done) return; done = true; resolve(v); close(); };
     el.querySelector('form').onsubmit = (e) => { e.preventDefault(); fin(el.querySelector('#ask-v').value.trim()); };
     el.querySelector('.close').addEventListener('click', () => fin(null));
@@ -928,7 +939,6 @@
         r.querySelector('.o-name').oninput = (e) => { o.name = e.target.value; r.classList.remove('bad'); };
         const pi = r.querySelector('.o-price'); // 只收數字（全形也可以）；點一下就全選，直接打新的價格，不用先把舊的刪掉
         pi.oninput = () => { const v = pi.value.replace(/[０-９]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 65248)).replace(/\D/g, '').replace(/^0+/, '').slice(0, 6); if (v !== pi.value) pi.value = v; o.price = v === '' ? '' : +v; o.priceAuto = false; r.classList.remove('bad'); };
-        pi.onfocus = () => setTimeout(() => { try { if (document.activeElement === pi) pi.setSelectionRange(0, pi.value.length); } catch (e) { /* 這個瀏覽器不能選 */ } }, 0);
         r.querySelector('.o-on input').onchange = (e) => { o.active = e.target.checked; r.classList.toggle('off', !o.active); q1('#ed-cnt').textContent = `${st.opts.length} 款・${st.opts.filter((y) => y.active).length} 款上架`; paintBar(); };
         r.querySelector('.o-ph input').onchange = async (e) => { const f = e.target.files[0]; e.target.value = ''; if (!f) return;
           try {
@@ -1386,7 +1396,7 @@
       <label class="field"><span>名稱</span><input id="e-name" value="${esc(p.name || '')}" maxlength="40"></label>
       ${p.category !== 'canele' && p.category !== 'cookie' ? `<label class="field"><span>分類</span><select id="e-cat">${catOptions(p.category)}</select></label>` : ''}
       ${p.category === 'cookie' ? `<label class="field"><span>放在哪個商品（系列）</span><select id="e-series">${!p.isNew && !(settings?.cookie?.series || []).some((x) => x.id === p.series) ? '<option value="">請選一個商品…</option>' : ''}${(settings?.cookie?.series || []).map((x) => `<option value="${esc(x.id)}" ${x.id === p.series ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select></label>` : ''}
-      <div class="grid2"><label class="field"><span>${p.category === 'canele' ? '單一口味禮盒價格（每盒 6 顆）' : p.category === 'cookie' ? '每片價格' : '價格'}</span><input id="e-price" type="number" inputmode="numeric" value="${esc(p.price || '')}"></label>
+      <div class="grid2"><label class="field"><span>${p.category === 'canele' ? '單一口味禮盒價格（每盒 6 顆）' : p.category === 'cookie' ? '每片價格' : '價格'}</span><input id="e-price" type="text" inputmode="numeric" pattern="[0-9]*" value="${esc(p.price || '')}"></label>
         <label class="field"><span>單位</span>${p.category === 'meringue' ? `<select id="e-unit">${[...new Set(['罐', '包', p.unit].filter(Boolean))].map(u => `<option value="${esc(u)}" ${u === p.unit ? 'selected' : ''}>${esc(u === '罐' ? `${packs().jar.name}（罐）` : u === '包' ? `${packs().bag.name}（包）` : u)}</option>`).join('')}</select>` : `<input id="e-unit" value="${esc(p.unit || '')}" maxlength="4">`}</label></div>
       ${p.category === 'cookie' ? askHtml(p)
     : `<label class="field"><span>說明（選填，顯示在加入購物車的視窗）</span><textarea id="e-desc" maxlength="300">${esc(p.desc || '')}</textarea></label>`}
@@ -1447,9 +1457,9 @@
     const liffInvite = NTC_CONFIG.liffId ? `https://liff.line.me/${NTC_CONFIG.liffId}/admin.html?invite=${s.adminInvite}` : '';
     app.innerHTML = `
       <section class="panel"><h2>接單日期</h2>
-        <div class="grid2"><label class="field"><span>最早可預約：今天＋幾天</span><input id="s-lead" type="number" min="0" value="${s.leadDays}"></label>
-          <label class="field"><span>最晚可預約：今天＋幾天</span><input id="s-max" type="number" min="1" value="${s.maxDays}"></label></div>
-        <label class="field"><span>每天最多接幾筆訂單（0＝不限）</span><input id="s-perday" type="number" min="0" value="${s.maxOrdersPerDay}"></label>
+        <div class="grid2"><label class="field"><span>最早可預約：今天＋幾天</span><input id="s-lead" type="text" inputmode="numeric" pattern="[0-9]*" min="0" value="${s.leadDays}"></label>
+          <label class="field"><span>最晚可預約：今天＋幾天</span><input id="s-max" type="text" inputmode="numeric" pattern="[0-9]*" min="1" value="${s.maxDays}"></label></div>
+        <label class="field"><span>每天最多接幾筆訂單（0＝不限）</span><input id="s-perday" type="text" inputmode="numeric" pattern="[0-9]*" min="0" value="${s.maxOrdersPerDay}"></label>
         <p style="font-weight:700;margin:0 0 6px;font-size:13px;color:var(--ink2)">每週公休</p>
         <div class="chips" id="s-week" style="margin-bottom:12px">${'日一二三四五六'.split('').map((d, i) => `<button type="button" class="chip ${s.closedWeekdays.includes(i) ? 'on' : ''}" data-d="${i}">週${d}</button>`).join('')}</div>
         <p style="font-weight:700;margin:0 0 6px;font-size:13px;color:var(--ink2)">不接單的日期</p>
@@ -1459,13 +1469,13 @@
         <label class="field"><span>日期下面的說明（出貨時間、急件費）</span><textarea id="s-datenote" maxlength="200">${esc(s.dateNote || '')}</textarea></label></section>
       <section class="panel"><h2>運費</h2>
         <p style="font-weight:700;margin:0 0 6px;font-size:13px;color:var(--ink2)">❄️ 可麗露・冷凍宅配（依每件包裹的盒數）</p>
-        <div id="s-tiers">${s.shipping.frozen.tiers.map((t, i) => `<div class="grid2" data-i="${i}"><label class="field"><span>${i === 0 ? '1' : s.shipping.frozen.tiers[i - 1].upTo + 1} 盒 ～ 幾盒</span><input class="tu" type="number" min="1" value="${t.upTo}"></label><label class="field"><span>運費</span><input class="tf" type="number" min="0" value="${t.fee}"></label></div>`).join('')}</div>
-        <label class="field"><span>一件包裹最多裝幾盒（超過會自動拆成多件、分別計運費）</span><input id="s-maxbox" type="number" min="1" value="${s.shipping.frozen.maxPerParcel}"></label>
+        <div id="s-tiers">${s.shipping.frozen.tiers.map((t, i) => `<div class="grid2" data-i="${i}"><label class="field"><span>${i === 0 ? '1' : s.shipping.frozen.tiers[i - 1].upTo + 1} 盒 ～ 幾盒</span><input class="tu" type="text" inputmode="numeric" pattern="[0-9]*" min="1" value="${t.upTo}"></label><label class="field"><span>運費</span><input class="tf" type="text" inputmode="numeric" pattern="[0-9]*" min="0" value="${t.fee}"></label></div>`).join('')}</div>
+        <label class="field"><span>一件包裹最多裝幾盒（超過會自動拆成多件、分別計運費）</span><input id="s-maxbox" type="text" inputmode="numeric" pattern="[0-9]*" min="1" value="${s.shipping.frozen.maxPerParcel}"></label>
         <p style="font-weight:700;margin:6px 0 6px;font-size:13px;color:var(--ink2)">🍬 馬林糖一口酥・常溫宅配（依整張訂單的罐數）</p>
-        <div id="s-atiers">${ambT.map((t, i) => `<div class="grid2" data-i="${i}"><label class="field"><span>${i === 0 ? '1' : ambT[i - 1].upTo + 1} 罐 ～ 幾罐</span><input class="tu" type="number" min="1" value="${t.upTo}"></label><label class="field"><span>運費</span><input class="tf" type="number" min="0" value="${t.fee}"></label></div>`).join('')}</div>
+        <div id="s-atiers">${ambT.map((t, i) => `<div class="grid2" data-i="${i}"><label class="field"><span>${i === 0 ? '1' : ambT[i - 1].upTo + 1} 罐 ～ 幾罐</span><input class="tu" type="text" inputmode="numeric" pattern="[0-9]*" min="1" value="${t.upTo}"></label><label class="field"><span>運費</span><input class="tf" type="text" inputmode="numeric" pattern="[0-9]*" min="0" value="${t.fee}"></label></div>`).join('')}</div>
         <div class="row" style="gap:8px;margin-bottom:6px"><button class="btn ghost small" id="s-atadd" type="button">＋ 加一級</button><button class="btn ghost small" id="s-atrm" type="button">－ 刪最後一級</button></div>
         <p class="note" style="margin:0 0 12px">最後一級的罐數填 999＝「幾罐以上」都是這個運費。馬林糖和造型餅乾一起訂時會裝同一箱，運費算「造型餅乾運費」的最高一級。</p>
-        <label class="field"><span>滿多少免運（0＝不免運）</span><input id="s-free" type="number" min="0" value="${s.freeShippingOver}"></label></section>
+        <label class="field"><span>滿多少免運（0＝不免運）</span><input id="s-free" type="text" inputmode="numeric" pattern="[0-9]*" min="0" value="${s.freeShippingOver}"></label></section>
       <section class="panel"><h2>付款方式</h2>
         <label class="tg red" style="display:flex;margin-bottom:6px"><b>暫停接單</b>${s.pauseOrders ? '<span class="flag">開著：客人只能看，不能下單</span>' : '<span class="flag ok">關閉：客人可以下單</span>'}<span class="sp"></span><input type="checkbox" id="s-pause" ${s.pauseOrders ? 'checked' : ''}></label>
         <p class="note" style="margin:0 0 12px">開著時客人的購物車只會顯示「目前暫停接單」（可以搭配下面的「公告」寫原因，例如「12/24–12/26 休息」）。管理員不受影響，可以照常測試下單。</p>
@@ -1476,15 +1486,15 @@
         <label class="tg" style="display:flex;margin-bottom:12px">銀行轉帳 ${b.account ? '' : '<span class="flag">要先填下面的帳號</span>'}<span class="sp"></span><input type="checkbox" id="s-p-tr" ${s.payments.transfer ? 'checked' : ''}></label>
         <div class="grid2"><label class="field"><span>銀行名稱</span><input id="s-bname" value="${esc(b.name)}" placeholder="例如：國泰世華"></label><label class="field"><span>銀行代碼</span><input id="s-bcode" value="${esc(b.code)}" placeholder="例如：013" inputmode="numeric"></label></div>
         <label class="field"><span>帳號</span><input id="s-bacc" value="${esc(b.account)}" inputmode="numeric"></label>
-        <div class="grid2"><label class="field"><span>戶名（選填）</span><input id="s-bholder" value="${esc(b.holder)}"></label><label class="field"><span>轉帳期限（天）</span><input id="s-tdays" type="number" min="1" value="${s.transferDays}"></label></div></section>
+        <div class="grid2"><label class="field"><span>戶名（選填）</span><input id="s-bholder" value="${esc(b.holder)}"></label><label class="field"><span>轉帳期限（天）</span><input id="s-tdays" type="text" inputmode="numeric" pattern="[0-9]*" min="1" value="${s.transferDays}"></label></div></section>
       <section class="panel"><h2>可麗露禮盒規則</h2>
-        <div class="grid2"><label class="field"><span>綜合口味禮盒價格</span><input id="s-aprice" type="number" value="${c.assortedPrice}"></label><label class="field"><span>單一口味最少幾盒</span><input id="s-smin" type="number" min="1" value="${c.singleMinBoxes}"></label></div>
-        ${c.modes.map((m, i) => `<label class="field"><span>任選 ${m.flavors} 種（每種 ${m.each} 顆）最少幾盒</span><input class="s-mode" data-i="${i}" type="number" min="1" value="${m.minBoxes}"></label>`).join('')}</section>
+        <div class="grid2"><label class="field"><span>綜合口味禮盒價格</span><input id="s-aprice" type="text" inputmode="numeric" pattern="[0-9]*" value="${c.assortedPrice}"></label><label class="field"><span>單一口味最少幾盒</span><input id="s-smin" type="text" inputmode="numeric" pattern="[0-9]*" min="1" value="${c.singleMinBoxes}"></label></div>
+        ${c.modes.map((m, i) => `<label class="field"><span>任選 ${m.flavors} 種（每種 ${m.each} 顆）最少幾盒</span><input class="s-mode" data-i="${i}" type="text" inputmode="numeric" pattern="[0-9]*" min="1" value="${m.minBoxes}"></label>`).join('')}</section>
       <section class="panel"><h2>造型餅乾規則</h2>
-        <label class="field"><span>最少幾片起訂（整張訂單的餅乾加起來，可跨系列）</span><input id="s-cmin" type="number" min="1" value="${s.cookie.minPieces}"></label>
+        <label class="field"><span>最少幾片起訂（整張訂單的餅乾加起來，可跨系列）</span><input id="s-cmin" type="text" inputmode="numeric" pattern="[0-9]*" min="1" value="${s.cookie.minPieces}"></label>
         <label class="field"><span>運費名稱</span><input id="s-clabel" value="${esc(s.cookie.shipping.label)}" maxlength="30"></label>
         <p style="font-weight:700;margin:0 0 6px;font-size:13px;color:var(--ink2)">🍪 運費（依整張訂單的片數）</p>
-        <div id="s-ctiers">${s.cookie.shipping.tiers.map((t, i) => `<div class="grid2" data-i="${i}"><label class="field"><span>${i === 0 ? '1' : s.cookie.shipping.tiers[i - 1].upTo + 1} 片 ～ 幾片</span><input class="tu" type="number" min="1" value="${t.upTo}"></label><label class="field"><span>運費</span><input class="tf" type="number" min="0" value="${t.fee}"></label></div>`).join('')}</div>
+        <div id="s-ctiers">${s.cookie.shipping.tiers.map((t, i) => `<div class="grid2" data-i="${i}"><label class="field"><span>${i === 0 ? '1' : s.cookie.shipping.tiers[i - 1].upTo + 1} 片 ～ 幾片</span><input class="tu" type="text" inputmode="numeric" pattern="[0-9]*" min="1" value="${t.upTo}"></label><label class="field"><span>運費</span><input class="tf" type="text" inputmode="numeric" pattern="[0-9]*" min="0" value="${t.fee}"></label></div>`).join('')}</div>
         <div class="row" style="gap:8px;margin-bottom:6px"><button class="btn ghost small" id="s-ctadd" type="button">＋ 加一級</button><button class="btn ghost small" id="s-ctrm" type="button">－ 刪最後一級</button></div>
         <p class="note" style="margin:0">最後一級的片數填大一點（例如 999）＝「幾片以上」都是這個運費。同一張訂單有馬林糖一口酥時，會跟餅乾裝同一箱寄，運費一律算這裡的最高一級。</p></section>
       <section class="panel"><h2>公告</h2><label class="field"><span>顯示在購物車最上面（選填）</span><textarea id="s-notice" maxlength="300" placeholder="例如：12/24–12/26 聖誕檔期已滿">${esc(s.notice)}</textarea></label></section>
@@ -1538,7 +1548,7 @@
       pauseOrders: $('#s-pause').checked,
     });
     $('#s-ctadd').onclick = () => { const box = $('#s-ctiers'); const n = box.children.length; const last = box.lastElementChild; const from = last ? +last.querySelector('.tu').value + 1 : 1;
-      box.insertAdjacentHTML('beforeend', `<div class="grid2" data-i="${n}"><label class="field"><span>${from} 片 ～ 幾片</span><input class="tu" type="number" min="1" value="${from + 5}"></label><label class="field"><span>運費</span><input class="tf" type="number" min="0" value="${last ? last.querySelector('.tf').value : 0}"></label></div>`); };
+      box.insertAdjacentHTML('beforeend', `<div class="grid2" data-i="${n}"><label class="field"><span>${from} 片 ～ 幾片</span><input class="tu" type="text" inputmode="numeric" pattern="[0-9]*" min="1" value="${from + 5}"></label><label class="field"><span>運費</span><input class="tf" type="text" inputmode="numeric" pattern="[0-9]*" min="0" value="${last ? last.querySelector('.tf').value : 0}"></label></div>`); };
     $('#s-ctrm').onclick = () => { const box = $('#s-ctiers'); if (box.children.length > 1) box.lastElementChild.remove(); else NTC.toast('至少要留一級'); };
     // 購物須知: the text that is written automatically comes from what customers really get (/catalog), so it always matches the saved settings
     NTC.api('/catalog').then((c) => { NTC.shopNotes(c.settings).forEach((r) => { const el = app.querySelector(`.sn-auto[data-k="${r.key}"]`); if (el) el.textContent = `自動寫好的：${r.auto}`; }); })
@@ -1550,7 +1560,7 @@
       const relabel = () => [...box.children].forEach((r, i, all) => { const sp = r.querySelector('label span'); if (sp) sp.textContent = `${i === 0 ? 1 : (+all[i - 1].querySelector('.tu').value || 0) + 1} ${u} ～ 幾${u}`; });
       box.addEventListener('input', relabel); new MutationObserver(relabel).observe(box, { childList: true }); });
     $('#s-atadd').onclick = () => { const box = $('#s-atiers'); const last = box.lastElementChild; const from = last ? +last.querySelector('.tu').value + 1 : 1;
-      box.insertAdjacentHTML('beforeend', `<div class="grid2" data-i="${box.children.length}"><label class="field"><span>${from} 罐 ～ 幾罐</span><input class="tu" type="number" min="1" value="999"></label><label class="field"><span>運費</span><input class="tf" type="number" min="0" value="${last ? last.querySelector('.tf').value : 0}"></label></div>`); };
+      box.insertAdjacentHTML('beforeend', `<div class="grid2" data-i="${box.children.length}"><label class="field"><span>${from} 罐 ～ 幾罐</span><input class="tu" type="text" inputmode="numeric" pattern="[0-9]*" min="1" value="999"></label><label class="field"><span>運費</span><input class="tf" type="text" inputmode="numeric" pattern="[0-9]*" min="0" value="${last ? last.querySelector('.tf').value : 0}"></label></div>`); };
     $('#s-atrm').onclick = () => { const box = $('#s-atiers'); if (box.children.length > 1) box.lastElementChild.remove(); else NTC.toast('至少要留一級'); };
     $('#s-logout').onclick = async () => { if (confirm('登出這支裝置的後台？')) { NTC.setAdminToken(''); await NTC.logout(); location.replace('index.html'); } };
     NTC.api('/admin/requests').then(({ requests }) => {
