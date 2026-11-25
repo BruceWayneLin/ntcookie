@@ -259,7 +259,7 @@ html.sheet-on body { display: block !important; padding: 0 !important; }
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
 /* Keep the owner's illustration centered while the backdrop stays still. */
 :root {
-  --loading-art: url("../assets/loading-canele.webp");
+  --loading-art: url("../assets/loading-canele-clear.webp");
   --loading-art-width: 72px;
 }
 html:is(.page-opening, .vchk, .liffgo), html:has(main [aria-busy="true"], main .spinner) {
@@ -294,7 +294,6 @@ html::after, .loading-cover .spinner {
   width: var(--loading-art-width);
   height: var(--loading-art-width);
   background: var(--loading-art) center / contain no-repeat;
-  mix-blend-mode: multiply;
 }
 @keyframes loading-spin { to { transform: rotate(1turn); } }
 @media (prefers-reduced-motion: no-preference) {
