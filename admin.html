@@ -215,6 +215,8 @@
   .eo .o-del { flex: none; width: 34px; height: 36px; padding: 0; border: 0; border-radius: 10px; background: none; color: #a0705e; cursor: pointer; display: flex; align-items: center; justify-content: center; }
   .eo .o-more { flex: none; width: 36px; height: 36px; margin-left: auto; border: 0; border-radius: 999px; background: #f1e1d8; font: 900 17px/1 var(--sans); color: var(--ink); cursor: pointer; }
   .eo .o-tags { font: 600 12px/1.35 var(--sans); color: #9a4f08; }
+  .eo .o-ph.new { box-shadow: 0 0 0 2.5px #e08a1e; }
+  .eo .o-rv { align-self: flex-start; padding: 6px 10px; border: 1.5px solid #e9b877; border-radius: 999px; background: #fff3e0; font: 700 13px var(--sans); color: #9a4f08; cursor: pointer; }
   .eo .o-on { flex: none; flex-direction: column; gap: 4px; font-size: 12px; }
   .sorow { display: flex; align-items: center; gap: 8px; padding: 6px 4px; border-bottom: 1px dashed #ead7cc; border-radius: 8px; }
   .sorow.hl { background: #fff3e0; }
@@ -803,7 +805,7 @@
     const box = document.createElement('div'); box.className = 'ed'; box.setAttribute('role', 'dialog'); box.setAttribute('aria-modal', 'true'); box.setAttribute('aria-label', isNew ? '新增商品' : '編輯商品');
     box.innerHTML = `<header class="ed-top"><button type="button" class="ed-x">‹ 返回</button><h2>${isNew ? '新增商品' : '編輯商品'}</h2>${isNew ? '<span class="ed-x" style="visibility:hidden">‹ 返回</span>' : `<a class="ed-x ed-pv" href="cookies.html?s=${esc(sid)}&preview=1" target="_blank" rel="noopener">預覽 ›</a>`}</header>
       <div class="ed-body">
-        <section class="panel"><h3>商品圖片 <small>第一張是封面・橫式 4:3 滿版顯示・最多 9 張・點照片可以換順序${isNew ? '' : '・換了馬上生效'}</small></h3><div class="phs" id="ed-phs"></div></section>
+        <section class="panel"><h3>商品圖片 <small>第一張是封面・橫式 4:3 滿版顯示・最多 9 張・點照片可以換順序${isNew ? '' : '・換了要按「更新」才會存'}</small></h3><div class="phs" id="ed-phs"></div>${isNew ? '' : '<button type="button" class="btn ghost small" id="ed-phs-rv" hidden style="margin-top:10px">↺ 照片換回原本的</button>'}</section>
         <section class="panel">
           <label class="field"><span>商品名稱 <b class="req">*</b></span><input id="ed-name" maxlength="30" placeholder="例如：佩佩豬系列" value="${esc(st.name)}"></label>
           <label class="field" style="margin-bottom:0"><span>商品描述（選填，客人打開這個商品時看得到）</span><textarea id="ed-desc" rows="4" maxlength="1000" placeholder="例如：每片約 8–10 公分，名字牌可以寫寶寶名字和生日">${esc(st.desc)}</textarea></label>
@@ -813,7 +815,7 @@
           <div class="opt-tools"><button type="button" class="btn ghost small" id="ed-order">調整順序</button><button type="button" class="btn ghost small" id="ed-allprice">全部同一個價格</button><button type="button" class="btn ghost small" data-all="on">全部上架</button><button type="button" class="btn ghost small" data-all="off">全部下架</button></div>
           <div id="ed-opts"></div>
           <button type="button" class="btn ghost block" id="ed-add" style="margin-top:12px">＋ 新增選項</button>
-          <p class="note" style="margin:10px 0 0">一個選項＝一片餅乾，可以各自放照片和價格。有「上架」的選項客人才看得到；至少一片上架，這個商品才會出現在網站上。${isNew ? '' : '<br><b>照片一換就會存好，客人馬上看得到</b>；名稱、價格改完要按下面的「更新」。'}</p></section>
+          <p class="note" style="margin:10px 0 0">一個選項＝一片餅乾，可以各自放照片和價格。有「上架」的選項客人才看得到；至少一片上架，這個商品才會出現在網站上。${isNew ? '' : '<br>照片、名稱、價格改完都要按下面的「<b>更新</b>」客人才看得到；照片換了不滿意，按「換回原本的」。'}</p></section>
         <details class="panel ed-more"><summary>更多設定</summary>
           <label class="field"><span>標題下的小字・第一行（單獨打開這個系列時顯示）</span><input id="ed-l1" maxlength="40" value="${esc(st.lines[0] || '')}"></label>
           <label class="field"><span>標題下的小字・第二行</span><input id="ed-l2" maxlength="40" value="${esc(st.lines[1] || '')}"></label>
@@ -841,27 +843,15 @@
     const keep = () => { collect(); if (snap() !== start()) { draftSet({ sid, isNew, at: Date.now(), name0: x?.name || '', st, base: start() }); wrote = true; } else if (wrote) draftSet(null); };
     const sched = () => { clearTimeout(dT); dT = setTimeout(keep, 400); };
     const onHide = () => { if (document.visibilityState === 'hidden') keep(); };
-    // ---- 照片一換就存
-    let photoSaves = 0; // 這次編輯裡直接存好的照片數：關掉編輯頁時列表要重畫（封面縮圖才會是新的）
+    // ---- 照片：換了先放著，按「更新」才存
+    let photoSaves = 0; // 這次編輯裡直接存好的改動（搬一片到別的商品）：關掉編輯頁時列表要重畫
     const word = () => (isNew ? '儲存' : '更新');
-    const leaveMsg = () => (photoSaves ? '還沒按「更新」，確定離開？剛剛改的名稱、價格不會存（照片已經存好了）。' : '還沒按「更新」，確定離開？剛剛改的不會存。');
-    const photoFailed = () => stopSheet('照片還沒換到前台', `照片已經放在這一頁了，但剛剛連線有問題，還沒存起來。\n\n請按下面的「${word()}」，就會存好。`);
-    const optPhotoNow = async (o, extra = '') => { // 一片的照片
-      const p = o.id ? products.find((y) => y.id === o.id) : null;
-      if (!p) { NTC.toast(`照片放好了。這是新的選項，按「${word()}」後客人才看得到。${extra}`, 5200); return; }
-      NTC.loading(true, '儲存照片…');
-      try { await NTC.api(`/admin/products/${o.id}`, { method: 'PUT', body: { photo: o.photo || '' } }); } catch (e) { NTC.loading(false); photoFailed(); return; }
-      p.photo = o.photo || ''; const b = base.opts.find((y) => y.id === o.id); if (b) b.photo = o.photo || ''; photoSaves++; keep();
-      NTC.toast(`${p.active ? '照片換好了，客人現在就看得到。' : '照片換好了（這一片沒有上架，客人看不到）。'}${extra}`, extra ? 5200 : 3200);
-    };
-    const phsNow = async (msg) => { // 商品圖片：加、刪、換順序
-      if (isNew) return;
-      NTC.loading(true, '儲存照片…');
-      try { const r = await NTC.api(`/admin/cookie-series/${sid}`, { method: 'PUT', body: { series: { photos: st.photos, photo: st.photos[0] || '' }, products: [], remove: [] } }); settings = r.settings; products = r.products; }
-      catch (e) { photoFailed(); return; } finally { NTC.loading(false); }
-      base.photos = [...st.photos]; photoSaves++; keep();
-      NTC.toast(products.some((p) => p.category === 'cookie' && p.series === sid && p.active) ? `${msg}，客人現在就看得到。` : `${msg}（這個商品還沒有上架，客人看不到）。`, 3600);
-    };
+    const leaveMsg = () => '還沒按「更新」，確定離開？剛剛改的（包括換的照片）都不會存。';
+    // 照片換了先放在這一頁，按「更新」才存（店主：照片沒有比較好要能換回去）；還沒存的可以「換回原本的」
+    const optPhoto0 = (o) => (o.id ? base.opts.find((y) => y.id === o.id)?.photo || '' : null); // null＝新的選項，沒有原本的
+    const optPhotoNow = (o) => { keep(); NTC.toast(`照片放好了，還沒存：按「${word()}」客人才看得到。不滿意可以按「換回原本的」。`, 4200); };
+    const phsChanged = () => !isNew && JSON.stringify(st.photos) !== JSON.stringify(base.photos);
+    const phsNow = (msg) => { if (isNew) return; keep(); NTC.toast(`${msg}，還沒存：按「${word()}」客人才看得到。`, 3600); };
     box.addEventListener('input', sched); box.addEventListener('change', sched); document.addEventListener('visibilitychange', onHide); window.addEventListener('pagehide', keep);
     const pv = q1('.ed-pv'); // 預覽看到的是「已經存好」的樣子：有沒存的就先擋下來（在 LINE 裡按預覽會離開這一頁）
     if (pv) pv.addEventListener('click', (e) => { if (!dirty()) return; e.preventDefault(); stopSheet('還沒有存', '預覽看到的是「已經存好」的樣子。\n\n請先按「更新」，再按預覽。'); });
@@ -876,6 +866,7 @@
 
     // --- 商品圖片
     const paintPhs = () => {
+      const rv = q1('#ed-phs-rv'); if (rv) rv.hidden = !phsChanged();
       q1('#ed-phs').innerHTML = st.photos.map((u, i) => `<button type="button" class="ph" data-i="${i}" aria-label="第 ${i + 1} 張照片"><img src="${esc(asset(u))}" alt="">${i ? '' : '<span class="cv">封面</span>'}</button>`).join('')
         + (st.photos.length < 9 ? '<label class="addph"><b>＋</b>加入照片<input type="file" accept="image/*" multiple hidden></label>' : '');
       sched();
@@ -886,7 +877,7 @@
           <div class="grid2" style="gap:8px">${i ? '<button type="button" class="btn ghost" data-a="cover">設為封面</button><button type="button" class="btn ghost" data-a="left">往前移</button>' : ''}${i < st.photos.length - 1 ? '<button type="button" class="btn ghost" data-a="right">往後移</button>' : ''}<button type="button" class="btn ghost" data-a="del" style="color:var(--red)">刪除這張</button></div>`);
         el.querySelectorAll('[data-a]').forEach((a) => (a.onclick = async () => {
           const p = st.photos; const k = a.dataset.a;
-          if (k === 'del' && !isNew && !confirm(p.length > 1 ? '刪除這張照片？客人馬上就看不到這張了。' : '刪除這張照片？這個商品就沒有封面照片了。')) return;
+          if (k === 'del' && !isNew && !confirm(p.length > 1 ? '刪除這張照片？（按「更新」才會真的刪掉）' : '刪除這張照片？這個商品就沒有封面照片了。')) return;
           if (k === 'cover') p.unshift(p.splice(i, 1)[0]); if (k === 'left') [p[i - 1], p[i]] = [p[i], p[i - 1]]; if (k === 'right') [p[i + 1], p[i]] = [p[i], p[i + 1]]; if (k === 'del') p.splice(i, 1);
           close(); paintPhs(); await phsNow(k === 'del' ? '照片刪掉了' : k === 'cover' ? '封面換好了' : '順序換好了');
         }));
@@ -923,12 +914,12 @@
       };
     };
     // --- 選項（每一片）
-    const optRow = (o, i) => { const tags = [o.soldOut ? '售完' : '', o.textLabel ? `客人要填：${o.textLabel}${o.textOptional ? '（選填）' : ''}` : ''].filter(Boolean).join('・');
+    const optRow = (o, i) => { const p0 = optPhoto0(o); const phNew = p0 !== null && (o.photo || '') !== p0; const tags = [o.soldOut ? '售完' : '', o.textLabel ? `客人要填：${o.textLabel}${o.textOptional ? '（選填）' : ''}` : ''].filter(Boolean).join('・');
       return `<div class="eo${o.active ? '' : ' off'}" data-i="${i}">
-        <label class="o-ph${o.photo ? ' has' : ''}" aria-label="選項照片">${o.photo ? `<img src="${esc(asset(o.photo))}" alt="" loading="lazy">` : '＋照片'}<input type="file" accept="image/*" hidden></label>
+        <label class="o-ph${o.photo ? ' has' : ''}${phNew ? ' new' : ''}" aria-label="選項照片">${o.photo ? `<img src="${esc(asset(o.photo))}" alt="" loading="lazy">` : '＋照片'}<input type="file" accept="image/*" hidden></label>
         <div class="o-mid"><div class="o-line"><input class="o-name" maxlength="40" placeholder="名稱，例如：豬爸爸" value="${esc(o.name || '')}" aria-label="選項名稱"><button type="button" class="o-del" aria-label="刪除這個選項"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg></button></div>
           <div class="o-line"><label class="o-pr"><span>NT$</span><input class="o-price" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off" enterkeyhint="done" placeholder="價格" value="${esc(o.price || '')}" aria-label="價格"></label><button type="button" class="o-more" aria-label="更多設定">⋯</button></div>
-          ${tags ? `<div class="o-tags">${esc(tags)}</div>` : ''}</div>
+          ${tags ? `<div class="o-tags">${esc(tags)}</div>` : ''}${phNew ? '<button type="button" class="o-rv">↺ 換回原本的照片</button>' : ''}</div>
         <label class="tg o-on">上架<input type="checkbox" ${o.active ? 'checked' : ''}></label></div>`; };
     const paintOpts = () => {
       q1('#ed-opts').innerHTML = st.opts.map(optRow).join('') || '<p class="note" style="margin:4px 0 0">還沒有選項。按「＋ 新增選項」加第一片。</p>';
@@ -946,9 +937,10 @@
             NTC.loading(true, '上傳照片…');
             o.photo = (await NTC.api('/admin/images', { method: 'POST', body: { dataUrl } })).url;
             paintOpts();
-            await optPhotoNow(o, '照片已更新。');
+            optPhotoNow(o);
           } catch (err) { NTC.toast(err.message || '照片上傳失敗', 3500); }
           finally { NTC.loading(false); } };
+        const rvb = r.querySelector('.o-rv'); if (rvb) rvb.onclick = () => { o.photo = optPhoto0(o); paintOpts(); keep(); NTC.toast('換回原本的照片了'); };
         r.querySelector('.o-more').onclick = () => optMore(i);
         r.querySelector('.o-del').onclick = () => delOpt(i);
       });
@@ -1057,6 +1049,7 @@
       try { const r = await NTC.api(`/admin/cookie-series/${x.id}`, { method: 'DELETE' }); settings = r.settings; products = r.products; shut(); renderProducts(); window.scrollTo(0, 0); NTC.toast(`「${x.name}」刪掉了。刪錯的話，按最上面的「復原」`, 5200); }
       catch (e) { NTC.toast(e.message, 3500); } finally { NTC.loading(false); }
     };
+    const rvAll = q1('#ed-phs-rv'); if (rvAll) rvAll.onclick = () => { st.photos = [...base.photos]; paintPhs(); keep(); NTC.toast('商品圖片換回原本的了'); };
     paintPhs(); paintGs(); paintOpts();
     if (isNew) setTimeout(() => q1('#ed-name').focus(), 50);
   }
