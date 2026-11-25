@@ -46,7 +46,7 @@
 </main>
 <div class="cm-bar" id="bar" hidden></div>
 <dialog id="box-quantity" class="cm-quantity" aria-labelledby="quantity-title"></dialog>
-<script src="js/config.js?v=1125d"></script>
+<script src="js/config.js?v=1125e"></script>
 <script src="js/app.js?v=1124c"></script>
 <script src="js/shop.js?v=1123k"></script>
 <script>
@@ -81,7 +81,7 @@
   function photo(product) {
     const filename = PHOTO[product.id.replace(/^canele-/, '')];
     const custom = product.photo && !product.photo.startsWith('assets/v2/01-canele/photo-');
-    return custom || !filename ? product.photo : `assets/v2/01-canele/photo-${filename}.webp?v=1125d`;
+    return custom || !filename ? product.photo : `assets/v2/01-canele/photo-${filename}.webp?v=1125e`;
   }
 
   function announce(message) {
