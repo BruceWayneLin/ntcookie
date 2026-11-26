@@ -216,6 +216,7 @@
   .eo .o-more { flex: none; width: 36px; height: 36px; margin-left: auto; border: 0; border-radius: 999px; background: #f1e1d8; font: 900 17px/1 var(--sans); color: var(--ink); cursor: pointer; }
   .eo .o-tags { font: 600 12px/1.35 var(--sans); color: #9a4f08; }
   .eo .o-ph.new { box-shadow: 0 0 0 2.5px #e08a1e; }
+  #e-img.new { box-shadow: 0 0 0 3px #e08a1e; }
   .eo .o-rv { align-self: flex-start; padding: 6px 10px; border: 1.5px solid #e9b877; border-radius: 999px; background: #fff3e0; font: 700 13px var(--sans); color: #9a4f08; cursor: pointer; }
   .eo .o-on { flex: none; flex-direction: column; gap: 4px; font-size: 12px; }
   .sorow { display: flex; align-items: center; gap: 8px; padding: 6px 4px; border-bottom: 1px dashed #ead7cc; border-radius: 8px; }
@@ -1384,8 +1385,10 @@
   function editProduct(p) {
     const { el, close } = NTC.sheet(`
       <h2>${p.isNew ? '新增' : '編輯'}・${p.category === 'canele' ? '可麗露口味' : p.category === 'cookie' ? '造型餅乾' : esc(catOf(p.category)?.name || '馬林糖')}</h2>
-      <div class="row" style="margin:6px 0 12px"><img id="e-img" class="${p.category === 'cookie' ? 'cookie-product-preview' : ''}" src="${esc(asset(p.photo || p.card || 'assets/favicon.png'))}" style="width:96px;height:96px;border-radius:14px;object-fit:cover" alt="">
-        <label class="btn ghost small">換照片<input type="file" accept="image/*" id="e-file" hidden></label></div>
+      <div class="row" style="margin:6px 0 12px"><img id="e-img" class="${p.category === 'cookie' ? 'cookie-product-preview' : ''}" src="${esc(asset(p.photo || p.card || 'assets/favicon.png'))}" style="width:96px;height:96px;border-radius:14px;object-fit:cover;cursor:zoom-in" alt="點一下看大張">
+        <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-start"><label class="btn ghost small">換照片<input type="file" accept="image/*" id="e-file" hidden></label>
+        <button type="button" class="btn ghost small" id="e-rv" hidden>↺ 換回原本的照片</button></div></div>
+      <p class="note" id="e-phnote" hidden style="margin:-4px 0 12px;color:#9a4f08">新照片還沒存：點照片可以看大張，確定 OK 再按下面的「<b>${p.isNew ? '儲存' : '更新'}</b>」，客人才看得到。</p>
       <label class="field"><span>名稱</span><input id="e-name" value="${esc(p.name || '')}" maxlength="40"></label>
       ${p.category !== 'canele' && p.category !== 'cookie' ? `<label class="field"><span>分類</span><select id="e-cat">${catOptions(p.category)}</select></label>` : ''}
       ${p.category === 'cookie' ? `<label class="field"><span>放在哪個商品（系列）</span><select id="e-series">${!p.isNew && !(settings?.cookie?.series || []).some((x) => x.id === p.series) ? '<option value="">請選一個商品…</option>' : ''}${(settings?.cookie?.series || []).map((x) => `<option value="${esc(x.id)}" ${x.id === p.series ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select></label>` : ''}
@@ -1394,27 +1397,30 @@
       ${p.category === 'cookie' ? askHtml(p)
     : `<label class="field"><span>說明（選填，顯示在加入購物車的視窗）</span><textarea id="e-desc" maxlength="300">${esc(p.desc || '')}</textarea></label>`}
       <div class="row" style="gap:16px;margin-bottom:14px"><label class="tg">上架<input type="checkbox" id="e-active" ${p.active ? 'checked' : ''}></label><label class="tg red">售完<input type="checkbox" id="e-sold" ${p.soldOut ? 'checked' : ''}></label></div>
-      <button class="btn block" id="e-save">儲存</button>
+      <button class="btn block" id="e-save">${p.isNew ? '儲存' : '更新'}</button>
       ${p.isNew ? '' : `<button class="btn ghost block" id="e-del" style="margin-top:10px;color:var(--red)">${p.category === 'cookie' ? '刪除這一片' : '刪除這個商品'}</button>`}`);
     let photo = p.photo;
     const saveLabel = () => { if (p.isNew) el.querySelector('#e-save').textContent = el.querySelector('#e-active').checked ? '儲存並上架' : '儲存，先不上架'; }; // 新增時，按鈕直接寫按下去會怎樣
     el.querySelector('#e-active').addEventListener('change', saveLabel); saveLabel();
     if (p.category === 'cookie') askWire(el);
     wireCatSelect(el);
+    // 照片換了先放在這一頁看（點一下看大張），按「更新」才存；不滿意按「換回原本的照片」（店主 11-26：可麗露要跟餅乾一樣）
+    const photoMark = () => { const changed = !p.isNew && photo !== p.photo;
+      el.querySelector('#e-img').classList.toggle('new', !!(p.isNew ? photo : changed)); el.querySelector('#e-rv').hidden = !changed; el.querySelector('#e-phnote').hidden = !(p.isNew ? photo : changed); };
+    el.querySelector('#e-img').onclick = () => { const src = el.querySelector('#e-img').src; const { el: v } = NTC.sheet(`<h2>照片預覽</h2><img src="${esc(src)}" alt="" style="display:block;width:100%;max-height:70vh;object-fit:contain;border-radius:14px;background:#f3e4db">`); v.querySelector('img').onclick = () => v.querySelector('.close').click(); };
+    el.querySelector('#e-rv').onclick = () => { photo = p.photo; el.querySelector('#e-img').src = asset(p.photo || p.card || 'assets/favicon.png'); photoMark(); NTC.toast('換回原本的照片了'); };
+    const back = el.querySelector('.close'); // 換了照片沒按「更新」就要離開：先問
+    back.addEventListener('click', (e) => { if (photo !== p.photo && !confirm(`新照片還沒存，確定離開？（按「取消」留下來，再按「${p.isNew ? '儲存' : '更新'}」）`)) { e.stopImmediatePropagation(); e.preventDefault(); } }, true);
     el.querySelector('#e-file').onchange = async (e) => {
       const f = e.target.files[0]; e.target.value = ''; if (!f) return;
       try {
         const dataUrl = p.category === 'cookie' ? await NTC.cookiePhoto.prepare(f) : await shrink(f);
+        if (!dataUrl) return;
         NTC.loading(true, '上傳照片…');
-        el.querySelector('#e-img').src = dataUrl; photo = (await NTC.api('/admin/images', { method: 'POST', body: { dataUrl } })).url;
-        if (p.isNew) NTC.toast('照片放好了，按「儲存」後客人才看得到', 3600);
-        else { // 已經有的商品：照片一換就存，客人馬上看得到（名稱、價格還是按「儲存」）
-          try { const update = p.card ? { photo, card: null } : { photo };
-            await NTC.api(`/admin/products/${p.id}`, { method: 'PUT', body: update });
-            const y = products.find((z) => z.id === p.id); if (y) Object.assign(y, update); Object.assign(p, update); renderProducts();
-            NTC.toast(p.active ? '照片換好了，客人現在就看得到' : '照片換好了（這個商品沒有上架，客人看不到）', 3600); }
-          catch (e2) { NTC.toast('照片還沒存好（連線有問題），請按下面的「儲存」', 5200); } } }
-      catch (err) { NTC.toast(err.message); } finally { NTC.loading(false); }
+        const url = (await NTC.api('/admin/images', { method: 'POST', body: { dataUrl } })).url;
+        el.querySelector('#e-img').src = dataUrl; photo = url; photoMark();
+        NTC.toast(`照片放好了，還沒存：看過 OK 再按「${p.isNew ? '儲存' : '更新'}」客人才看得到`, 4200); }
+      catch (err) { NTC.toast(err.message || '照片上傳失敗', 3500); } finally { NTC.loading(false); }
     };
     el.querySelector('#e-save').onclick = async () => {
       const name = el.querySelector('#e-name').value.trim();
@@ -1430,7 +1436,7 @@
       if (photo !== p.photo) body.card = null; // a new photo replaces the designed card
       delete body.isNew;
       NTC.loading(true, '儲存中…');
-      try { const r = await NTC.api(`/admin/products/${id}`, { method: 'PUT', body }); const i = products.findIndex((x) => x.id === id); if (i >= 0) products[i] = r.product; else products.push(r.product); close(); const y = window.scrollY; renderProducts(); window.scrollTo(0, y); NTC.toast(!p.isNew ? (r.product.category !== p.category ? `已儲存，搬到「${catName(r.product.category)}」了` : '已儲存') : r.product.active ? `已儲存，「${r.product.name}」上架了，客人現在就看得到` : '已儲存（還沒上架，客人看不到）', p.isNew ? 3600 : 2200); }
+      try { const r = await NTC.api(`/admin/products/${id}`, { method: 'PUT', body }); const i = products.findIndex((x) => x.id === id); if (i >= 0) products[i] = r.product; else products.push(r.product); close(); const y = window.scrollY; renderProducts(); window.scrollTo(0, y); NTC.toast(!p.isNew ? (r.product.category !== p.category ? `已更新，搬到「${catName(r.product.category)}」了` : photo !== p.photo ? (r.product.active ? '已更新，新照片客人現在就看得到' : '已更新（這個商品沒有上架，客人看不到）') : '已更新') : r.product.active ? `已儲存，「${r.product.name}」上架了，客人現在就看得到` : '已儲存（還沒上架，客人看不到）', p.isNew ? 3600 : 2200); }
       catch (e) { NTC.toast(e.message, 3500); } finally { NTC.loading(false); }
     };
     const d = el.querySelector('#e-del');
