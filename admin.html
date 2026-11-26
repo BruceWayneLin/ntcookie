@@ -1443,7 +1443,8 @@
       <div class="row" style="margin:6px 0 12px"><span class="thumb${p.category === 'cookie' ? ' cookie-product-preview' : ''}" id="e-box" style="width:96px;height:96px;border-radius:14px;cursor:zoom-in"><img id="e-img" src="${esc(asset(p.photo || p.card || 'assets/favicon.png'))}" alt="點一下看大張" onload="this.classList.toggle('tall',this.naturalHeight>this.naturalWidth)"></span>
         <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-start"><label class="btn ghost small">換照片<input type="file" accept="image/*" id="e-file" hidden></label>
         <button type="button" class="btn ghost small" id="e-rv" hidden>↺ 換回原本的照片</button></div></div>
-      <p class="note" id="e-phnote" hidden style="margin:-4px 0 12px;color:#9a4f08">新照片還沒存：點照片可以看大張，確定 OK 再按下面的「<b>${p.isNew ? '儲存' : '更新'}</b>」，客人才看得到。</p>
+      <p class="note" id="e-phnote" hidden style="margin:-4px 0 12px;color:#9a4f08">新照片還沒存：點照片可以看大張，確定 OK 再按「<b>${p.isNew ? '儲存' : '確定更新'}</b>」，客人才看得到。</p>
+      ${p.isNew ? '' : '<button type="button" class="btn block" id="e-ok" hidden style="margin:0 0 14px">確定更新</button>'}
       <label class="field"><span>名稱</span><input id="e-name" value="${esc(p.name || '')}" maxlength="40"></label>
       ${p.category !== 'canele' && p.category !== 'cookie' ? `<label class="field"><span>分類</span><select id="e-cat">${catOptions(p.category)}</select></label>` : ''}
       ${p.category === 'cookie' ? `<label class="field"><span>放在哪個商品（系列）</span><select id="e-series">${!p.isNew && !(settings?.cookie?.series || []).some((x) => x.id === p.series) ? '<option value="">請選一個商品…</option>' : ''}${(settings?.cookie?.series || []).map((x) => `<option value="${esc(x.id)}" ${x.id === p.series ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select></label>` : ''}
@@ -1461,7 +1462,8 @@
     wireCatSelect(el);
     // 照片換了先放在這一頁看（點一下看大張），按「更新」才存；不滿意按「換回原本的照片」（店主 11-26：可麗露要跟餅乾一樣）
     const photoMark = () => { const changed = !p.isNew && photo !== p.photo;
-      el.querySelector('#e-box').classList.toggle('new', !!(p.isNew ? photo : changed)); el.querySelector('#e-rv').hidden = !changed; el.querySelector('#e-phnote').hidden = !(p.isNew ? photo : changed); };
+      el.querySelector('#e-box').classList.toggle('new', !!(p.isNew ? photo : changed)); el.querySelector('#e-rv').hidden = !changed; el.querySelector('#e-phnote').hidden = !(p.isNew ? photo : changed);
+      const ok = el.querySelector('#e-ok'); if (ok) ok.hidden = !changed; if (!p.isNew) el.querySelector('#e-save').textContent = changed ? '確定更新' : '更新'; };
     el.querySelector('#e-img').onclick = () => { const src = el.querySelector('#e-img').src; const { el: v } = NTC.sheet(`<h2>照片預覽</h2><img src="${esc(src)}" alt="" style="display:block;width:100%;max-height:70vh;object-fit:contain;border-radius:14px;background:#f3e4db">`); v.querySelector('img').onclick = () => v.querySelector('.close').click(); };
     el.querySelector('#e-rv').onclick = () => { photo = p.photo; el.querySelector('#e-img').src = asset(p.photo || p.card || 'assets/favicon.png'); photoMark(); NTC.toast('換回原本的照片了'); };
     const back = el.querySelector('.close'); // 換了照片沒按「更新」就要離開：先問
@@ -1494,6 +1496,7 @@
       try { const r = await NTC.api(`/admin/products/${id}`, { method: 'PUT', body }); const i = products.findIndex((x) => x.id === id); if (i >= 0) products[i] = r.product; else products.push(r.product); close(); const y = window.scrollY; renderProducts(); window.scrollTo(0, y); NTC.toast(!p.isNew ? (r.product.category !== p.category ? `已更新，搬到「${catName(r.product.category)}」了` : photo !== p.photo ? (r.product.active ? '已更新，新照片客人現在就看得到' : '已更新（這個商品沒有上架，客人看不到）') : '已更新') : r.product.active ? `已儲存，「${r.product.name}」上架了，客人現在就看得到` : '已儲存（還沒上架，客人看不到）', p.isNew ? 3600 : 2200); }
       catch (e) { NTC.toast(e.message, 3500); } finally { NTC.loading(false); }
     };
+    const okb = el.querySelector('#e-ok'); if (okb) okb.onclick = () => el.querySelector('#e-save').click(); // 照片下面的「確定更新」＝最下面那顆
     const d = el.querySelector('#e-del');
     if (d) d.onclick = async () => { if (!confirm(`確定刪除「${p.name}」？（只想暫時不賣的話，用「上架」開關就好）`)) return;
       NTC.loading(true, '刪除中…');
