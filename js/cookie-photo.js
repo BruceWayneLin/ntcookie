@@ -321,7 +321,7 @@
     }
     if (right <= left || bottom <= top) return null;
     const sw = right - left + 1, sh = bottom - top + 1, size = window.NTC_CONFIG.cookiePhotoSize;
-    const ratio = Math.min(size * .85 / sw, size * .65 / sh);
+    const ratio = Math.min(size * .70 / sw, size * .65 / sh); // 寬的（咖哩麵包超人）最多 70% 寬：不要比旁邊圓的（約 65%）大一圈 (11-26)
     const output = createCanvas(size, size), ctx = output.getContext('2d');
     ctx.fillStyle = background;
     ctx.fillRect(0, 0, size, size);
