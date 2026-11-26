@@ -28,7 +28,12 @@
   .flag.ok { background: #e3f1e6; color: #2f6b3d; }
   .prod { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px dashed #ead7cc; }
   .prod:last-child { border-bottom: 0; }
-  .prod img { width: 56px; height: 56px; border-radius: 12px; object-fit: cover; flex: none; background: #f3e4db; }
+  /* 縮圖：不用 object-fit 裁成正方形。iPhone 長按照片時，跳出來的那張會無視 object-fit，把 4:3 的照片硬塞進正方形 → 可麗露變瘦（店主 11-26）。
+     改成外面一個正方形框裁切，裡面的照片保持原本比例 */
+  .thumb { display: inline-flex; align-items: center; justify-content: center; overflow: hidden; flex: none; background: #f3e4db; }
+  .thumb img { flex: none; width: auto; height: 100%; max-width: none; }
+  .thumb img.tall { width: 100%; height: auto; max-height: none; }
+  .prod .thumb { width: 56px; height: 56px; border-radius: 12px; }
   .prod .i { flex: 1; min-width: 0; }
   .prod .i b { display: block; font-size: 15px; }
   .prod .i span { font-size: 13px; color: var(--ink2); }
@@ -216,7 +221,7 @@
   .eo .o-more { flex: none; width: 36px; height: 36px; margin-left: auto; border: 0; border-radius: 999px; background: #f1e1d8; font: 900 17px/1 var(--sans); color: var(--ink); cursor: pointer; }
   .eo .o-tags { font: 600 12px/1.35 var(--sans); color: #9a4f08; }
   .eo .o-ph.new { box-shadow: 0 0 0 2.5px #e08a1e; }
-  #e-img.new { box-shadow: 0 0 0 3px #e08a1e; }
+  #e-box.new { box-shadow: 0 0 0 3px #e08a1e; }
   .szcmp { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); gap: 10px; margin: 0 0 6px; }
   .szcmp figure { margin: 0; }
   .szcmp .szbox { aspect-ratio: 1; overflow: hidden; border-radius: 14px; background: var(--cookie-photo-background, #fad7dc); }
@@ -557,7 +562,7 @@
   // ================= 商品 =================
   const CATS = { canele: 'N.T Canelé 可麗露（單一口味禮盒價格）', meringue: '馬林糖一口酥' };
   const prodRow = (p) => `<div class="prod" data-id="${esc(p.id)}">
-        <img src="${esc(asset(p.photo || p.card))}" alt=""><div class="i"><b>${esc(p.name)}</b><span>${money(p.price)} / ${esc(p.unit || '')}${p.textLabel ? `・客人${p.textOptional ? '可填' : '要填'}：${esc(p.textLabel)}` : ''}</span></div>
+        <span class="thumb"><img src="${esc(asset(p.photo || p.card))}" alt="" onload="this.classList.toggle('tall',this.naturalHeight>this.naturalWidth)"></span><div class="i"><b>${esc(p.name)}</b><span>${money(p.price)} / ${esc(p.unit || '')}${p.textLabel ? `・客人${p.textOptional ? '可填' : '要填'}：${esc(p.textLabel)}` : ''}</span></div>
         <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
           <label class="tg">上架<input type="checkbox" data-k="active" ${p.active ? 'checked' : ''}></label>
           <label class="tg red">售完<input type="checkbox" data-k="soldOut" ${p.soldOut ? 'checked' : ''}></label></div>
@@ -1435,7 +1440,7 @@
   function editProduct(p) {
     const { el, close } = NTC.sheet(`
       <h2>${p.isNew ? '新增' : '編輯'}・${p.category === 'canele' ? '可麗露口味' : p.category === 'cookie' ? '造型餅乾' : esc(catOf(p.category)?.name || '馬林糖')}</h2>
-      <div class="row" style="margin:6px 0 12px"><img id="e-img" class="${p.category === 'cookie' ? 'cookie-product-preview' : ''}" src="${esc(asset(p.photo || p.card || 'assets/favicon.png'))}" style="width:96px;height:96px;border-radius:14px;object-fit:cover;cursor:zoom-in" alt="點一下看大張">
+      <div class="row" style="margin:6px 0 12px"><span class="thumb${p.category === 'cookie' ? ' cookie-product-preview' : ''}" id="e-box" style="width:96px;height:96px;border-radius:14px;cursor:zoom-in"><img id="e-img" src="${esc(asset(p.photo || p.card || 'assets/favicon.png'))}" alt="點一下看大張" onload="this.classList.toggle('tall',this.naturalHeight>this.naturalWidth)"></span>
         <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-start"><label class="btn ghost small">換照片<input type="file" accept="image/*" id="e-file" hidden></label>
         <button type="button" class="btn ghost small" id="e-rv" hidden>↺ 換回原本的照片</button></div></div>
       <p class="note" id="e-phnote" hidden style="margin:-4px 0 12px;color:#9a4f08">新照片還沒存：點照片可以看大張，確定 OK 再按下面的「<b>${p.isNew ? '儲存' : '更新'}</b>」，客人才看得到。</p>
@@ -1456,7 +1461,7 @@
     wireCatSelect(el);
     // 照片換了先放在這一頁看（點一下看大張），按「更新」才存；不滿意按「換回原本的照片」（店主 11-26：可麗露要跟餅乾一樣）
     const photoMark = () => { const changed = !p.isNew && photo !== p.photo;
-      el.querySelector('#e-img').classList.toggle('new', !!(p.isNew ? photo : changed)); el.querySelector('#e-rv').hidden = !changed; el.querySelector('#e-phnote').hidden = !(p.isNew ? photo : changed); };
+      el.querySelector('#e-box').classList.toggle('new', !!(p.isNew ? photo : changed)); el.querySelector('#e-rv').hidden = !changed; el.querySelector('#e-phnote').hidden = !(p.isNew ? photo : changed); };
     el.querySelector('#e-img').onclick = () => { const src = el.querySelector('#e-img').src; const { el: v } = NTC.sheet(`<h2>照片預覽</h2><img src="${esc(src)}" alt="" style="display:block;width:100%;max-height:70vh;object-fit:contain;border-radius:14px;background:#f3e4db">`); v.querySelector('img').onclick = () => v.querySelector('.close').click(); };
     el.querySelector('#e-rv').onclick = () => { photo = p.photo; el.querySelector('#e-img').src = asset(p.photo || p.card || 'assets/favicon.png'); photoMark(); NTC.toast('換回原本的照片了'); };
     const back = el.querySelector('.close'); // 換了照片沒按「更新」就要離開：先問
