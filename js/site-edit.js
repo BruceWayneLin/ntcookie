@@ -85,14 +85,28 @@
     const { el: sh, close } = sheet(`<h2>換圖</h2><p class="se-where">${esc(labelOf(el))}</p>
       ${now ? `<img class="se-pv" src="${esc(now)}" alt="">` : ''}
       <p class="note" style="margin:0">${esc(el.dataset.editHint || '圖上的字是圖的一部分：換成你的圖之後，要的字請寫在圖上。')}</p>
-      <label class="btn block" id="se-pick">${own ? '換一張' : '換成自己的圖'}<input type="file" accept="image/*" hidden></label>${own ? '<button type="button" class="btn ghost block" id="se-back">用回原本的圖</button>' : ''}`);
+      <p class="note" id="se-wait" hidden style="margin:10px 0 0;color:#9a4f08;font-weight:700">新的圖還沒存：上面是換上去的樣子，確定 OK 再按「確定更新」，客人才看得到。</p>
+      <button type="button" class="btn block" id="se-ok" hidden>確定更新</button>
+      <label class="btn block" id="se-pick">${own ? '換一張' : '換成自己的圖'}<input type="file" accept="image/*" hidden></label>
+      <button type="button" class="btn ghost block" id="se-undo" hidden>不要這張，換回剛剛的</button>${own ? '<button type="button" class="btn ghost block" id="se-back">用回原本的圖</button>' : ''}`);
+    // 換了圖先放在這裡給她看，按「確定更新」才存（店主 11-26：要跟商品照片一樣，不要一換就上線）
+    let pending = ''; const pv0 = now;
+    const pvEl = () => { let p = sh.querySelector('.se-pv'); if (!p) { p = document.createElement('img'); p.className = 'se-pv'; p.alt = ''; sh.querySelector('.se-where').after(p); } return p; };
+    const mark = () => { const w = !!pending; sh.querySelector('#se-wait').hidden = !w; sh.querySelector('#se-ok').hidden = !w; sh.querySelector('#se-undo').hidden = !w;
+      const pk = sh.querySelector('#se-pick'); pk.firstChild.textContent = w ? '再換一張' : own ? '換一張' : '換成自己的圖'; pk.classList.toggle('ghost', w);
+      const bk = sh.querySelector('#se-back'); if (bk) bk.hidden = w; };
+    sh.querySelector('.close').addEventListener('click', (e) => { if (pending && !confirm('新的圖還沒存，確定離開？（按「取消」留下來，再按「確定更新」）')) { e.stopImmediatePropagation(); e.preventDefault(); } }, true);
+    sh.querySelector('#se-undo').onclick = () => { pending = ''; if (pv0) pvEl().src = pv0; else { const p = sh.querySelector('.se-pv'); if (p) p.remove(); } mark(); };
+    sh.querySelector('#se-ok').onclick = async () => { if (!pending) return; NTC.loading(true, '儲存中…');
+      try { const u = pending; await done(u, '更新好了，客人現在就看得到'); pending = ''; } catch (err) { NTC.toast(err.message || '沒有存成功，請再按一次「確定更新」', 3500); } finally { NTC.loading(false); } };
     const done = async (value, msg) => {
       if (ban) { const r = await NTC.api(`/admin/banners/${key}`, { method: 'PUT', body: { photo: value } }); try { localStorage.setItem('ntc-banners', JSON.stringify(r.settings.banners || {})); } catch (e) { /* */ } close(); NTC.toast(msg, 2000); setTimeout(() => location.reload(), 700); return; }
       await save(key, 'img', value, el); close(); NTC.toast(msg, 2600);
     };
     sh.querySelector('#se-pick input').onchange = async (e) => { const f = e.target.files[0]; e.target.value = ''; if (!f) return;
       NTC.loading(true, '上傳照片…');
-      try { const dataUrl = await shrink(f); const url = (await NTC.api('/admin/images', { method: 'POST', body: { dataUrl } })).url; await done(url, '換好了，客人現在就看得到'); }
+      try { const dataUrl = await shrink(f); pending = (await NTC.api('/admin/images', { method: 'POST', body: { dataUrl } })).url; pvEl().src = dataUrl; mark(); sh.querySelector('.se-pv').scrollIntoView({ block: 'center' });
+        NTC.toast('圖放上來了，還沒存：看過 OK 按「確定更新」', 3600); }
       catch (err) { NTC.toast(err.message || '照片上傳失敗，請再試一次', 3500); } finally { NTC.loading(false); } };
     const back = sh.querySelector('#se-back'); if (back) back.onclick = async () => { NTC.loading(true, '儲存中…'); try { await done('', '用回原本的圖了'); } catch (e) { NTC.toast(e.message, 3500); } finally { NTC.loading(false); } };
   }
