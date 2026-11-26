@@ -30,10 +30,10 @@
   .prod:last-child { border-bottom: 0; }
   /* 縮圖：不用 object-fit 裁成正方形。iPhone 長按照片時，跳出來的那張會無視 object-fit，把 4:3 的照片硬塞進正方形 → 可麗露變瘦（店主 11-26）。
      改成外面一個正方形框裁切，裡面的照片保持原本比例 */
-  .thumb { display: inline-flex; align-items: center; justify-content: center; overflow: hidden; flex: none; background: #f3e4db; }
-  .thumb img { flex: none; width: auto; height: 100%; max-width: none; }
-  .thumb img.tall { width: 100%; height: auto; max-height: none; }
-  .prod .thumb { width: 56px; height: 56px; border-radius: 12px; }
+     11-26 第二版：完全不裁切、不用 object-fit，縮圖就是照片原本的形狀（只定高度），長按跳出來的那張一定跟照片一樣 */
+  .thumb { display: inline-flex; flex: none; }
+  .thumb img { display: block; height: 100%; width: auto; max-width: none; border-radius: inherit; background: #f3e4db; }
+  .prod .thumb { height: 56px; border-radius: 12px; }
   .prod .i { flex: 1; min-width: 0; }
   .prod .i b { display: block; font-size: 15px; }
   .prod .i span { font-size: 13px; color: var(--ink2); }
@@ -1440,7 +1440,7 @@
   function editProduct(p) {
     const { el, close } = NTC.sheet(`
       <h2>${p.isNew ? '新增' : '編輯'}・${p.category === 'canele' ? '可麗露口味' : p.category === 'cookie' ? '造型餅乾' : esc(catOf(p.category)?.name || '馬林糖')}</h2>
-      <div class="row" style="margin:6px 0 12px"><span class="thumb${p.category === 'cookie' ? ' cookie-product-preview' : ''}" id="e-box" style="width:96px;height:96px;border-radius:14px;cursor:zoom-in"><img id="e-img" src="${esc(asset(p.photo || p.card || 'assets/favicon.png'))}" alt="點一下看大張" onload="this.classList.toggle('tall',this.naturalHeight>this.naturalWidth)"></span>
+      <div class="row" style="margin:6px 0 12px"><span class="thumb${p.category === 'cookie' ? ' cookie-product-preview' : ''}" id="e-box" style="height:96px;border-radius:14px;cursor:zoom-in"><img id="e-img" src="${esc(asset(p.photo || p.card || 'assets/favicon.png'))}" alt="點一下看大張" onload="this.classList.toggle('tall',this.naturalHeight>this.naturalWidth)"></span>
         <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-start"><label class="btn ghost small">換照片<input type="file" accept="image/*" id="e-file" hidden></label>
         <button type="button" class="btn ghost small" id="e-rv" hidden>↺ 換回原本的照片</button></div></div>
       <p class="note" id="e-phnote" hidden style="margin:-4px 0 12px;color:#9a4f08">新照片還沒存：點照片可以看大張，確定 OK 再按「<b>${p.isNew ? '儲存' : '確定更新'}</b>」，客人才看得到。</p>
@@ -1464,7 +1464,7 @@
     const photoMark = () => { const changed = !p.isNew && photo !== p.photo;
       el.querySelector('#e-box').classList.toggle('new', !!(p.isNew ? photo : changed)); el.querySelector('#e-rv').hidden = !changed; el.querySelector('#e-phnote').hidden = !(p.isNew ? photo : changed);
       const ok = el.querySelector('#e-ok'); if (ok) ok.hidden = !changed; if (!p.isNew) el.querySelector('#e-save').textContent = changed ? '確定更新' : '更新'; };
-    el.querySelector('#e-img').onclick = () => { const src = el.querySelector('#e-img').src; const { el: v } = NTC.sheet(`<h2>照片預覽</h2><img src="${esc(src)}" alt="" style="display:block;width:100%;max-height:70vh;object-fit:contain;border-radius:14px;background:#f3e4db">`); v.querySelector('img').onclick = () => v.querySelector('.close').click(); };
+    el.querySelector('#e-img').onclick = () => { const src = el.querySelector('#e-img').src; const { el: v } = NTC.sheet(`<h2>照片預覽</h2><img src="${esc(src)}" alt="" style="display:block;max-width:100%;max-height:70vh;width:auto;height:auto;margin:0 auto;border-radius:14px;background:#f3e4db">`); v.querySelector('img').onclick = () => v.querySelector('.close').click(); };
     el.querySelector('#e-rv').onclick = () => { photo = p.photo; el.querySelector('#e-img').src = asset(p.photo || p.card || 'assets/favicon.png'); photoMark(); NTC.toast('換回原本的照片了'); };
     const back = el.querySelector('.close'); // 換了照片沒按「更新」就要離開：先問
     back.addEventListener('click', (e) => { if (photo !== p.photo && !confirm(`新照片還沒存，確定離開？（按「取消」留下來，再按「${p.isNew ? '儲存' : '更新'}」）`)) { e.stopImmediatePropagation(); e.preventDefault(); } }, true);
