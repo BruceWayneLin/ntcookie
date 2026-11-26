@@ -91,7 +91,10 @@
       <button type="button" class="btn ghost block" id="se-undo" hidden>不要這張，換回剛剛的</button>${own ? '<button type="button" class="btn ghost block" id="se-back">用回原本的圖</button>' : ''}`);
     // 換了圖先放在這裡給她看，按「確定更新」才存（店主 11-26：要跟商品照片一樣，不要一換就上線）
     let pending = ''; const pv0 = now;
-    const pvEl = () => { let p = sh.querySelector('.se-pv'); if (!p) { p = document.createElement('img'); p.className = 'se-pv'; p.alt = ''; sh.querySelector('.se-where').after(p); } return p; };
+    const box = (ban ? el : img || el).getBoundingClientRect(); // 網頁上那個框的形狀：預覽照這個形狀裁，看到的就是客人看到的
+    const frame = (p) => { if (box.width > 20 && box.height > 20) { p.style.aspectRatio = `${box.width} / ${box.height}`; p.style.objectFit = 'cover'; p.style.maxHeight = 'none'; } return p; };
+    const pvEl = () => { let p = sh.querySelector('.se-pv'); if (!p) { p = document.createElement('img'); p.className = 'se-pv'; p.alt = ''; sh.querySelector('.se-where').after(p); } return frame(p); };
+    { const p0 = sh.querySelector('.se-pv'); if (p0) frame(p0); }
     const mark = () => { const w = !!pending; sh.querySelector('#se-wait').hidden = !w; sh.querySelector('#se-ok').hidden = !w; sh.querySelector('#se-undo').hidden = !w;
       const pk = sh.querySelector('#se-pick'); pk.firstChild.textContent = w ? '再換一張' : own ? '換一張' : '換成自己的圖'; pk.classList.toggle('ghost', w);
       const bk = sh.querySelector('#se-back'); if (bk) bk.hidden = w; };

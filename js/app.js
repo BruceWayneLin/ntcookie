@@ -466,8 +466,8 @@
     document.querySelectorAll('[data-edit-img]').forEach((el) => {
       if (!siteOrig.has(el)) siteOrig.set(el, { src: el.getAttribute('src'), width: el.getAttribute('width'), height: el.getAttribute('height') });
       const v = m[el.dataset.editImg]; const o = siteOrig.get(el);
-      if (typeof v === 'string' && SITE_IMG.test(v)) { if (el.getAttribute('data-edit-own') !== v) { el.removeAttribute('width'); el.removeAttribute('height'); el.src = NTC.asset(v); el.setAttribute('data-edit-own', v); } }
-      else if (el.hasAttribute('data-edit-own')) { el.src = o.src; for (const a of ['width', 'height']) if (o[a]) el.setAttribute(a, o[a]); el.removeAttribute('data-edit-own'); }
+      if (typeof v === 'string' && SITE_IMG.test(v)) { if (el.getAttribute('data-edit-own') !== v) { if (o.width && o.height) { el.style.aspectRatio = `${o.width} / ${o.height}`; el.style.objectFit = 'cover'; } el.src = NTC.asset(v); el.setAttribute('data-edit-own', v); } } // 換成她的圖：框維持原本那張的形狀，不會突然拉長（店主 11-26）
+      else if (el.hasAttribute('data-edit-own')) { el.src = o.src; for (const a of ['width', 'height']) if (o[a]) el.setAttribute(a, o[a]); el.style.aspectRatio = ''; el.style.objectFit = ''; el.removeAttribute('data-edit-own'); }
     });
     document.querySelectorAll('[data-edit-href]').forEach((el) => {
       if (!siteOrig.has(el)) siteOrig.set(el, { href: el.getAttribute('href') });
@@ -482,7 +482,7 @@
     // 編輯模式：後台「網站」打開 ?edit=1；換頁也一直開著，按「完成」才關（只有店家帳號存得了）
     try {
       if (/[?&]edit=1(&|$)/.test(location.search)) sessionStorage.setItem('ntc-site-edit', '1');
-      if (sessionStorage.getItem('ntc-site-edit') === '1' && !/admin\.html$/.test(location.pathname)) { const s = document.createElement('script'); s.src = 'js/site-edit.js?v=1126c'; document.body.appendChild(s); }
+      if (sessionStorage.getItem('ntc-site-edit') === '1' && !/admin\.html$/.test(location.pathname)) { const s = document.createElement('script'); s.src = 'js/site-edit.js?v=1126d'; document.body.appendChild(s); }
     } catch (e) { /* no session storage: no edit mode */ }
   };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', siteBoot); else siteBoot();
