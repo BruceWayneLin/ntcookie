@@ -68,6 +68,9 @@ html:has(.canele-selection) { background: #faf4ed; scroll-padding-bottom: 86px; 
 }
 .canele-selection .cm-card.on { border-color: var(--cm-accent); box-shadow: inset 0 0 0 1px var(--cm-accent); }
 .canele-selection .cm-card .ph { border-radius: 7px; }
+/* 每張口味照片一樣的 4:3 框：照片載入時不會突然拉長，也不會一張高一張矮（店主 11-26） */
+.canele-selection .cm-card .ph { aspect-ratio: 4 / 3; }
+.canele-selection .cm-card .ph img { width: 100%; height: 100%; object-fit: cover; }
 .canele-selection .cm-card h2 {
   max-width: 100%;
   padding-inline: 3px;

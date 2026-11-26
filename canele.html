@@ -16,7 +16,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <link rel="preload" as="image" href="assets/v2/01-canele/m-header.webp" type="image/webp">
 <link rel="stylesheet" href="css/app.css?v=1125b">
-<link rel="stylesheet" href="css/canele-selection.css?v=1121i">
+<link rel="stylesheet" href="css/canele-selection.css?v=1126e">
 <style>/* 11-23 i: the owner's own picture at the top (admin → 商品 → 可麗露 → 可麗露頁最上面的大圖) */
 .cm-head.own { background: none; container-type: inline-size; } /* 高度跟原本的大圖一樣，不會突然拉長（店主 11-26） */
 .cm-head .cm-own { display: none; }
@@ -149,7 +149,7 @@
         : assortment ? `<button type="button" class="cm-btn pick" data-pick="${esc(product.id)}"></button>`
         : `<button type="button" class="cm-btn" data-add="${esc(product.id)}">${needed(product) > 1 ? '選盒數' : '加入購物車'}</button>`;
       return `<article class="cm-card${product.soldOut ? ' so' : ''}">
-        <div class="ph">${picture ? `<img src="${esc(asset(picture))}" alt="" width="900" height="600" loading="lazy">` : ''}</div>
+        <div class="ph">${picture ? `<img src="${esc(asset(picture))}" alt="" width="900" height="675" loading="lazy">` : ''}</div>
         <h2>${product.icon ? `<img src="${esc(asset(product.icon))}" alt="">` : ''}<span>${esc(product.name)}</span></h2>
         ${assortment ? '' : `<p class="pr">${price(product.price)}<small>／盒</small></p>`}
         ${action}
