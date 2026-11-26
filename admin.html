@@ -217,6 +217,13 @@
   .eo .o-tags { font: 600 12px/1.35 var(--sans); color: #9a4f08; }
   .eo .o-ph.new { box-shadow: 0 0 0 2.5px #e08a1e; }
   #e-img.new { box-shadow: 0 0 0 3px #e08a1e; }
+  .szcmp { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); gap: 10px; margin: 0 0 6px; }
+  .szcmp figure { margin: 0; }
+  .szcmp .szbox { aspect-ratio: 1; overflow: hidden; border-radius: 14px; background: var(--cookie-photo-background, #fad7dc); }
+  .szcmp .szbox img { display: block; width: 100%; height: 100%; object-fit: cover; transform-origin: center; }
+  .szcmp figcaption { margin-top: 4px; text-align: center; font: 700 13px/1.3 var(--sans); color: var(--muted); }
+  .szrow { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 12px 0 6px; }
+  .szrow b { font: 900 20px var(--sans); color: var(--ink); }
   .eo .o-rv { align-self: flex-start; padding: 6px 10px; border: 1.5px solid #e9b877; border-radius: 999px; background: #fff3e0; font: 700 13px var(--sans); color: #9a4f08; cursor: pointer; }
   .eo .o-on { flex: none; flex-direction: column; gap: 4px; font-size: 12px; }
   .sorow { display: flex; align-items: center; gap: 8px; padding: 6px 4px; border-bottom: 1px dashed #ead7cc; border-radius: 8px; }
@@ -850,7 +857,7 @@
     const leaveMsg = () => '還沒按「更新」，確定離開？剛剛改的（包括換的照片）都不會存。';
     // 照片換了先放在這一頁，按「更新」才存（店主：照片沒有比較好要能換回去）；還沒存的可以「換回原本的」
     const optPhoto0 = (o) => (o.id ? base.opts.find((y) => y.id === o.id)?.photo || '' : null); // null＝新的選項，沒有原本的
-    const optPhotoNow = (o) => { keep(); NTC.toast(`照片放好了，還沒存：按「${word()}」客人才看得到。不滿意可以按「換回原本的」。`, 4200); };
+    const optPhotoNow = (o) => { keep(); NTC.toast(`照片放好了，還沒存：按「${word()}」客人才看得到。太大太小：按 ⋯ →「調整照片大小」。`, 4800); };
     const phsChanged = () => !isNew && JSON.stringify(st.photos) !== JSON.stringify(base.photos);
     const phsNow = (msg) => { if (isNew) return; keep(); NTC.toast(`${msg}，還沒存：按「${word()}」客人才看得到。`, 3600); };
     box.addEventListener('input', sched); box.addEventListener('change', sched); document.addEventListener('visibilitychange', onHide); window.addEventListener('pagehide', keep);
@@ -936,20 +943,62 @@
           try {
             const dataUrl = await NTC.cookiePhoto.prepare(f);
             NTC.loading(true, '上傳照片…');
-            o.photo = (await NTC.api('/admin/images', { method: 'POST', body: { dataUrl } })).url;
+            o.photo = (await NTC.api('/admin/images', { method: 'POST', body: { dataUrl } })).url; o.szSrc = undefined; o.szPct = undefined;
             paintOpts();
             optPhotoNow(o);
           } catch (err) { NTC.toast(err.message || '照片上傳失敗', 3500); }
           finally { NTC.loading(false); } };
-        const rvb = r.querySelector('.o-rv'); if (rvb) rvb.onclick = () => { o.photo = optPhoto0(o); paintOpts(); keep(); NTC.toast('換回原本的照片了'); };
+        const rvb = r.querySelector('.o-rv'); if (rvb) rvb.onclick = () => { o.photo = optPhoto0(o); o.szSrc = undefined; o.szPct = undefined; paintOpts(); keep(); NTC.toast('換回原本的照片了'); };
         r.querySelector('.o-more').onclick = () => optMore(i);
         r.querySelector('.o-del').onclick = () => delOpt(i);
       });
       paintBar();
     };
+    // 照片大小：有的造型拍起來特別大／特別小，讓店主自己調（店主 11-26）。從原本那張照片縮放，粉紅底補滿；調完一樣要按「更新」
+    const scalePhoto = (src, k) => new Promise((ok, ko) => {
+      const im = new Image(); im.crossOrigin = 'anonymous';
+      im.onload = () => { try {
+        const w = im.naturalWidth, h = im.naturalHeight; const c = document.createElement('canvas'); c.width = w; c.height = h; const x = c.getContext('2d');
+        x.drawImage(im, 0, 0); const bg = x.getImageData(3, 3, 1, 1).data; // 角落的粉紅底
+        x.fillStyle = `rgb(${bg[0]},${bg[1]},${bg[2]})`; x.fillRect(0, 0, w, h); x.imageSmoothingQuality = 'high';
+        x.drawImage(im, (w - w * k) / 2, (h - h * k) / 2, w * k, h * k);
+        for (const q of [0.92, 0.85, 0.78]) { const d = c.toDataURL('image/webp', q); if (d.startsWith('data:image/webp') && d.length < 370000) return ok(d); const j = c.toDataURL('image/jpeg', q); if (j.length < 370000) return ok(j); }
+        ko(new Error('圖片太大'));
+      } catch (e) { ko(new Error('這張照片不能調大小，請重新上傳一張')); } };
+      im.onerror = () => ko(new Error('照片讀不到，請再試一次'));
+      const u = asset(src); im.src = u + (/^https?:/.test(u) ? `${u.includes('?') ? '&' : '?'}cors=1` : ''); // 另一個網址：不拿沒有 CORS 的快取
+    });
+    const resizeOpt = (i) => {
+      const o = st.opts[i]; if (!o.photo) return NTC.toast('這一片還沒有照片，先放照片再調大小', 3200);
+      const src = o.szSrc || o.photo; let pct = o.szPct || 100;
+      const ref = [st.opts[i - 1], st.opts[i + 1], ...st.opts].find((y) => y && y !== o && y.photo);
+      const { el, close } = NTC.sheet(`<h2>調整照片大小</h2><p class="note" style="margin:0 0 12px">跟同一個商品的另一片放在一起比，調到看起來差不多大。</p>
+        <div class="szcmp">${ref ? `<figure><div class="szbox"><img src="${esc(asset(ref.photo))}" alt=""></div><figcaption>${esc(ref.name || '')}（對照）</figcaption></figure>` : ''}
+          <figure><div class="szbox"><img id="sz-img" src="${esc(asset(src))}" alt=""></div><figcaption>${esc(o.name || '這一片')}</figcaption></figure></div>
+        <div class="szrow"><button type="button" class="btn ghost small" id="sz-m">－ 小一點</button><b id="sz-v"></b><button type="button" class="btn ghost small" id="sz-p">＋ 大一點</button></div>
+        <input type="range" id="sz-r" min="50" max="130" step="1" style="width:100%" aria-label="照片大小">
+        <button type="button" class="btn ghost block small" id="sz-0" style="margin-top:8px">回到原本的大小（100%）</button>
+        <button type="button" class="btn block" id="sz-ok" style="margin-top:14px">好了</button>`);
+      const img = el.querySelector('#sz-img'); const r = el.querySelector('#sz-r'); const v = el.querySelector('#sz-v');
+      const show = () => { pct = Math.max(50, Math.min(130, Math.round(pct))); r.value = pct; v.textContent = `${pct}%`; img.style.transform = `scale(${pct / 100})`; };
+      r.oninput = () => { pct = +r.value; show(); };
+      el.querySelector('#sz-m').onclick = () => { pct -= 5; show(); }; el.querySelector('#sz-p').onclick = () => { pct += 5; show(); }; el.querySelector('#sz-0').onclick = () => { pct = 100; show(); };
+      show();
+      el.querySelector('#sz-ok').onclick = async () => {
+        if (pct === (o.szPct || 100)) return close();
+        NTC.loading(true, '調整照片…');
+        try {
+          o.photo = pct === 100 ? src : (await NTC.api('/admin/images', { method: 'POST', body: { dataUrl: await scalePhoto(src, pct / 100) } })).url;
+          o.szSrc = pct === 100 ? undefined : src; o.szPct = pct === 100 ? undefined : pct;
+          close(); paintOpts(); keep();
+          NTC.toast(`照片調成 ${pct}% 了，還沒存：按「${word()}」客人才看得到。`, 4200);
+        } catch (e) { NTC.toast(e.message || '照片調整失敗', 3500); } finally { NTC.loading(false); }
+      };
+    };
     const optMore = (i) => {
       const o = st.opts[i];
       const { el, close } = NTC.sheet(`<h2>${esc(o.name || '這個選項')}</h2>
+        ${o.photo ? '<button type="button" class="btn ghost block small" id="m-size" style="margin:0 0 12px">⤢ 調整照片大小（太大、太小）</button>' : ''}
         <label class="tg red" style="display:flex;margin:4px 0 14px">售完（客人看得到，但不能買）<span class="sp"></span><input type="checkbox" id="m-sold" ${o.soldOut ? 'checked' : ''}></label>
         <label class="field"><span>單位（平常是「片」；一組一起賣的可以改成「組」）</span><input id="m-unit" maxlength="4" value="${esc(o.unit || '片')}"></label>
         ${askHtml(o)}
@@ -962,6 +1011,7 @@
       askWire(el);
       const keep = () => Object.assign(o, { soldOut: el.querySelector('#m-sold').checked, unit: el.querySelector('#m-unit').value.trim() || '片', ...askRead(el) });
       el.querySelector('#m-ok').onclick = () => { keep(); close(); paintOpts(); };
+      const msz = el.querySelector('#m-size'); if (msz) msz.onclick = () => { keep(); close(); paintOpts(); resizeOpt(i); };
       el.querySelector('#m-up').onclick = () => { keep(); [st.opts[i - 1], st.opts[i]] = [st.opts[i], st.opts[i - 1]]; close(); paintOpts(); };
       el.querySelector('#m-dn').onclick = () => { keep(); [st.opts[i + 1], st.opts[i]] = [st.opts[i], st.opts[i + 1]]; close(); paintOpts(); };
       el.querySelector('#m-dup').onclick = () => { keep(); const { id, key, ...rest } = o; st.opts.splice(i + 1, 0, { ...rest, key: `n${Math.random().toString(36).slice(2)}`, name: `${o.name || ''}（複製）`.slice(0, 40) }); close(); paintOpts(); };
@@ -1024,7 +1074,7 @@
       st.opts.forEach((o, i) => { if (!o.id) o.id = `cookie-${sid}-${stamp}${i.toString(36)}`.slice(0, 40); });
       const body = {
         series: { name: st.name, desc: st.desc, lines: st.lines, single: st.single, photos: st.photos, photo: st.photos[0] || '', groups: st.groups, ...(String(st.sort).trim() !== '' ? { sort: +st.sort } : {}) },
-        products: st.opts.map(({ key, priceAuto, ...o }, i) => ({ ...o, name: String(o.name).trim(), price: +o.price, unit: o.unit || '片', sort: (i + 1) * 10, active: !!o.active, soldOut: !!o.soldOut })),
+        products: st.opts.map(({ key, priceAuto, szSrc, szPct, ...o }, i) => ({ ...o, name: String(o.name).trim(), price: +o.price, unit: o.unit || '片', sort: (i + 1) * 10, active: !!o.active, soldOut: !!o.soldOut })),
         remove: st.removed,
       };
       saving = true; NTC.loading(true, '儲存中…');
