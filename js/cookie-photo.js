@@ -311,6 +311,21 @@
     return mask(padded);
   }
 
+  // a photo already on the shop pink: keep her framing, only fit it into the square (pink fills any extra)
+  function ownPink(source) {
+    const { width: w, height: h } = source;
+    const data = source.getContext('2d').getImageData(0, 0, w, h).data;
+    const tone = flatTone(data, perimeter(w, h).map(i => i * 4));
+    const pink = (background.match(/[0-9a-f]{2}/gi) || []).map(x => parseInt(x, 16));
+    if (!tone || pink.length !== 3 || tone.some((v, c) => Math.abs(v - pink[c]) > 14)) return null;
+    const size = window.NTC_CONFIG.cookiePhotoSize, k = Math.min(size / w, size / h);
+    const output = createCanvas(size, size), ctx = output.getContext('2d');
+    ctx.fillStyle = background; ctx.fillRect(0, 0, size, size);
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(source, (size - w * k) / 2, (size - h * k) / 2, w * k, h * k);
+    return output;
+  }
+
   function card(subject) {
     const { width: w, height: h } = subject;
     const data = subject.getContext('2d').getImageData(0, 0, w, h).data;
@@ -360,7 +375,10 @@
     },
     // The same function serves new options, existing replacements and catalog preparation.
     async prepare(file) {
-      const full = await load(file), inner = trim(full);
+      const full = await load(file);
+      // 已經是店裡的粉紅底（她自己或用 GPT 把大小調好了）：照她排的大小放，不再自動放大／縮小（店主 11-26）
+      const own = ownPink(full); if (own) return encode(own);
+      const inner = trim(full);
       let source = inner, subject = mask(inner);
       if (!subject && inner !== full) { source = full; subject = mask(full); } // trimming did not help: carry on with the whole picture
       if (!subject) subject = maskCloseUp(source);
