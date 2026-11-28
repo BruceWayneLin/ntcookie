@@ -265,8 +265,8 @@
 <div class="shopbar" id="shopbar" hidden></div>
 <main class="wrap" id="app"><div class="spinner"></div></main>
 <p class="note" id="ver" style="text-align:center;margin:0 0 24px;color:var(--muted)"></p>
-<script src="js/config.js?v=1128b"></script>
-<script src="js/app.js?v=1128b"></script>
+<script src="js/config.js?v=1128c"></script>
+<script src="js/app.js?v=1128c"></script>
 <script src="js/shop-tiles.js?v=1123k"></script>
 <script src="js/cookie-edge.js?v=1122e"></script>
 <script src="js/cookie-photo.js?v=1126f"></script>
@@ -292,7 +292,7 @@
       window.scrollTo(0, y + d); requestAnimationFrame(() => window.scrollTo(0, y)); }, 150); });
   $('#ver').textContent = '版本 ' + (NTC_CONFIG.version || '');
   const q = new URLSearchParams(location.search);
-  const PAY = { linepay: 'LINE Pay', ecpay: '綠界', transfer: '轉帳', lpcode: 'LINE Pay' };
+  const PAY = { linepay: 'LINE Pay', ecpay: '綠界', transfer: '轉帳' };
   let canDeleteReal = false; // only the fixed top admin may delete customer orders
   let tab = 'orders'; let statuses = {}; let orders = []; let filter = 'open'; let sortBy = 'created';
   let products = []; let settings = null; let ready = {}; let inqs = null; let inqStatuses = {}; let inqFilter = 'open'; let inqP = null; let dirty = false; let prodCat = null; const openAcc = new Set();
@@ -392,7 +392,7 @@
   function renderShopBar() {
     const bar = $('#shopbar'); if (!settings) return;
     const open = !settings.pauseOrders;
-    const pays = [settings.payments.transfer && settings.bank.account ? '銀行轉帳' : '', settings.payments.lpcode && settings.lpcode && (settings.lpcode.link || settings.lpcode.qr) ? 'LINE Pay' : '', settings.payments.ecpay && ready.ecpay ? '信用卡／ATM／超商' : '', settings.payments.linepay && ready.linepay ? 'LINE Pay' : ''].filter(Boolean).join('、');
+    const pays = [settings.payments.transfer && settings.bank.account ? '銀行轉帳' : '', settings.payments.ecpay && ready.ecpay ? '信用卡／ATM／超商' : '', settings.payments.linepay && ready.linepay ? 'LINE Pay' : ''].filter(Boolean).join('、');
     const how = !open ? '客人可以逛，但不能下單（休息、檔期滿都用這個）'
       : settings.testMode ? '客人結帳會「用 LINE 傳訂單給店家」（測試模式開著）' : `客人可以下單，付款方式：${pays || '（還沒開任何付款方式）'}`;
     bar.hidden = !(tab === 'orders' || tab === 'settings'); // the switch belongs with the orders and the settings, not with 客製 / 商品
@@ -445,8 +445,8 @@
       ${list.map((o) => `<button class="ord${o.status === 'reported' ? ' needs' : ''}" data-no="${esc(o.orderNo)}">
         <div class="top"><b>${esc(o.orderNo)}</b><span class="status-pill ${esc(o.status)}">${esc(o.statusLabel)}</span>${o.byShop ? '<span class="flag" style="background:#e2ecf7;color:#2d5785">店家測試單</span>' : ''}<span class="sp"></span><span class="amt">${money(o.total)}</span></div>
         <div class="mid">📅 ${NTC.fmtDate(o.date)}　👤 ${esc(o.contact.name)}　${esc(PAY[o.payment.method] || '')}
-          ${o.payment.status === 'paid' ? '<span class="flag ok">已收款</span>' : o.payment.last5 ? `<span class="flag">回報末五碼 ${esc(o.payment.last5)}</span>` : o.status === 'reported' ? '<span class="flag">客人回報已付款</span>' : '<span class="flag">未付款</span>'}<br>
-          ${esc(o.lines.map((l) => `${l.name}×${l.qty}`).join('、'))}${o.note ? `<br>💬 ${esc(o.note.slice(0, 60))}` : ''}</div>${o.status === 'reported' ? `<span class="todo">👉 ${o.payment.method === 'lpcode' ? '客人說已用 LINE Pay 付款，到 LINE Pay 核對後' : `客人說已匯款${o.payment.last5 ? `（末五碼 ${esc(o.payment.last5)}）` : ''}，核對後`}點進來按「確認已收到款項」</span>` : ''}</button>`).join('') || '<p class="empty note">沒有訂單</p>'}`;
+          ${o.payment.status === 'paid' ? '<span class="flag ok">已收款</span>' : o.payment.last5 ? `<span class="flag">回報末五碼 ${esc(o.payment.last5)}</span>` : '<span class="flag">未付款</span>'}<br>
+          ${esc(o.lines.map((l) => `${l.name}×${l.qty}`).join('、'))}${o.note ? `<br>💬 ${esc(o.note.slice(0, 60))}` : ''}</div>${o.status === 'reported' ? `<span class="todo">👉 客人說已匯款${o.payment.last5 ? `（末五碼 ${esc(o.payment.last5)}）` : ''}，核對後點進來按「確認已收到款項」</span>` : ''}</button>`).join('') || '<p class="empty note">沒有訂單</p>'}`;
     app.querySelectorAll('[data-f]').forEach((b) => (b.onclick = () => { filter = b.dataset.f; renderOrders(); }));
     app.querySelectorAll('[data-s]').forEach((b) => (b.onclick = () => { sortBy = b.dataset.s; renderOrders(); }));
     app.querySelectorAll('.ord').forEach((b) => (b.onclick = () => openOrder(orders.find((o) => o.orderNo === b.dataset.no))));
@@ -466,7 +466,7 @@
         <dt>付款</dt><dd>${esc(PAY[p.method] || '')}・${p.status === 'paid' ? `<span class="flag ok">已收款 ${new Date(p.paidAt).toLocaleString('zh-TW', { hour12: false })}</span>` : '<span class="flag">未收款</span>'}
           ${p.last5 ? `<br>客人回報末五碼 <b>${esc(p.last5)}</b>` : ''}${p.info ? `<br>${p.info.kind === 'atm' ? `ATM ${esc(p.info.bankCode)}-${esc(p.info.account)}` : `超商代碼 ${esc(p.info.code)}`}` : ''}
           ${p.simulated ? '<br><span class="flag">測試環境模擬付款</span>' : ''}</dd></dl>
-      ${p.status !== 'paid' && o.status !== 'cancelled' ? `${o.status === 'reported' ? `<div class="note" style="margin:0 0 8px;padding:10px 12px;border-radius:12px;background:#eef4fb">${p.method === 'lpcode' ? `客人說<b>已經用 LINE Pay 付款</b>。請先打開 LINE Pay 確認真的收到 <b>${money(o.total)}</b>，再按下面的按鈕。` : `客人說<b>已經匯款</b>（末五碼 <b>${esc(p.last5 || '')}</b>）。請先到網銀確認真的收到 <b>${money(o.total)}</b>，再按下面的按鈕。`}</div>` : ''}<button class="btn block" id="o-paid" style="margin-bottom:12px">確認已收到款項</button>` : ''}
+      ${p.status !== 'paid' && o.status !== 'cancelled' ? `${o.status === 'reported' ? `<div class="note" style="margin:0 0 8px;padding:10px 12px;border-radius:12px;background:#eef4fb">客人說<b>已經匯款</b>（末五碼 <b>${esc(p.last5 || '')}</b>）。請先到網銀確認真的收到 <b>${money(o.total)}</b>，再按下面的按鈕。</div>` : ''}<button class="btn block" id="o-paid" style="margin-bottom:12px">確認已收到款項</button>` : ''}
       <p style="font-weight:700;margin:0 0 6px">訂單狀態</p>
       <div class="statusbar" id="o-status" style="margin-bottom:12px">${Object.entries(statuses).map(([k, t]) => `<button data-k="${k}" class="${k === o.status ? 'on' : ''}">${t}</button>`).join('')}</div>
       <label class="field"><span>給客人看的留言（顯示在客人的訂單頁）</span><input id="o-msg" value="${esc(o.adminMessage)}" maxlength="500" placeholder="例如：已出貨，黑貓單號 1234-5678-9012"></label>
@@ -512,7 +512,6 @@
       catch (e) { NTC.toast(e.message, 3500); } finally { NTC.loading(false); }
     };
     function moneyCheck() {
-      if (o.payment.method === 'lpcode') return `這筆訂單還沒確認收款。\n\n請先打開 LINE Pay 確認已經收到：\n金額 ${money(o.total)}${o.status === 'reported' ? '' : '\n（客人還沒按「我已經付款了」）'}\n\n確定錢已經收到了嗎？`;
       return `這筆訂單還沒確認收款。\n\n請先到網銀確認已經收到：\n金額 ${money(o.total)}${o.payment.last5 ? `\n客人帳號末五碼 ${o.payment.last5}` : '\n（客人還沒回報末五碼）'}\n\n確定錢已經入帳了嗎？`;
     }
     const paid = el.querySelector('#o-paid'); if (paid) paid.onclick = () => { if (confirm(moneyCheck())) save({ markPaid: true }); };
@@ -1539,18 +1538,12 @@
         <p class="note" style="margin:0 0 12px">開著時客人的購物車只會顯示「目前暫停接單」（可以搭配下面的「公告」寫原因，例如「12/24–12/26 休息」）。管理員不受影響，可以照常測試下單。</p>
         <label class="tg red" style="display:flex;margin-bottom:6px"><b>測試模式</b>${s.testMode ? '<span class="flag">開著：只有管理員能線上結帳</span>' : '<span class="flag ok">關閉：客人可以線上付款</span>'}<span class="sp"></span><input type="checkbox" id="s-test" ${s.testMode ? 'checked' : ''}></label>
         <p class="note" style="margin:0 0 12px">測試模式開著時，客人結帳會改成「用 LINE 傳訂單給店家」。金流和匯款帳號都準備好之後再關掉。</p>
-        <label class="tg" style="display:flex;margin-bottom:8px">LINE Pay 官方串接（需要統編） ${ready.linepay ? `<span class="flag ok">已串接（${ready.linepayEnv === 'production' ? '正式' : '測試'}）</span>` : '<span class="flag">尚未申請／串接</span>'}<span class="sp"></span><input type="checkbox" id="s-p-lp" ${s.payments.linepay ? 'checked' : ''}></label>
+        <label class="tg" style="display:flex;margin-bottom:8px">LINE Pay ${ready.linepay ? `<span class="flag ok">已串接（${ready.linepayEnv === 'production' ? '正式' : '測試'}）</span>` : '<span class="flag">尚未申請／串接</span>'}<span class="sp"></span><input type="checkbox" id="s-p-lp" ${s.payments.linepay ? 'checked' : ''}></label>
         <label class="tg" style="display:flex;margin-bottom:8px">信用卡／ATM／超商（綠界） ${ready.ecpay ? `<span class="flag ${ready.ecpayEnv === 'production' ? 'ok' : ''}">${ready.ecpayEnv === 'production' ? '正式' : '測試環境（不會真的扣款）'}</span>` : '<span class="flag">尚未申請／串接</span>'}<span class="sp"></span><input type="checkbox" id="s-p-ec" ${s.payments.ecpay ? 'checked' : ''}></label>
         <label class="tg" style="display:flex;margin-bottom:12px">銀行轉帳 ${b.account ? '' : '<span class="flag">要先填下面的帳號</span>'}<span class="sp"></span><input type="checkbox" id="s-p-tr" ${s.payments.transfer ? 'checked' : ''}></label>
         <div class="grid2"><label class="field"><span>銀行名稱</span><input id="s-bname" value="${esc(b.name)}" placeholder="例如：國泰世華"></label><label class="field"><span>銀行代碼</span><input id="s-bcode" value="${esc(b.code)}" placeholder="例如：013" inputmode="numeric"></label></div>
         <label class="field"><span>帳號</span><input id="s-bacc" value="${esc(b.account)}" inputmode="numeric"></label>
-        <div class="grid2"><label class="field"><span>戶名（選填）</span><input id="s-bholder" value="${esc(b.holder)}"></label><label class="field"><span>轉帳期限（天）</span><input id="s-tdays" type="text" inputmode="numeric" pattern="[0-9]*" min="1" value="${s.transferDays}"></label></div>
-        <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--line)">
-        <label class="tg" style="display:flex;margin-bottom:8px">LINE Pay 付款（個人） ${(s.lpcode && (s.lpcode.link || s.lpcode.qr)) ? '' : '<span class="flag">要先貼下面的 LINE Pay 連結</span>'}<span class="sp"></span><input type="checkbox" id="s-p-lq" ${s.payments.lpcode ? 'checked' : ''}></label>
-        <label class="field" style="margin-bottom:6px"><span>LINE Pay 付款連結</span><input id="s-lq-link" type="url" inputmode="url" autocomplete="off" placeholder="https://line.me/R/pay/…" value="${esc((s.lpcode && s.lpcode.link) || '')}"></label>
-        <div class="row" style="gap:8px;margin:0 0 6px;align-items:center"><label class="btn ghost small">或選收款碼圖片（自動讀連結）<input type="file" accept="image/*" id="s-lq-file" hidden></label><span class="note" id="s-lq-msg" style="margin:0"></span></div>
-        <p class="note" style="margin:0 0 12px">客人選 LINE Pay 下單後，按「打開 LINE Pay 付款」就會直接打開妳的 LINE Pay，只要輸入金額。客人按「付好了」後，妳在 LINE Pay 看到錢進來，再到訂單按「確認已收到款項」。</p>
-        </div></section>
+        <div class="grid2"><label class="field"><span>戶名（選填）</span><input id="s-bholder" value="${esc(b.holder)}"></label><label class="field"><span>轉帳期限（天）</span><input id="s-tdays" type="text" inputmode="numeric" pattern="[0-9]*" min="1" value="${s.transferDays}"></label></div></section>
       <section class="panel"><h2>可麗露禮盒規則</h2>
         <div class="grid2"><label class="field"><span>綜合口味禮盒價格</span><input id="s-aprice" type="text" inputmode="numeric" pattern="[0-9]*" value="${c.assortedPrice}"></label><label class="field"><span>單一口味最少幾盒</span><input id="s-smin" type="text" inputmode="numeric" pattern="[0-9]*" min="1" value="${c.singleMinBoxes}"></label></div>
         ${c.modes.map((m, i) => `<label class="field"><span>任選 ${m.flavors} 種（每種 ${m.each} 顆）最少幾盒</span><input class="s-mode" data-i="${i}" type="text" inputmode="numeric" pattern="[0-9]*" min="1" value="${m.minBoxes}"></label>`).join('')}</section>
@@ -1592,22 +1585,6 @@
       try { settings = (await NTC.api('/admin/settings', { method: 'PUT', body })).settings; renderSettings(); renderShopBar(); NTC.toast(msg); }
       catch (e) { NTC.toast(e.message, 3500); } finally { NTC.loading(false); }
     };
-    // LINE Pay 付款連結：貼上連結，或選收款碼圖片自動讀出連結（店主 11-28：上傳圖片太麻煩，客人也不用掃碼）
-    const lpQr = (s.lpcode && s.lpcode.qr) || '';
-    const LP_RE = /^https:\/\/line\.me\/R\/pay\/[\w\-./?=&%]{10,400}$/; // 跟伺服器同一個規則
-    const lqMsg = (t, ok) => { const m = $('#s-lq-msg'); m.textContent = t; m.style.color = ok ? 'var(--ok)' : 'var(--red)'; };
-    $('#s-lq-link').addEventListener('input', () => { const v = $('#s-lq-link').value.trim(); lqMsg(!v ? '' : LP_RE.test(v) ? '✓ 連結可以用' : '這不像 LINE Pay 連結（要 https://line.me/R/pay/ 開頭）', LP_RE.test(v)); });
-    $('#s-lq-file').onchange = async (e) => { const f = e.target.files[0]; e.target.value = ''; if (!f) return;
-      NTC.loading(true, '讀取收款碼…');
-      try {
-        if (!window.jsQR) await new Promise((ok, ko) => { const sc = document.createElement('script'); sc.src = 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js'; sc.integrity = 'sha384-b5Ya4Bq3qCyz39m2ISh+4DxjAIljdeFwK/BsXLuj9gugaNwAcj/ia15fxNZL9Nlx'; sc.crossOrigin = 'anonymous'; sc.onload = ok; sc.onerror = () => ko(new Error('讀取工具載入失敗，請直接貼連結')); document.head.appendChild(sc); });
-        const img = await new Promise((ok, ko) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ko(new Error('這張圖片讀不到')); i.src = URL.createObjectURL(f); });
-        const k = Math.min(1, 1400 / Math.max(img.width, img.height)); const c = document.createElement('canvas'); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
-        const x = c.getContext('2d'); x.drawImage(img, 0, 0, c.width, c.height); const d = x.getImageData(0, 0, c.width, c.height);
-        const r = window.jsQR(d.data, c.width, c.height); const v = r && r.data ? r.data.trim() : '';
-        if (!LP_RE.test(v)) throw new Error(v ? '這張圖裡的不是 LINE Pay 連結' : '圖裡讀不到 QR code，換一張清楚的截圖');
-        $('#s-lq-link').value = v; lqMsg('✓ 讀到 LINE Pay 連結了，按「儲存設定」', true); setDirty(true);
-      } catch (err) { lqMsg(err.message || '讀不到', false); } finally { NTC.loading(false); } };
     $('#s-save').onclick = () => put({
       leadDays: +$('#s-lead').value, maxDays: +$('#s-max').value, maxOrdersPerDay: +$('#s-perday').value, closedWeekdays: week, blockedDates: blocked,
       dateLabel: $('#s-datelabel').value.trim() || '希望到貨日期',
@@ -1615,8 +1592,7 @@
         ambient: { label: s.shipping.ambient.label, tiers: [...app.querySelectorAll('#s-atiers [data-i]')].map((r) => ({ upTo: +r.querySelector('.tu').value, fee: +r.querySelector('.tf').value })) } },
       dateNote: $('#s-datenote').value.trim(),
       freeShippingOver: +$('#s-free').value,
-      payments: { linepay: $('#s-p-lp').checked, ecpay: $('#s-p-ec').checked, transfer: $('#s-p-tr').checked, lpcode: $('#s-p-lq').checked },
-      lpcode: { qr: lpQr, link: $('#s-lq-link').value.trim() },
+      payments: { linepay: $('#s-p-lp').checked, ecpay: $('#s-p-ec').checked, transfer: $('#s-p-tr').checked },
       bank: { name: $('#s-bname').value.trim(), code: $('#s-bcode').value.trim(), account: $('#s-bacc').value.trim(), holder: $('#s-bholder').value.trim() },
       transferDays: +$('#s-tdays').value,
       cookie: { ...s.cookie, series: undefined, groups: undefined, minPieces: +$('#s-cmin').value, shipping: { label: $('#s-clabel').value.trim(), tiers: [...app.querySelectorAll('#s-ctiers [data-i]')].map((r) => ({ upTo: +r.querySelector('.tu').value, fee: +r.querySelector('.tf').value })) } },
@@ -1663,7 +1639,7 @@
   }
   // each settings section folds to its title + a one-line summary of what is set; fields stay in the page, so 儲存設定 still saves everything
   function foldSettings() {
-    const s = settings; const pays = [s.payments.transfer && '銀行轉帳', s.payments.lpcode && s.lpcode && (s.lpcode.link || s.lpcode.qr) && 'LINE Pay', s.payments.linepay && 'LINE Pay', s.payments.ecpay && '信用卡／ATM／超商'].filter(Boolean);
+    const s = settings; const pays = [s.payments.transfer && '銀行轉帳', s.payments.linepay && 'LINE Pay', s.payments.ecpay && '信用卡／ATM／超商'].filter(Boolean);
     const sum = {
       接單日期: `最早今天＋${s.leadDays} 天${(s.closedWeekdays || []).length ? '・公休週' + [...s.closedWeekdays].sort().map((d) => '日一二三四五六'[d]).join('') : ''}${(s.blockedDates || []).length ? `・${s.blockedDates.length} 天不接單` : ''}`,
       運費: `冷凍 ${money(s.shipping.frozen.tiers[0].fee)} 起・馬林糖 ${money((s.shipping.ambient.tiers || [{ fee: s.shipping.ambient.fee }])[0].fee)} 起${s.freeShippingOver ? `・滿 ${money(s.freeShippingOver)} 免運` : ''}`,

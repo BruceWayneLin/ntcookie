@@ -115,8 +115,7 @@ const DEFAULT_SETTINGS = {
     ambient: { label: '黑貓常溫宅配', tiers: [{ upTo: 3, fee: 130 }, { upTo: 999, fee: 170 }] },
   },
   freeShippingOver: 0, // 0 = 不免運
-  payments: { linepay: true, ecpay: true, transfer: true, lpcode: false },
-  lpcode: { qr: '' }, // 個人 LINE Pay 收款碼（店主 11-28：沒有統編，用個人 LINE Pay 掃碼收款；客人付完回報，店家確認）
+  payments: { linepay: true, ecpay: true, transfer: true },
   bank: { name: '', code: '', account: '', holder: '' },
   transferDays: 2, // 轉帳期限（天）
   canele: {
@@ -252,7 +251,6 @@ function publicSettings(s, admin = false, products = null) {
       linepay: !!(open && s.payments?.linepay && linepayReady()),
       ecpay: !!(open && s.payments?.ecpay && ecpayReady()),
       transfer: !!(open && s.payments?.transfer && bankReady),
-      lpcode: !!(open && s.payments?.lpcode && (LP_LINK.test(s.lpcode?.link || '') || IMG_URL.test(s.lpcode?.qr || ''))), // 有 LINE Pay 連結（或收款碼圖）才給客人選
     },
     canele: s.canele, notice: s.notice, shopNotes: cleanNotes(s.shopNotes), today: twDate(),
     cookie: { minPieces: s.cookie.minPieces, shipping: s.cookie.shipping, groups: cookieGroups(s), series: products ? visibleSeries(s, products, admin) : [] },
@@ -492,18 +490,14 @@ async function nextOrderNo() {
 const STATUS = {
   pending: '待付款', reported: '已匯款（待確認）', paid: '已付款', making: '製作中', shipped: '已出貨', done: '已完成', cancelled: '已取消',
 };
-const PAY_LABEL = { linepay: 'LINE Pay', ecpay: '信用卡／ATM／超商', transfer: '銀行轉帳', lpcode: 'LINE Pay' };
-const MANUAL_PAY = ['transfer', 'lpcode'];
-const LP_LINK = /^https:\/\/line\.me\/R\/pay\/[\w\-./?=&%]{10,400}$/; // 收款碼裡的 LINE Pay 連結：客人手機點了直接打開 LINE Pay 轉帳畫面 // 客人付完回報、店家自己確認收款的付款方式
+const PAY_LABEL = { linepay: 'LINE Pay', ecpay: '信用卡／ATM／超商', transfer: '銀行轉帳' };
 
-const statusLabel = (o) => (o.status === 'reported' && o.payment?.method === 'lpcode' ? '已付款（待確認）' : STATUS[o.status] || o.status); // LINE Pay 掃碼回報：不是匯款
 function publicOrder(o, settings) {
   const v = pick(o, ['orderNo', 'createdAt', 'status', 'lines', 'subtotal', 'shipping', 'total', 'date', 'note', 'contact']);
-  v.statusLabel = statusLabel(o);
+  v.statusLabel = STATUS[o.status] || o.status;
   v.payment = pick(o.payment || {}, ['method', 'status', 'paidAt', 'last5', 'info', 'deadline']);
   v.payment.label = PAY_LABEL[o.payment?.method] || '';
   if (o.payment?.method === 'transfer' && settings) v.bank = settings.bank;
-  if (o.payment?.method === 'lpcode' && settings) v.lpcode = { qr: settings.lpcode?.qr || '', link: LP_LINK.test(settings.lpcode?.link || '') ? settings.lpcode.link : '' };
   v.adminMessage = o.adminMessage || '';
   return v;
 }
@@ -583,15 +577,14 @@ const twDay = (ymd) => { const d = new Date(ymd + 'T00:00:00Z'); return `${d.get
 function payLine(o) {
   if (o.status === 'cancelled') return '';
   if (o.payment?.status === 'paid') return '付款：已確認收到 ✓';
-  if (o.status === 'reported') return o.payment?.method === 'lpcode' ? '付款：已收到您的 LINE Pay 付款回報，店家確認中' : `付款：已收到您的匯款回報（末五碼 ${o.payment.last5}），店家確認中`;
-  if (o.payment?.method === 'lpcode') return `付款：請到訂單頁按「打開 LINE Pay 付款」付 $${o.total}，付好後按「付好了，按這裡」`;
+  if (o.status === 'reported') return `付款：已收到您的匯款回報（末五碼 ${o.payment.last5}），店家確認中`;
   if (o.payment?.method === 'transfer') return `付款：請匯款 $${o.total}，再到訂單頁回報帳號末五碼`;
   return '付款：尚未完成';
 }
 function statusText(o, mine) {
   if (!mine) return `📦 ${o.orderNo}
-目前狀態：${statusLabel(o)}`; // not this LINE account's order: status only, no personal details
-  return [`📦 ${o.orderNo}`, `目前狀態：${statusLabel(o)}`, payLine(o), `${'希望到貨'}：${twDay(o.date)}`, `合計：$${o.total}`, o.adminMessage ? `店家留言：${o.adminMessage}` : ''].filter(Boolean).join('\n');
+目前狀態：${STATUS[o.status] || o.status}`; // not this LINE account's order: status only, no personal details
+  return [`📦 ${o.orderNo}`, `目前狀態：${STATUS[o.status] || o.status}`, payLine(o), `${'希望到貨'}：${twDay(o.date)}`, `合計：$${o.total}`, o.adminMessage ? `店家留言：${o.adminMessage}` : ''].filter(Boolean).join('\n');
 }
 async function lineWebhook(event) {
   const raw = event.isBase64Encoded ? Buffer.from(event.body || '', 'base64').toString('utf8') : (event.body || '');
@@ -652,7 +645,7 @@ async function createOrder(event) {
     pk: 'ORDER', sk: orderNo, orderNo, token: rand(18), createdAt: now, status: 'pending',
     lines: priced.lines, subtotal: priced.subtotal, shipping: priced.shipping, total: priced.total,
     date: b.date, note: str(b.note, 500), contact,
-    payment: { method, status: 'unpaid', deadline: MANUAL_PAY.includes(method) ? addDays(twDate(), int(settings.transferDays, 2)) : undefined },
+    payment: { method, status: 'unpaid', deadline: method === 'transfer' ? addDays(twDate(), int(settings.transferDays, 2)) : undefined },
     byShop: isAdminOf(settings, viewer) ? true : undefined, // 店家自己下的單（測試用），後台可以刪
     user: user ? { sub: user.sub, name: user.name, picture: user.picture } : undefined,
     gsi1pk: user ? `USER#${user.sub}` : undefined, gsi1sk: user ? now : undefined,
@@ -671,7 +664,7 @@ const orderPage = (base, o, extra = '') => `${base}order.html?no=${o.orderNo}&t=
 async function startPayment(o, returnBase, inLine) {
   const base = siteBase(returnBase);
   const method = o.payment.method;
-  if (MANUAL_PAY.includes(method)) return { type: 'order', url: orderPage(base, o) };
+  if (method === 'transfer') return { type: 'order', url: orderPage(base, o) };
   if (method === 'linepay') return linepayRequest(o, base, inLine);
   if (method === 'ecpay') return ecpayForm(o, base);
   throw bad('付款方式不正確');
@@ -870,7 +863,7 @@ async function dailyDigest() {
   const onTime = live.filter((o) => o.date === target); const late = live.filter((o) => o.date < target);
   const n = ['①', '②', '③', '④', '⑤', '⑥', '⑦', '⑧', '⑨', '⑩', '⑪', '⑫'];
   const item = (o, i, withDate) => {
-    const paid = o.payment?.status === 'paid' ? '已付款 ✓' : o.status === 'reported' ? (o.payment?.method === 'lpcode' ? '⚠️ LINE Pay 付款待確認' : '⚠️ 匯款待確認') : '⚠️ 還沒付款';
+    const paid = o.payment?.status === 'paid' ? '已付款 ✓' : o.status === 'reported' ? '⚠️ 匯款待確認' : '⚠️ 還沒付款';
     return [`${n[i] || `(${i + 1})`} ${o.orderNo}　${o.contact?.name || ''}${withDate ? `　📅 ${twDay(o.date)}` : ''}`, `　${o.lines.map((l) => `${l.name}×${l.qty}`).join('、').slice(0, 90)}`, `　$${o.total}｜${paid}`, ''];
   };
   const lines = ['🔔 出貨提醒', ''];
@@ -956,17 +949,6 @@ async function route(event) {
         await notifyAdmins(`🏦 客人回報已轉帳\n訂單：${o.orderNo}\n客人：${who || '（未填）'}　${o.contact?.phone || ''}\n金額：$${o.total}\n帳號末五碼：${last5}\n\n請到網銀確認入帳後，在後台按「確認已收到款項」：\n${adminLink(o.orderNo)}`).catch(() => {});
         return json(200, { order: await withPhotos(publicOrder(n, await getSettings())) });
       }
-      if (method === 'POST' && seg[2] === 'lpreport') { // 客人說已經用 LINE Pay 掃碼付了；店家還要自己確認收到
-        const o = await loadOrder(seg[1], event, b.t);
-        if (o.payment?.method !== 'lpcode') throw bad('這筆訂單不是用 LINE Pay 掃碼付款');
-        if (o.payment?.status === 'paid' || o.status === 'cancelled') throw bad('這筆訂單不需要再回報付款');
-        const fields = { payment: { ...o.payment, reportedAt: new Date().toISOString() } };
-        if (o.status === 'pending') fields.status = 'reported';
-        const n = await setOrder(o.orderNo, fields, '客人回報已用 LINE Pay 掃碼付款');
-        const who = `${o.contact?.name || ''}${o.user?.name && o.user.name !== o.contact?.name ? `（LINE：${o.user.name}）` : ''}`;
-        await notifyAdmins(`💚 客人回報已用 LINE Pay 付款\n訂單：${o.orderNo}\n客人：${who || '（未填）'}　${o.contact?.phone || ''}\n金額：$${o.total}\n\n請打開 LINE Pay 確認收到這筆錢，再到後台按「確認已收到款項」：\n${adminLink(o.orderNo)}`).catch(() => {});
-        return json(200, { order: await withPhotos(publicOrder(n, await getSettings())) });
-      }
       if (method === 'POST' && seg[2] === 'pay') { // retry / switch payment
         const o = await loadOrder(seg[1], event, b.t);
         if (o.payment?.status === 'paid' || o.status === 'cancelled') throw bad('這筆訂單不需要付款');
@@ -974,10 +956,8 @@ async function route(event) {
         const m = b.method || o.payment.method;
         const viewer = await getUser(event).catch(() => null);
         if (!publicSettings(settings, isAdminOf(settings, viewer)).payments[m]) throw bad('這個付款方式目前不能用');
-        const payment = { ...o.payment, method: m, deadline: MANUAL_PAY.includes(m) ? addDays(twDate(), int(settings.transferDays, 2)) : o.payment.deadline };
-        const switched = m !== o.payment.method; const fields = { payment };
-        if (switched && o.status === 'reported') { fields.status = 'pending'; delete payment.last5; delete payment.reportedAt; } // 換了付款方式：之前的「已回報」不算數
-        const n = await setOrder(o.orderNo, fields, switched ? `改用 ${PAY_LABEL[m]} 付款` : '重新付款');
+        const payment = { ...o.payment, method: m, deadline: m === 'transfer' ? addDays(twDate(), int(settings.transferDays, 2)) : o.payment.deadline };
+        const n = await setOrder(o.orderNo, { payment }, m !== o.payment.method ? `改用 ${PAY_LABEL[m]} 付款` : '重新付款');
         return json(200, { next: await startPayment(n, b.returnBase, b.inLine) });
       }
     }
@@ -1100,7 +1080,7 @@ async function route(event) {
         // money first: an unpaid order only moves to 已付款 / 製作中 / 已出貨 / 已完成 when the shop explicitly confirms the payment arrived
         const AFTER_PAY = ['paid', 'making', 'shipped', 'done'];
         if (AFTER_PAY.includes(b.status) && b.status !== o.status && o.payment?.status !== 'paid' && !b.markPaid) {
-          throw bad('這筆還沒確認收款。請先確認錢已經收到（網銀或 LINE Pay），再按「確認已收到款項」。');
+          throw bad('這筆還沒確認收款。請先到網銀確認錢已入帳，再按「確認已收到款項」。');
         }
         if (b.status && STATUS[b.status] && b.status !== o.status) {
           fields.status = b.status; notes.push(`狀態 → ${STATUS[b.status]}`);
@@ -1328,8 +1308,6 @@ async function route(event) {
         const keys = ['leadDays', 'maxDays', 'maxOrdersPerDay', 'closedWeekdays', 'blockedDates', 'dateLabel', 'dateNote', 'shipping', 'freeShippingOver', 'payments', 'bank', 'transferDays', 'canele', 'notice', 'shopNotes', 'testMode', 'pauseOrders', 'cookie'];
         const next = { ...settings, ...pick(b, keys), pk: 'SETTINGS', sk: 'main' };
         if (b.shopNotes !== undefined) next.shopNotes = cleanNotes(b.shopNotes);
-        if (b.payments && !('lpcode' in b.payments)) next.payments = { ...next.payments, lpcode: !!settings.payments?.lpcode }; // 舊的後台頁面存設定時不會把掃碼付款關掉
-        if (b.lpcode !== undefined) { const qr = str(b.lpcode?.qr, 300); const link = str(b.lpcode?.link, 420).trim(); next.lpcode = { qr: IMG_URL.test(qr) ? qr : '', link: LP_LINK.test(link) ? link : '' }; } // 個人 LINE Pay 收款碼的圖
         if (b.packs !== undefined) next.packs = cleanPacks(b.packs);
         if (b.shipping) {
           const f = b.shipping.frozen || {}; const a = b.shipping.ambient || {};

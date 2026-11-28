@@ -31,8 +31,8 @@
 </header>
 <main class="wrap" id="app"><div class="spinner"></div></main>
 <button type="button" class="nt-back" onclick="if (history.length > 1 && document.referrer && new URL(document.referrer).origin === location.origin) history.back(); else location.href = 'orders.html'"><i aria-hidden="true"></i>返回上一頁</button>
-<script src="js/config.js?v=1128b"></script>
-<script src="js/app.js?v=1128b"></script>
+<script src="js/config.js?v=1128c"></script>
+<script src="js/app.js?v=1128c"></script>
 <script>
 (async function () {
   const { $, esc, money } = NTC;
@@ -64,7 +64,7 @@
       if (b.classList.contains('copy-no')) { b.classList.add('done'); b.lastChild.textContent = '已複製'; clearTimeout(b._t); b._t = setTimeout(() => { b.classList.remove('done'); b.lastChild.textContent = '複製'; }, 1600); }
     } else NTC.toast(`請長按選取：${v}`, 4000);
   }));
-  const PAY_NAMES = { linepay: 'LINE Pay', ecpay: '信用卡／ATM／超商', transfer: '銀行轉帳', lpcode: 'LINE Pay' };
+  const PAY_NAMES = { linepay: 'LINE Pay', ecpay: '信用卡／ATM／超商', transfer: '銀行轉帳' };
 
   function payBlock() {
     const p = o.payment;
@@ -84,17 +84,6 @@
           <a class="btn line block small" style="margin-top:10px" href="${NTC.chatUrl(`您好，我已經匯款了\n訂單：${o.orderNo}\n金額：${money(o.total)}\n帳號末五碼：${p.last5}`)}">用 LINE 通知店家我已匯款</a></div>` : ''}
         <div class="row" style="margin-top:12px"><input id="last5" inputmode="numeric" maxlength="5" placeholder="帳號末五碼" style="flex:1;border:1.5px solid #e6d2c6;border-radius:12px;padding:12px;font-size:16px" value="${esc(p.last5 || '')}">
         <button class="btn small" id="sendLast5">${p.last5 ? '更新' : '回報已匯款'}</button></div>`;
-    } else if (p.method === 'lpcode') { // LINE Pay：點按鈕直接打開 LINE Pay（收款碼裡的連結），客人只要輸入金額（店主 11-28：不要再教客人存 QR code）
-      const lpLink = o.lpcode && o.lpcode.link; const qr = o.lpcode && o.lpcode.qr;
-      if (o.status === 'reported') h += `<div style="margin:0 0 12px;padding:10px 12px;border-radius:12px;background:#eef4fb"><b>✓ 已回報 LINE Pay 付款</b><br><span class="note">店家確認收到後，這裡會變成「已付款」。</span>
-          <a class="btn line block small" style="margin-top:10px" href="${NTC.chatUrl(`您好，我已經用 LINE Pay 付款了\n訂單：${o.orderNo}\n金額：${money(o.total)}`)}">用 LINE 通知店家我已付款</a></div>`;
-      else {
-        h += `<p style="margin:0 0 10px;text-align:center">應付金額 <b style="font-size:22px;color:var(--red)">${money(o.total)}</b> ${copyBtn(o.total)}</p>`;
-        if (lpLink) h += `<a class="btn line block" href="${esc(lpLink)}" style="margin:0 0 8px">打開 LINE Pay 付款</a><p class="note" style="margin:0 0 14px;text-align:center">LINE Pay 打開後，輸入金額 <b>${money(o.total)}</b> 就完成了</p>`;
-        else if (qr) h += `<img src="${esc(NTC.asset(qr))}" alt="店家的 LINE Pay 收款碼" style="display:block;width:min(240px,75%);margin:0 auto 8px;padding:10px;box-sizing:border-box;background:#fff"><p class="note" style="margin:0 0 14px;text-align:center">用 LINE Pay 掃碼，輸入金額 <b>${money(o.total)}</b></p>`;
-        else h += '<p class="note" style="margin:0 0 10px;padding:9px 11px;border-radius:10px;background:#fff6ec">店家的 LINE Pay 暫時沒有放上來。還沒付款的話，可以改用下面其他付款方式，或按「聯絡店家」。</p>';
-        h += '<button class="btn block" id="lpPaid">付好了，按這裡</button>';
-      }
     } else if (p.method === 'ecpay' && p.info) {
       const i = p.info;
       h += i.kind === 'atm'
@@ -104,7 +93,7 @@
     } else {
       h += `<p class="note" style="margin:0 0 10px">這筆訂單還沒付款（${esc(PAY_NAMES[p.method] || '')}）。</p><button class="btn block" id="payNow">前往付款・${money(o.total)}</button>`;
     }
-    const others = o.status === 'reported' ? [] : Object.entries(cat.settings.payments).filter(([k, on]) => on && k !== p.method); // 已回報付款：不再提供改付款方式
+    const others = Object.entries(cat.settings.payments).filter(([k, on]) => on && k !== p.method);
     if (others.length) h += `<div style="margin-top:12px"><p class="note" style="margin:0 0 6px">或改用：</p><div class="chips">${others.map(([k]) => `<button class="chip switch" data-k="${k}">${PAY_NAMES[k]}</button>`).join('')}</div></div>`;
     return h;
   }
@@ -112,7 +101,7 @@
   function render() {
     const fresh = q.get('new') === '1' || pay === 'ok';
     app.innerHTML = `
-      ${fresh && ['transfer', 'lpcode'].includes(o.payment.method) && o.payment.status !== 'paid' ? `<div class="panel" style="background:#fff6ec"><b>請記下訂單編號 <span class="order-no">${esc(o.orderNo)}</span></b>${copyNoBtn(o.orderNo)}<p class="note" style="margin:4px 0 10px">${o.payment.method === 'lpcode' ? '用 LINE Pay 付好後回到這一頁按「付好了，按這裡」。' : '匯款後回到這一頁填末五碼。'}找不到這頁時：官網選單 →「我的訂單」→ 用訂單編號＋手機查詢；或按下面把訂單傳到 LINE 聊天室留著。</p>
+      ${fresh && o.payment.method === 'transfer' && o.payment.status !== 'paid' ? `<div class="panel" style="background:#fff6ec"><b>請記下訂單編號 <span class="order-no">${esc(o.orderNo)}</span></b>${copyNoBtn(o.orderNo)}<p class="note" style="margin:4px 0 10px">匯款後回到這一頁填末五碼。找不到這頁時：官網選單 →「我的訂單」→ 用訂單編號＋手機查詢；或按下面把訂單傳到 LINE 聊天室留著。</p>
         <a class="btn line block small" href="${NTC.chatUrl(`您好，我下了一張訂單\n訂單：${o.orderNo}\n金額：${money(o.total)}\n${location.href.replace(/&new=1|&pay=[a-z]+/g, '')}`)}">把訂單傳到 LINE（店家也會看到）</a></div>` : ''}
       ${fresh && o.payment.status === 'paid' ? '<div class="panel" style="text-align:center;background:#f3faf4"><p style="font:900 22px var(--serif);margin:4px 0">付款成功，謝謝您 ♡</p><p class="note" style="margin:0">我們會依日期為您手作，出貨時會再通知。</p></div>'
         : fresh ? '<div class="panel" style="text-align:center"><p style="font:900 22px var(--serif);margin:4px 0">訂單已送出 ♡</p><p class="note" style="margin:0">完成付款後就會開始安排製作。</p></div>' : ''}
@@ -134,11 +123,6 @@
       </section>
       <div class="row" style="gap:10px"><a class="btn ghost block" href="${NTC.chatUrl(`您好，我想詢問訂單 ${o.orderNo}`)}">聯絡店家</a><a class="btn block" href="index.html">繼續逛逛</a></div>`;
     wireCopy(app);
-    const lp = $('#lpPaid');
-    if (lp) lp.onclick = async () => {
-      if (!confirm(`確定已經用 LINE Pay 付了 ${money(o.total)}？\n店家會在 LINE Pay 確認收到這筆錢。`)) return;
-      NTC.loading(true); try { o = (await NTC.api(`/orders/${o.orderNo}/lpreport`, { method: 'POST', body: { t } })).order; render(); NTC.toast('已回報，謝謝您'); } catch (e) { NTC.toast(e.message); } finally { NTC.loading(false); }
-    };
     const s5 = $('#sendLast5');
     if (s5) s5.onclick = async () => {
       const v = $('#last5').value.trim();
