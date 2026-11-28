@@ -156,6 +156,7 @@ r = await call(`/orders/${O1.orderNo}/pay`, { method: 'POST', body: { t: O1.toke
 r = await call(`/orders/${O1.orderNo}/transfer`, { method: 'POST', body: { t: O1.token, last5: '11111' } }); ok('after 已付款 the customer cannot re-report', r.status === 400, r.status);
 
 section('LINE Pay 掃碼付款（個人收款碼）');
+await putSettings({ payments: BASE.payments, lpcode: { qr: '' } }); // start clean even if an earlier manual check left a QR in the QA table
 r = await call('/catalog'); ok('lpcode off by default (no QR yet)', r.json.settings.payments.lpcode === false, r.json.settings.payments);
 r = await putSettings({ payments: { ...BASE.payments, lpcode: true } }); g = await call('/catalog'); ok('lpcode switched on without a QR → still hidden from customers', r.status === 200 && g.json.settings.payments.lpcode === false, g.json.settings.payments);
 r = await putSettings({ lpcode: { qr: 'javascript:alert(1)' } }); ok('a bad QR address is dropped', r.status === 200 && r.json.settings.lpcode.qr === '', r.json?.settings?.lpcode);
