@@ -31,8 +31,8 @@
 </header>
 <main class="wrap" id="app"><div class="spinner"></div></main>
 <button type="button" class="nt-back" onclick="if (history.length > 1 && document.referrer && new URL(document.referrer).origin === location.origin) history.back(); else location.href = 'orders.html'"><i aria-hidden="true"></i>返回上一頁</button>
-<script src="js/config.js?v=1126g"></script>
-<script src="js/app.js?v=1126g"></script>
+<script src="js/config.js?v=1128a"></script>
+<script src="js/app.js?v=1128a"></script>
 <script>
 (async function () {
   const { $, esc, money } = NTC;
@@ -90,7 +90,8 @@
         ? `<div style="margin:0 0 12px;padding:10px 12px;border-radius:12px;background:#eef4fb"><b>✓ 已回報 LINE Pay 付款</b><br><span class="note">店家在 LINE Pay 確認收到後，這裡會變成「已付款」。</span>
             <a class="btn line block small" style="margin-top:10px" href="${NTC.chatUrl(`您好，我已經用 LINE Pay 付款了\n訂單：${o.orderNo}\n金額：${money(o.total)}`)}">用 LINE 通知店家我已付款</a></div>`
         : `<p class="note" style="margin:0 0 10px">請在 <b>${esc(p.deadline || '')}</b> 前用 <b>LINE Pay</b> 掃下面的收款碼，付 <b style="color:var(--red)">${money(o.total)}</b> ${copyBtn(o.total)}</p>`;
-      if (qr && o.status !== 'reported') h += `<img src="${esc(NTC.asset(qr))}" alt="店家的 LINE Pay 收款碼" style="display:block;width:min(260px,80%);margin:0 auto 10px;border-radius:12px;background:#fff">
+      if (!qr && o.status !== 'reported') h += `<p class="note" style="margin:0 0 10px;padding:9px 11px;border-radius:10px;background:#fff6ec">店家的收款碼暫時沒有放上來。還沒付款的話，可以改用下面其他付款方式，或按「聯絡店家」。已經付過了，請按「我已經付款了」。</p><button class="btn block" id="lpPaid">我已經付款了</button>`;
+      if (qr && o.status !== 'reported') h += `<img src="${esc(NTC.asset(qr))}" alt="店家的 LINE Pay 收款碼" style="display:block;width:min(260px,80%);margin:0 auto 10px;padding:10px;box-sizing:border-box;background:#fff">
         <ol class="note" style="margin:0 0 12px;padding-left:20px;line-height:1.7"><li>用手機看這頁的話：<b>長按收款碼 →「儲存到照片」</b></li><li>打開 LINE →「錢包」→ LINE Pay 的<b>掃描</b> → 右上角選<b>相簿</b>裡剛存的收款碼<br>（用別台手機看這頁，直接掃就可以）</li>
         <li>輸入金額 <b>${money(o.total)}</b>，備註填訂單編號 <b>${esc(o.orderNo)}</b> ${copyBtn(o.orderNo)}</li><li>付好後回到這頁，按下面的「我已經付款了」</li></ol>
         <button class="btn block" id="lpPaid">我已經付款了</button>`;
@@ -103,7 +104,7 @@
     } else {
       h += `<p class="note" style="margin:0 0 10px">這筆訂單還沒付款（${esc(PAY_NAMES[p.method] || '')}）。</p><button class="btn block" id="payNow">前往付款・${money(o.total)}</button>`;
     }
-    const others = Object.entries(cat.settings.payments).filter(([k, on]) => on && k !== p.method);
+    const others = o.status === 'reported' ? [] : Object.entries(cat.settings.payments).filter(([k, on]) => on && k !== p.method); // 已回報付款：不再提供改付款方式
     if (others.length) h += `<div style="margin-top:12px"><p class="note" style="margin:0 0 6px">或改用：</p><div class="chips">${others.map(([k]) => `<button class="chip switch" data-k="${k}">${PAY_NAMES[k]}</button>`).join('')}</div></div>`;
     return h;
   }

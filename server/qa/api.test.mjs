@@ -166,6 +166,11 @@ g = await call(`/orders/${OL.orderNo}?t=${OL.token}`); ok('order shows the QR + 
 r = await call(`/orders/${OL.orderNo}/lpreport`, { method: 'POST', body: { t: 'wrong' } }); ok('report with wrong token → 403', r.status === 403, r.status);
 r = await call(`/orders/${O1.orderNo}/lpreport`, { method: 'POST', body: { t: O1.token } }); ok('a bank-transfer order cannot use the LINE Pay report', r.status === 400, r.status);
 r = await call(`/orders/${OL.orderNo}/lpreport`, { method: 'POST', body: { t: OL.token } }); ok('customer reports paid → 待確認, money not yet confirmed', r.json?.order.status === 'reported' && r.json.order.payment.status === 'unpaid', r.json?.order);
+ok('reported LINE Pay order is labelled 已付款（待確認）, not 已匯款', r.json?.order.statusLabel === '已付款（待確認）', r.json?.order?.statusLabel);
+r = await putSettings({ payments: { linepay: true, ecpay: true, transfer: true } }); ok('an older admin page saving payments without lpcode keeps it on', r.json?.settings.payments.lpcode === true, r.json?.settings?.payments);
+const OL2 = (await order({ payment: 'lpcode' })).json; await call(`/orders/${OL2.orderNo}/lpreport`, { method: 'POST', body: { t: OL2.token } });
+r = await call(`/orders/${OL2.orderNo}/pay`, { method: 'POST', body: { t: OL2.token, method: 'transfer' } }); g = await call(`/orders/${OL2.orderNo}?t=${OL2.token}`);
+ok('switching method after reporting → back to 待付款 (the old report no longer counts)', g.json.order.status === 'pending' && g.json.order.payment.method === 'transfer' && !g.json.order.payment.last5, g.json.order);
 r = await call(`/admin/orders/${OL.orderNo}`, { method: 'PATCH', user: ADMIN, body: { markPaid: true } }); ok('admin confirms → 已付款', r.json?.order.status === 'paid' && r.json.order.payment.status === 'paid', r.json?.order?.status);
 r = await call(`/orders/${OL.orderNo}/lpreport`, { method: 'POST', body: { t: OL.token } }); ok('after 已付款 the customer cannot re-report', r.status === 400, r.status);
 r = await putSettings({ payments: BASE.payments, lpcode: { qr: '' } }); g = await call('/catalog'); ok('QR removed → option gone again', g.json.settings.payments.lpcode === false, g.json.settings.payments);

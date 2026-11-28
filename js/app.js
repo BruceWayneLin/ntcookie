@@ -482,7 +482,7 @@
     // 編輯模式：後台「網站」打開 ?edit=1；換頁也一直開著，按「完成」才關（只有店家帳號存得了）
     try {
       if (/[?&]edit=1(&|$)/.test(location.search)) sessionStorage.setItem('ntc-site-edit', '1');
-      if (sessionStorage.getItem('ntc-site-edit') === '1' && !/admin\.html$/.test(location.pathname)) { const s = document.createElement('script'); s.src = 'js/site-edit.js?v=1126g'; document.body.appendChild(s); }
+      if (sessionStorage.getItem('ntc-site-edit') === '1' && !/admin\.html$/.test(location.pathname)) { const s = document.createElement('script'); s.src = 'js/site-edit.js?v=1128a'; document.body.appendChild(s); }
     } catch (e) { /* no session storage: no edit mode */ }
   };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', siteBoot); else siteBoot();

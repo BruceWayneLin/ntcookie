@@ -265,8 +265,8 @@
 <div class="shopbar" id="shopbar" hidden></div>
 <main class="wrap" id="app"><div class="spinner"></div></main>
 <p class="note" id="ver" style="text-align:center;margin:0 0 24px;color:var(--muted)"></p>
-<script src="js/config.js?v=1126g"></script>
-<script src="js/app.js?v=1126g"></script>
+<script src="js/config.js?v=1128a"></script>
+<script src="js/app.js?v=1128a"></script>
 <script src="js/shop-tiles.js?v=1123k"></script>
 <script src="js/cookie-edge.js?v=1122e"></script>
 <script src="js/cookie-photo.js?v=1126f"></script>
@@ -292,7 +292,7 @@
       window.scrollTo(0, y + d); requestAnimationFrame(() => window.scrollTo(0, y)); }, 150); });
   $('#ver').textContent = '版本 ' + (NTC_CONFIG.version || '');
   const q = new URLSearchParams(location.search);
-  const PAY = { linepay: 'LINE Pay', ecpay: '綠界', transfer: '轉帳' };
+  const PAY = { linepay: 'LINE Pay', ecpay: '綠界', transfer: '轉帳', lpcode: 'LINE Pay 掃碼' };
   let canDeleteReal = false; // only the fixed top admin may delete customer orders
   let tab = 'orders'; let statuses = {}; let orders = []; let filter = 'open'; let sortBy = 'created';
   let products = []; let settings = null; let ready = {}; let inqs = null; let inqStatuses = {}; let inqFilter = 'open'; let inqP = null; let dirty = false; let prodCat = null; const openAcc = new Set();
@@ -445,8 +445,8 @@
       ${list.map((o) => `<button class="ord${o.status === 'reported' ? ' needs' : ''}" data-no="${esc(o.orderNo)}">
         <div class="top"><b>${esc(o.orderNo)}</b><span class="status-pill ${esc(o.status)}">${esc(o.statusLabel)}</span>${o.byShop ? '<span class="flag" style="background:#e2ecf7;color:#2d5785">店家測試單</span>' : ''}<span class="sp"></span><span class="amt">${money(o.total)}</span></div>
         <div class="mid">📅 ${NTC.fmtDate(o.date)}　👤 ${esc(o.contact.name)}　${esc(PAY[o.payment.method] || '')}
-          ${o.payment.status === 'paid' ? '<span class="flag ok">已收款</span>' : o.payment.last5 ? `<span class="flag">回報末五碼 ${esc(o.payment.last5)}</span>` : '<span class="flag">未付款</span>'}<br>
-          ${esc(o.lines.map((l) => `${l.name}×${l.qty}`).join('、'))}${o.note ? `<br>💬 ${esc(o.note.slice(0, 60))}` : ''}</div>${o.status === 'reported' ? `<span class="todo">👉 客人說已匯款${o.payment.last5 ? `（末五碼 ${esc(o.payment.last5)}）` : ''}，核對後點進來按「確認已收到款項」</span>` : ''}</button>`).join('') || '<p class="empty note">沒有訂單</p>'}`;
+          ${o.payment.status === 'paid' ? '<span class="flag ok">已收款</span>' : o.payment.last5 ? `<span class="flag">回報末五碼 ${esc(o.payment.last5)}</span>` : o.status === 'reported' ? '<span class="flag">客人回報已付款</span>' : '<span class="flag">未付款</span>'}<br>
+          ${esc(o.lines.map((l) => `${l.name}×${l.qty}`).join('、'))}${o.note ? `<br>💬 ${esc(o.note.slice(0, 60))}` : ''}</div>${o.status === 'reported' ? `<span class="todo">👉 ${o.payment.method === 'lpcode' ? '客人說已用 LINE Pay 付款，到 LINE Pay 核對後' : `客人說已匯款${o.payment.last5 ? `（末五碼 ${esc(o.payment.last5)}）` : ''}，核對後`}點進來按「確認已收到款項」</span>` : ''}</button>`).join('') || '<p class="empty note">沒有訂單</p>'}`;
     app.querySelectorAll('[data-f]').forEach((b) => (b.onclick = () => { filter = b.dataset.f; renderOrders(); }));
     app.querySelectorAll('[data-s]').forEach((b) => (b.onclick = () => { sortBy = b.dataset.s; renderOrders(); }));
     app.querySelectorAll('.ord').forEach((b) => (b.onclick = () => openOrder(orders.find((o) => o.orderNo === b.dataset.no))));
@@ -466,7 +466,7 @@
         <dt>付款</dt><dd>${esc(PAY[p.method] || '')}・${p.status === 'paid' ? `<span class="flag ok">已收款 ${new Date(p.paidAt).toLocaleString('zh-TW', { hour12: false })}</span>` : '<span class="flag">未收款</span>'}
           ${p.last5 ? `<br>客人回報末五碼 <b>${esc(p.last5)}</b>` : ''}${p.info ? `<br>${p.info.kind === 'atm' ? `ATM ${esc(p.info.bankCode)}-${esc(p.info.account)}` : `超商代碼 ${esc(p.info.code)}`}` : ''}
           ${p.simulated ? '<br><span class="flag">測試環境模擬付款</span>' : ''}</dd></dl>
-      ${p.status !== 'paid' && o.status !== 'cancelled' ? `${o.status === 'reported' ? `<div class="note" style="margin:0 0 8px;padding:10px 12px;border-radius:12px;background:#eef4fb">客人說<b>已經匯款</b>（末五碼 <b>${esc(p.last5 || '')}</b>）。請先到網銀確認真的收到 <b>${money(o.total)}</b>，再按下面的按鈕。</div>` : ''}<button class="btn block" id="o-paid" style="margin-bottom:12px">確認已收到款項</button>` : ''}
+      ${p.status !== 'paid' && o.status !== 'cancelled' ? `${o.status === 'reported' ? `<div class="note" style="margin:0 0 8px;padding:10px 12px;border-radius:12px;background:#eef4fb">${p.method === 'lpcode' ? `客人說<b>已經用 LINE Pay 付款</b>。請先打開 LINE Pay 確認真的收到 <b>${money(o.total)}</b>，再按下面的按鈕。` : `客人說<b>已經匯款</b>（末五碼 <b>${esc(p.last5 || '')}</b>）。請先到網銀確認真的收到 <b>${money(o.total)}</b>，再按下面的按鈕。`}</div>` : ''}<button class="btn block" id="o-paid" style="margin-bottom:12px">確認已收到款項</button>` : ''}
       <p style="font-weight:700;margin:0 0 6px">訂單狀態</p>
       <div class="statusbar" id="o-status" style="margin-bottom:12px">${Object.entries(statuses).map(([k, t]) => `<button data-k="${k}" class="${k === o.status ? 'on' : ''}">${t}</button>`).join('')}</div>
       <label class="field"><span>給客人看的留言（顯示在客人的訂單頁）</span><input id="o-msg" value="${esc(o.adminMessage)}" maxlength="500" placeholder="例如：已出貨，黑貓單號 1234-5678-9012"></label>
@@ -512,6 +512,7 @@
       catch (e) { NTC.toast(e.message, 3500); } finally { NTC.loading(false); }
     };
     function moneyCheck() {
+      if (o.payment.method === 'lpcode') return `這筆訂單還沒確認收款。\n\n請先打開 LINE Pay 確認已經收到：\n金額 ${money(o.total)}${o.status === 'reported' ? '' : '\n（客人還沒按「我已經付款了」）'}\n\n確定錢已經收到了嗎？`;
       return `這筆訂單還沒確認收款。\n\n請先到網銀確認已經收到：\n金額 ${money(o.total)}${o.payment.last5 ? `\n客人帳號末五碼 ${o.payment.last5}` : '\n（客人還沒回報末五碼）'}\n\n確定錢已經入帳了嗎？`;
     }
     const paid = el.querySelector('#o-paid'); if (paid) paid.onclick = () => { if (confirm(moneyCheck())) save({ markPaid: true }); };
@@ -1543,7 +1544,7 @@
         <label class="tg" style="display:flex;margin-bottom:12px">銀行轉帳 ${b.account ? '' : '<span class="flag">要先填下面的帳號</span>'}<span class="sp"></span><input type="checkbox" id="s-p-tr" ${s.payments.transfer ? 'checked' : ''}></label>
         <label class="tg" style="display:flex;margin-bottom:8px">LINE Pay 掃碼付款（個人收款碼） ${s.lpcode && s.lpcode.qr ? '' : '<span class="flag">要先放下面的收款碼</span>'}<span class="sp"></span><input type="checkbox" id="s-p-lq" ${s.payments.lpcode ? 'checked' : ''}></label>
         <div class="row" style="gap:12px;margin:0 0 6px;align-items:center"><span class="thumb" style="height:96px;border-radius:12px;background:#fff">${s.lpcode && s.lpcode.qr ? `<img id="s-lq-img" src="${esc(asset(s.lpcode.qr))}" alt="LINE Pay 收款碼">` : '<img id="s-lq-img" alt="" hidden>'}</span>
-          <div style="display:flex;flex-direction:column;gap:8px"><label class="btn ghost small">${s.lpcode && s.lpcode.qr ? '換收款碼' : '放 LINE Pay 收款碼'}<input type="file" accept="image/*" id="s-lq-file" hidden></label>${s.lpcode && s.lpcode.qr ? '<button type="button" class="btn ghost small" id="s-lq-del" style="color:var(--red)">拿掉收款碼</button>' : ''}</div></div>
+          <div style="display:flex;flex-direction:column;gap:8px"><label class="btn ghost small">${s.lpcode && s.lpcode.qr ? '換收款碼' : '放 LINE Pay 收款碼'}<input type="file" accept="image/*" id="s-lq-file" hidden></label><button type="button" class="btn ghost small" id="s-lq-del" style="color:var(--red)" ${s.lpcode && s.lpcode.qr ? '' : 'hidden'}>拿掉收款碼</button></div></div>
         <p class="note" style="margin:0 0 12px">在 LINE Pay 店家（個人商家）裡把收款碼存成圖片放上來。客人下單後會看到這張碼，用 LINE Pay 掃碼付款、再按「我已經付款了」；妳在 LINE Pay 看到錢進來，再到訂單按「確認已收到款項」。</p>
         <div class="grid2"><label class="field"><span>銀行名稱</span><input id="s-bname" value="${esc(b.name)}" placeholder="例如：國泰世華"></label><label class="field"><span>銀行代碼</span><input id="s-bcode" value="${esc(b.code)}" placeholder="例如：013" inputmode="numeric"></label></div>
         <label class="field"><span>帳號</span><input id="s-bacc" value="${esc(b.account)}" inputmode="numeric"></label>
@@ -1593,9 +1594,9 @@
     let lpQr = (s.lpcode && s.lpcode.qr) || '';
     $('#s-lq-file').onchange = async (e) => { const f = e.target.files[0]; e.target.value = ''; if (!f) return;
       NTC.loading(true, '上傳收款碼…');
-      try { lpQr = (await NTC.api('/admin/images', { method: 'POST', body: { dataUrl: await shrink(f, 1000) } })).url; const im = $('#s-lq-img'); im.src = asset(lpQr); im.hidden = false; setDirty(true); NTC.toast('收款碼放好了，按「儲存設定」才會生效', 3200); }
+      try { lpQr = (await NTC.api('/admin/images', { method: 'POST', body: { dataUrl: await shrink(f, 1000) } })).url; const im = $('#s-lq-img'); im.src = asset(lpQr); im.hidden = false; $('#s-lq-del').hidden = false; setDirty(true); NTC.toast('收款碼放好了，按「儲存設定」才會生效', 3200); }
       catch (err) { NTC.toast(err.message || '上傳失敗', 3500); } finally { NTC.loading(false); } };
-    const lqDel = $('#s-lq-del'); if (lqDel) lqDel.onclick = () => { if (!confirm('拿掉 LINE Pay 收款碼？（按「儲存設定」才會生效，客人就不能選掃碼付款了）')) return; lpQr = ''; const im = $('#s-lq-img'); im.hidden = true; $('#s-p-lq').checked = false; setDirty(true); };
+    const lqDel = $('#s-lq-del'); if (lqDel) lqDel.onclick = () => { if (!confirm('拿掉 LINE Pay 收款碼？（按「儲存設定」才會生效，客人就不能選掃碼付款了）')) return; lpQr = ''; const im = $('#s-lq-img'); im.hidden = true; lqDel.hidden = true; $('#s-p-lq').checked = false; setDirty(true); };
     $('#s-save').onclick = () => put({
       leadDays: +$('#s-lead').value, maxDays: +$('#s-max').value, maxOrdersPerDay: +$('#s-perday').value, closedWeekdays: week, blockedDates: blocked,
       dateLabel: $('#s-datelabel').value.trim() || '希望到貨日期',
@@ -1651,7 +1652,7 @@
   }
   // each settings section folds to its title + a one-line summary of what is set; fields stay in the page, so 儲存設定 still saves everything
   function foldSettings() {
-    const s = settings; const pays = [s.payments.transfer && '銀行轉帳', s.payments.lpcode && 'LINE Pay 掃碼', s.payments.linepay && 'LINE Pay', s.payments.ecpay && '信用卡／ATM／超商'].filter(Boolean);
+    const s = settings; const pays = [s.payments.transfer && '銀行轉帳', s.payments.lpcode && s.lpcode && s.lpcode.qr && 'LINE Pay 掃碼', s.payments.linepay && 'LINE Pay', s.payments.ecpay && '信用卡／ATM／超商'].filter(Boolean);
     const sum = {
       接單日期: `最早今天＋${s.leadDays} 天${(s.closedWeekdays || []).length ? '・公休週' + [...s.closedWeekdays].sort().map((d) => '日一二三四五六'[d]).join('') : ''}${(s.blockedDates || []).length ? `・${s.blockedDates.length} 天不接單` : ''}`,
       運費: `冷凍 ${money(s.shipping.frozen.tiers[0].fee)} 起・馬林糖 ${money((s.shipping.ambient.tiers || [{ fee: s.shipping.ambient.fee }])[0].fee)} 起${s.freeShippingOver ? `・滿 ${money(s.freeShippingOver)} 免運` : ''}`,
