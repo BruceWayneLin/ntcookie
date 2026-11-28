@@ -31,8 +31,8 @@
 </header>
 <main class="wrap" id="app"><div class="spinner"></div></main>
 <button type="button" class="nt-back" onclick="if (history.length > 1 && document.referrer && new URL(document.referrer).origin === location.origin) history.back(); else location.href = 'orders.html'"><i aria-hidden="true"></i>返回上一頁</button>
-<script src="js/config.js?v=1128c"></script>
-<script src="js/app.js?v=1128c"></script>
+<script src="js/config.js?v=1128d"></script>
+<script src="js/app.js?v=1128d"></script>
 <script>
 (async function () {
   const { $, esc, money } = NTC;
@@ -91,10 +91,11 @@
         : `<p class="note" style="margin:0 0 10px">請到超商機台輸入繳費代碼付款：</p><dl class="kv"><dt>繳費代碼</dt><dd>${esc(i.code)} ${copyBtn(i.code)}</dd><dt>金額</dt><dd>${money(o.total)}</dd><dt>期限</dt><dd>${esc(i.expire)}</dd></dl>`;
       h += '<p class="note" style="margin:10px 0 0">付款完成後這裡會自動變成「已付款」。</p>';
     } else {
-      h += `<p class="note" style="margin:0 0 10px">這筆訂單還沒付款（${esc(PAY_NAMES[p.method] || '')}）。</p><button class="btn block" id="payNow">前往付款・${money(o.total)}</button>`;
+      if (cat.settings.payments[p.method]) h += `<p class="note" style="margin:0 0 10px">這筆訂單還沒付款（${esc(PAY_NAMES[p.method] || '')}）。</p><button class="btn block" id="payNow">前往付款・${money(o.total)}</button>`;
+      else h += `<p class="note" style="margin:0 0 10px">這筆訂單還沒付款，原本的付款方式已經停用。${Object.values(cat.settings.payments).some(Boolean) ? '請選下面的付款方式：' : '請按「聯絡店家」。'}</p>`; // 店家關掉的付款方式（例如 11-28 拿掉的個人 LINE Pay）：不要再給「前往付款」
     }
     const others = Object.entries(cat.settings.payments).filter(([k, on]) => on && k !== p.method);
-    if (others.length) h += `<div style="margin-top:12px"><p class="note" style="margin:0 0 6px">或改用：</p><div class="chips">${others.map(([k]) => `<button class="chip switch" data-k="${k}">${PAY_NAMES[k]}</button>`).join('')}</div></div>`;
+    if (others.length) h += `<div style="margin-top:12px"><p class="note" style="margin:0 0 6px">${cat.settings.payments[p.method] ? '或改用：' : '付款方式：'}</p><div class="chips">${others.map(([k]) => `<button class="chip switch" data-k="${k}">${PAY_NAMES[k]}</button>`).join('')}</div></div>`;
     return h;
   }
 
