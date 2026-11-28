@@ -252,7 +252,7 @@ function publicSettings(s, admin = false, products = null) {
       linepay: !!(open && s.payments?.linepay && linepayReady()),
       ecpay: !!(open && s.payments?.ecpay && ecpayReady()),
       transfer: !!(open && s.payments?.transfer && bankReady),
-      lpcode: !!(open && s.payments?.lpcode && IMG_URL.test(s.lpcode?.qr || '')),
+      lpcode: !!(open && s.payments?.lpcode && (LP_LINK.test(s.lpcode?.link || '') || IMG_URL.test(s.lpcode?.qr || ''))), // 有 LINE Pay 連結（或收款碼圖）才給客人選
     },
     canele: s.canele, notice: s.notice, shopNotes: cleanNotes(s.shopNotes), today: twDate(),
     cookie: { minPieces: s.cookie.minPieces, shipping: s.cookie.shipping, groups: cookieGroups(s), series: products ? visibleSeries(s, products, admin) : [] },
@@ -492,8 +492,9 @@ async function nextOrderNo() {
 const STATUS = {
   pending: '待付款', reported: '已匯款（待確認）', paid: '已付款', making: '製作中', shipped: '已出貨', done: '已完成', cancelled: '已取消',
 };
-const PAY_LABEL = { linepay: 'LINE Pay', ecpay: '信用卡／ATM／超商', transfer: '銀行轉帳', lpcode: 'LINE Pay（掃碼付款）' };
-const MANUAL_PAY = ['transfer', 'lpcode']; // 客人付完回報、店家自己確認收款的付款方式
+const PAY_LABEL = { linepay: 'LINE Pay', ecpay: '信用卡／ATM／超商', transfer: '銀行轉帳', lpcode: 'LINE Pay' };
+const MANUAL_PAY = ['transfer', 'lpcode'];
+const LP_LINK = /^https:\/\/line\.me\/R\/pay\/[\w\-./?=&%]{10,400}$/; // 收款碼裡的 LINE Pay 連結：客人手機點了直接打開 LINE Pay 轉帳畫面 // 客人付完回報、店家自己確認收款的付款方式
 
 const statusLabel = (o) => (o.status === 'reported' && o.payment?.method === 'lpcode' ? '已付款（待確認）' : STATUS[o.status] || o.status); // LINE Pay 掃碼回報：不是匯款
 function publicOrder(o, settings) {
@@ -502,7 +503,7 @@ function publicOrder(o, settings) {
   v.payment = pick(o.payment || {}, ['method', 'status', 'paidAt', 'last5', 'info', 'deadline']);
   v.payment.label = PAY_LABEL[o.payment?.method] || '';
   if (o.payment?.method === 'transfer' && settings) v.bank = settings.bank;
-  if (o.payment?.method === 'lpcode' && settings) v.lpcode = { qr: settings.lpcode?.qr || '' };
+  if (o.payment?.method === 'lpcode' && settings) v.lpcode = { qr: settings.lpcode?.qr || '', link: LP_LINK.test(settings.lpcode?.link || '') ? settings.lpcode.link : '' };
   v.adminMessage = o.adminMessage || '';
   return v;
 }
@@ -583,7 +584,7 @@ function payLine(o) {
   if (o.status === 'cancelled') return '';
   if (o.payment?.status === 'paid') return '付款：已確認收到 ✓';
   if (o.status === 'reported') return o.payment?.method === 'lpcode' ? '付款：已收到您的 LINE Pay 付款回報，店家確認中' : `付款：已收到您的匯款回報（末五碼 ${o.payment.last5}），店家確認中`;
-  if (o.payment?.method === 'lpcode') return `付款：請用 LINE Pay 掃店家收款碼付 $${o.total}，付完到訂單頁按「我已經付款了」`;
+  if (o.payment?.method === 'lpcode') return `付款：請到訂單頁按「打開 LINE Pay 付款」付 $${o.total}，付好後按「付好了，按這裡」`;
   if (o.payment?.method === 'transfer') return `付款：請匯款 $${o.total}，再到訂單頁回報帳號末五碼`;
   return '付款：尚未完成';
 }
@@ -1328,7 +1329,7 @@ async function route(event) {
         const next = { ...settings, ...pick(b, keys), pk: 'SETTINGS', sk: 'main' };
         if (b.shopNotes !== undefined) next.shopNotes = cleanNotes(b.shopNotes);
         if (b.payments && !('lpcode' in b.payments)) next.payments = { ...next.payments, lpcode: !!settings.payments?.lpcode }; // 舊的後台頁面存設定時不會把掃碼付款關掉
-        if (b.lpcode !== undefined) { const qr = str(b.lpcode?.qr, 300); next.lpcode = { qr: IMG_URL.test(qr) ? qr : '' }; } // 個人 LINE Pay 收款碼的圖
+        if (b.lpcode !== undefined) { const qr = str(b.lpcode?.qr, 300); const link = str(b.lpcode?.link, 420).trim(); next.lpcode = { qr: IMG_URL.test(qr) ? qr : '', link: LP_LINK.test(link) ? link : '' }; } // 個人 LINE Pay 收款碼的圖
         if (b.packs !== undefined) next.packs = cleanPacks(b.packs);
         if (b.shipping) {
           const f = b.shipping.frozen || {}; const a = b.shipping.ambient || {};
