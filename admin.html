@@ -1594,13 +1594,13 @@
     };
     // LINE Pay 付款連結：貼上連結，或選收款碼圖片自動讀出連結（店主 11-28：上傳圖片太麻煩，客人也不用掃碼）
     const lpQr = (s.lpcode && s.lpcode.qr) || '';
-    const LP_RE = /^https:\/\/line\.me\/R\/pay\/\S{10,400}$/;
+    const LP_RE = /^https:\/\/line\.me\/R\/pay\/[\w\-./?=&%]{10,400}$/; // 跟伺服器同一個規則
     const lqMsg = (t, ok) => { const m = $('#s-lq-msg'); m.textContent = t; m.style.color = ok ? 'var(--ok)' : 'var(--red)'; };
     $('#s-lq-link').addEventListener('input', () => { const v = $('#s-lq-link').value.trim(); lqMsg(!v ? '' : LP_RE.test(v) ? '✓ 連結可以用' : '這不像 LINE Pay 連結（要 https://line.me/R/pay/ 開頭）', LP_RE.test(v)); });
     $('#s-lq-file').onchange = async (e) => { const f = e.target.files[0]; e.target.value = ''; if (!f) return;
       NTC.loading(true, '讀取收款碼…');
       try {
-        if (!window.jsQR) await new Promise((ok, ko) => { const sc = document.createElement('script'); sc.src = 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js'; sc.onload = ok; sc.onerror = () => ko(new Error('讀取工具載入失敗，請直接貼連結')); document.head.appendChild(sc); });
+        if (!window.jsQR) await new Promise((ok, ko) => { const sc = document.createElement('script'); sc.src = 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js'; sc.integrity = 'sha384-b5Ya4Bq3qCyz39m2ISh+4DxjAIljdeFwK/BsXLuj9gugaNwAcj/ia15fxNZL9Nlx'; sc.crossOrigin = 'anonymous'; sc.onload = ok; sc.onerror = () => ko(new Error('讀取工具載入失敗，請直接貼連結')); document.head.appendChild(sc); });
         const img = await new Promise((ok, ko) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ko(new Error('這張圖片讀不到')); i.src = URL.createObjectURL(f); });
         const k = Math.min(1, 1400 / Math.max(img.width, img.height)); const c = document.createElement('canvas'); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
         const x = c.getContext('2d'); x.drawImage(img, 0, 0, c.width, c.height); const d = x.getImageData(0, 0, c.width, c.height);
