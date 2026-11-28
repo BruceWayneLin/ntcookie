@@ -156,7 +156,7 @@ r = await call(`/orders/${O1.orderNo}/pay`, { method: 'POST', body: { t: O1.toke
 r = await call(`/orders/${O1.orderNo}/transfer`, { method: 'POST', body: { t: O1.token, last5: '11111' } }); ok('after 已付款 the customer cannot re-report', r.status === 400, r.status);
 
 section('LINE Pay 掃碼付款（個人收款碼）');
-await putSettings({ payments: BASE.payments, lpcode: { qr: '' } }); // start clean even if an earlier manual check left a QR in the QA table
+await putSettings({ payments: { ...BASE.payments, lpcode: false }, lpcode: { qr: '' } }); // start clean even if an earlier manual check left a QR in the QA table
 r = await call('/catalog'); ok('lpcode off by default (no QR yet)', r.json.settings.payments.lpcode === false, r.json.settings.payments);
 r = await putSettings({ payments: { ...BASE.payments, lpcode: true } }); g = await call('/catalog'); ok('lpcode switched on without a QR → still hidden from customers', r.status === 200 && g.json.settings.payments.lpcode === false, g.json.settings.payments);
 r = await putSettings({ lpcode: { qr: 'javascript:alert(1)' } }); ok('a bad QR address is dropped', r.status === 200 && r.json.settings.lpcode.qr === '', r.json?.settings?.lpcode);
@@ -173,7 +173,7 @@ r = await call(`/orders/${OL2.orderNo}/pay`, { method: 'POST', body: { t: OL2.to
 ok('switching method after reporting → back to 待付款 (the old report no longer counts)', g.json.order.status === 'pending' && g.json.order.payment.method === 'transfer' && !g.json.order.payment.last5, g.json.order);
 r = await call(`/admin/orders/${OL.orderNo}`, { method: 'PATCH', user: ADMIN, body: { markPaid: true } }); ok('admin confirms → 已付款', r.json?.order.status === 'paid' && r.json.order.payment.status === 'paid', r.json?.order?.status);
 r = await call(`/orders/${OL.orderNo}/lpreport`, { method: 'POST', body: { t: OL.token } }); ok('after 已付款 the customer cannot re-report', r.status === 400, r.status);
-r = await putSettings({ payments: BASE.payments, lpcode: { qr: '' } }); g = await call('/catalog'); ok('QR removed → option gone again', g.json.settings.payments.lpcode === false, g.json.settings.payments);
+r = await putSettings({ payments: { ...BASE.payments, lpcode: false }, lpcode: { qr: '' } }); g = await call('/catalog'); ok('QR removed → option gone again', g.json.settings.payments.lpcode === false, g.json.settings.payments);
 
 section('查詢訂單（訂單編號＋手機）');
 r = await call('/orders/lookup', { method: 'POST', body: { no: O1.orderNo.toLowerCase(), phone: '0912 345 678' } }); ok('right number + phone (any format) → link to the order', r.json?.no === O1.orderNo && r.json.t === O1.token, r.json);
