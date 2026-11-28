@@ -368,7 +368,7 @@
     const tiers = (t, unit, from1 = 1) => { const a = [...t].sort((x, y) => x.upTo - y.upTo); if (a.length === 1) return `一律 ${m(a[0].fee)}`;
       return a.map((x, i) => { const lo = i ? a[i - 1].upTo + 1 : from1; return (i === a.length - 1 && x.upTo >= 99 ? `${lo} ${unit}以上` : lo >= x.upTo ? `${x.upTo} ${unit}` : `${lo}～${x.upTo} ${unit}`) + ` ${m(x.fee)}`; }).join('、'); };
     const amb = S.shipping.ambient.tiers && S.shipping.ambient.tiers.length ? S.shipping.ambient.tiers : [{ upTo: 999, fee: S.shipping.ambient.fee || 0 }];
-    const pay = [S.payments.transfer && '銀行轉帳', S.payments.linepay && 'LINE Pay', S.payments.ecpay && '信用卡／ATM／超商'].filter(Boolean);
+    const pay = [S.payments.transfer && '銀行轉帳', (S.payments.linepay || S.payments.lpcode) && 'LINE Pay', S.payments.ecpay && '信用卡／ATM／超商'].filter(Boolean);
     const auto = [
       ['date', '到貨日', `每一份都是接單後手工製作，最早可選 ${NTC.fmtDate(NTC.dateRules(S).min)} 到貨。${S.dateNote || ''}`],
       ['cookie', '造型餅乾', `${S.cookie.minPieces} 片起訂，可跨系列搭配。${S.cookie.shipping.label}：${tiers(S.cookie.shipping.tiers, '片', S.cookie.minPieces)}。`],

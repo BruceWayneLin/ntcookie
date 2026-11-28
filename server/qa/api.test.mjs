@@ -155,6 +155,20 @@ r = await call(`/admin/orders/${O1.orderNo}`, { method: 'PATCH', user: ADMIN, bo
 r = await call(`/orders/${O1.orderNo}/pay`, { method: 'POST', body: { t: O1.token } }); ok('paid order cannot be paid again', r.status === 400, r.status);
 r = await call(`/orders/${O1.orderNo}/transfer`, { method: 'POST', body: { t: O1.token, last5: '11111' } }); ok('after 已付款 the customer cannot re-report', r.status === 400, r.status);
 
+section('LINE Pay 掃碼付款（個人收款碼）');
+r = await call('/catalog'); ok('lpcode off by default (no QR yet)', r.json.settings.payments.lpcode === false, r.json.settings.payments);
+r = await putSettings({ payments: { ...BASE.payments, lpcode: true } }); g = await call('/catalog'); ok('lpcode switched on without a QR → still hidden from customers', r.status === 200 && g.json.settings.payments.lpcode === false, g.json.settings.payments);
+r = await putSettings({ lpcode: { qr: 'javascript:alert(1)' } }); ok('a bad QR address is dropped', r.status === 200 && r.json.settings.lpcode.qr === '', r.json?.settings?.lpcode);
+r = await putSettings({ lpcode: { qr: 'assets/favicon.png' } }); g = await call('/catalog'); ok('QR + switch on → customers can pick it', g.json.settings.payments.lpcode === true && !('lpcode' in g.json.settings), [g.json.settings.payments, Object.keys(g.json.settings)]);
+const OL = (await order({ payment: 'lpcode' })).json; ok('lpcode order → order page (no payment gateway)', OL?.next?.type === 'order', OL);
+g = await call(`/orders/${OL.orderNo}?t=${OL.token}`); ok('order shows the QR + deadline, not the bank account', g.json.order.lpcode?.qr === 'assets/favicon.png' && !g.json.order.bank && g.json.order.payment.deadline === ymd(2) && g.json.order.payment.label === 'LINE Pay（掃碼付款）', g.json.order);
+r = await call(`/orders/${OL.orderNo}/lpreport`, { method: 'POST', body: { t: 'wrong' } }); ok('report with wrong token → 403', r.status === 403, r.status);
+r = await call(`/orders/${O1.orderNo}/lpreport`, { method: 'POST', body: { t: O1.token } }); ok('a bank-transfer order cannot use the LINE Pay report', r.status === 400, r.status);
+r = await call(`/orders/${OL.orderNo}/lpreport`, { method: 'POST', body: { t: OL.token } }); ok('customer reports paid → 待確認, money not yet confirmed', r.json?.order.status === 'reported' && r.json.order.payment.status === 'unpaid', r.json?.order);
+r = await call(`/admin/orders/${OL.orderNo}`, { method: 'PATCH', user: ADMIN, body: { markPaid: true } }); ok('admin confirms → 已付款', r.json?.order.status === 'paid' && r.json.order.payment.status === 'paid', r.json?.order?.status);
+r = await call(`/orders/${OL.orderNo}/lpreport`, { method: 'POST', body: { t: OL.token } }); ok('after 已付款 the customer cannot re-report', r.status === 400, r.status);
+r = await putSettings({ payments: BASE.payments, lpcode: { qr: '' } }); g = await call('/catalog'); ok('QR removed → option gone again', g.json.settings.payments.lpcode === false, g.json.settings.payments);
+
 section('查詢訂單（訂單編號＋手機）');
 r = await call('/orders/lookup', { method: 'POST', body: { no: O1.orderNo.toLowerCase(), phone: '0912 345 678' } }); ok('right number + phone (any format) → link to the order', r.json?.no === O1.orderNo && r.json.t === O1.token, r.json);
 r = await call('/orders/lookup', { method: 'POST', body: { no: O1.orderNo, phone: '0912345679' } }); ok('wrong phone → not found', r.status === 404 && !r.json.t, r.status);

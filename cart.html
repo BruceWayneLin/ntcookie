@@ -50,6 +50,7 @@
   const pays = [
     ['linepay', 'LINE Pay', '用 LINE Pay 付款（可綁信用卡、LINE Points 折抵）'],
     ['ecpay', '信用卡／ATM 轉帳／超商代碼', '由綠界科技安全付款'],
+    ['lpcode', 'LINE Pay（掃碼付款）', '下單後顯示店家的 LINE Pay 收款碼，用 LINE Pay 掃碼付款'],
     ['transfer', '銀行轉帳（匯款）', '下單後顯示匯款帳號，轉帳後回報末五碼'],
   ].filter(([k]) => S.payments[k]);
   form.payment = pays.length ? pays[0][0] : '';
